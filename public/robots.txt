@@ -1,0 +1,35 @@
+# Content Signal (https://contentsignals.org/ - machine-readable usage permissions)
+# Content-Signal: search=yes, ai-train=no
+
+# Google AdSense & Ad Crawlers
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
+User-agent: AdsBot-Google-Mobile
+Allow: /
+
+User-agent: Google-Display-Ads-Bot
+Allow: /
+
+# General Search Engine Crawlers (Googlebot, Bingbot, etc.)
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: *
+Allow: /
+Allow: /ads.txt
+Disallow: /*?q=*
+
+# Sitemaps & AI Agent Documentation
+Sitemap: https://pottotools.in/sitemap.xml
+# LLMs: https://pottotools.in/llms.txt
+# LLMs-Full: https://pottotools.in/llms-full.txt

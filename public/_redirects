@@ -1,0 +1,29 @@
+# ----------------------------------------------------------------------
+# PottoTools - Canonical 301 Redirects for Netlify & Cloudflare Pages
+# ----------------------------------------------------------------------
+
+# Force HTTPS & non-WWW to canonical
+https://www.pottotools.in/*  https://pottotools.in/:splat  301!
+http://www.pottotools.in/*   https://pottotools.in/:splat  301!
+http://pottotools.in/*       https://pottotools.in/:splat  301!
+
+# Canonical 301 Redirects for Alias Routes
+/about-us              /about               301!
+/about-us/             /about               301!
+/contact-us            /contact             301!
+/contact-us/           /contact             301!
+/all-tools             /directory           301!
+/all-tools/            /directory           301!
+/convert-documents     /convert-docs        301!
+/convert-documents/    /convert-docs        301!
+/cookies               /cookie-policy       301!
+/cookies/              /cookie-policy       301!
+/custom-photo-resizer  /custom-photo-studio 301!
+/custom-photo-resizer/ /custom-photo-studio 301!
+/gov-tools             /image-tools         301!
+/gov-tools/            /image-tools         301!
+/category-gov-tools    /image-tools         301!
+/category-gov-tools/   /image-tools         301!
+
+# SPA Client-Side Routing Fallback
+/*    /index.html   200

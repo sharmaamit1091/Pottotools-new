@@ -1,0 +1,71 @@
+# PottoTools: Full Technical Documentation & LLM Guide
+
+> PottoTools (https://pottotools.in) is a private, client-side web application providing high-performance document and image manipulation tools. All operations (PDF compression, format conversion, photo editing, government exam photo/signature compliance, OCR, and spreadsheet processing) execute entirely in the user's web browser using WebAssembly, HTML5 Canvas, and modern Web APIs. No user document or file is ever transmitted to a server.
+
+## Core Architecture & Privacy Principles
+
+- **Zero-Server Processing**: Processing runs locally via WebAssembly (`pdf-lib`, `pdfjs-dist`, `docx`, `xlsx`, `tesseract.js`) and HTML5 Canvas.
+- **Client Data Safety**: Documents are loaded into browser memory and garbage-collected upon session end. No data leaves the client device.
+- **Cost**: 100% Free, zero paywalls, zero daily quotas, no account or registration required.
+- **Accessibility**: Works across all desktop and mobile browsers supporting modern JavaScript standards.
+
+## Complete Tool Directory & Specifications
+
+### 1. PDF Organization Tools
+- **PDF Page Organizer** (`https://pottotools.in/pdf-page-organizer`): Reorder pages with drag and drop, rotate individual pages 90/180/270 degrees, and delete unwanted pages before downloading the consolidated PDF.
+- **Merge PDF** (`https://pottotools.in/merge-pdf`): Merge multiple PDFs into a single file with custom ordering.
+- **Split PDF** (`https://pottotools.in/split-pdf`): Split PDFs by individual pages, customized page ranges (e.g., 1-5, 8, 11-14), or odd/even splits.
+- **Delete PDF Pages** (`https://pottotools.in/delete-pdf-pages`): Remove specified pages from a PDF.
+- **Watermark PDF** (`https://pottotools.in/watermark-pdf`): Add text or image watermarks with custom opacity, rotation angle, position (center, diagonal, corners), and font sizing.
+- **Page Numbers** (`https://pottotools.in/page-numbers-pdf`): Stamp page numbers with customizable position, font, format (e.g., "Page X of Y"), and starting index.
+
+### 2. PDF Compression & Optimization
+- **Compress PDF** (`https://pottotools.in/compress-pdf`): Reduces PDF file size down to strict portal limits (100 KB, 200 KB, 500 KB, 1 MB, or custom target in KB/MB) using intelligent stream compression and image downsampling.
+
+### 3. Document Conversion
+- **PDF to Editable Word DOCX** (`https://pottotools.in/pdf-to-editable-word`): Converts digital or scanned PDF files into fully editable Microsoft Word (.docx) files preserving layout, typography, tables, and images with embedded OCR for scanned pages.
+- **Word DOCX to PDF** (`https://pottotools.in/word-to-pdf`): Converts Word documents (.docx) into standard PDF documents.
+- **DOCX to TXT** (`https://pottotools.in/docx-to-txt`): Extracts plain text from DOCX files.
+- **DOCX to HTML** (`https://pottotools.in/docx-to-html`): Converts DOCX structure into semantic HTML markup.
+- **TXT to PDF** (`https://pottotools.in/txt-to-pdf`): Formats plain text files into paginated PDFs.
+- **Markdown to PDF** (`https://pottotools.in/markdown-to-pdf`): Converts Markdown formatted text into styled PDFs.
+
+### 4. Image Tools & Exam Presets
+- **Custom Photo Studio** (`https://pottotools.in/custom-photo-studio`): Custom pixel, cm, mm, and inch resizing with crop, adjustments, and KB compression.
+- **Photo Size Compressor** (`https://pottotools.in/photo-size-compressor`): Compresses photos to exact target file sizes in KB or MB without altering pixel dimensions unless requested.
+- **Government Exam Photo & Signature Resizer** (`https://pottotools.in/photo-signature-resizer`): Built-in compliance presets for major recruitment exams:
+  - **UPSC**: Photograph (350x350 to 1000x1000 px, 20-300 KB, name/date tag) and Signature (350x350 to 1000x1000 px, 20-300 KB).
+  - **SSC**: Photograph (3.5x4.5 cm / 200x230 px, 20-50 KB) and Signature (4.0x2.0 cm / 140x60 px, 10-20 KB).
+  - **IBPS / SBI Banking**: Photograph (200x230 px, 20-50 KB) and Signature (140x60 px, 10-20 KB).
+  - **Railway (RRB)**: Photograph (35x45 mm, 20-50 KB) and Signature (140x60 px, 10-40 KB).
+  - **State PSC**: Standardized civil service photo/signature dimensions (10-100 KB).
+  - **NTA (NEET / JEE)**: Postcard photo (4x6 inch, 10-200 KB), passport photo (10-200 KB), and signature (4-30 KB).
+- **Photo Editor** (`https://pottotools.in/photo-editor`): Interactive crop, rotate, flip, brightness, contrast, saturation, sharpness, and temperature controls.
+- **HD Image Enhancer** (`https://pottotools.in/hd-image-enhancer`): Enhances clarity, sharpens details, and offers upscaling (2x, 4x) using unsharp masking and bicubic resampling.
+- **Image Format Converter** (`https://pottotools.in/image-converter`): Converts between JPG, PNG, WEBP, and BMP formats.
+- **Passport Photo Cropper** (`https://pottotools.in/passport-photo-cropper`): Crops photos to official 35x45 mm standards and prepares printable multi-photo sheets.
+- **Photos to PDF** (`https://pottotools.in/image-to-pdf`): Bundles multiple images into a clean PDF.
+- **PDF to Images** (`https://pottotools.in/pdf-to-images`): Exports PDF pages as standalone JPG or PNG images.
+
+### 5. OCR & Scanned Document Tools
+- **Find Anything in Scanned PDFs** (`https://pottotools.in/searchable-pdf-text-finder`): Scans image-based PDFs, recognizes text, and creates a searchable PDF.
+- **OCR Scanner** (`https://pottotools.in/ocr-tool`): Extracts text from images or scanned documents into editable text with English and Hindi language support.
+
+### 6. Security & Digital Signing
+- **Protect PDF** (`https://pottotools.in/protect-pdf`): Password-protects PDFs with standard encryption.
+- **Sign PDF** (`https://pottotools.in/sign-pdf`): Draw, type, or upload a signature and stamp it onto PDF pages.
+- **PDF & ID Redactor** (`https://pottotools.in/pdf-id-redactor`): Permanently blackout or pixel-blur Aadhaar, bank, PAN, and salary info 100% offline.
+- **PDF Metadata Viewer & Cleaner** (`https://pottotools.in/pdf-metadata`): Inspects and removes metadata from PDF documents.
+
+### 7. Office Spreadsheets & Presentations
+- **CSV to XLSX** (`https://pottotools.in/csv-to-xlsx`): Converts CSV files into Excel workbooks.
+- **XLSX to CSV** (`https://pottotools.in/xlsx-to-csv`): Converts Excel sheets into CSV files.
+- **Spreadsheet Viewer** (`https://pottotools.in/sheet-viewer`): Browser-based table viewer for XLSX/CSV files.
+- **Excel to PDF** (`https://pottotools.in/excel-to-pdf`): Renders spreadsheet tables into printable PDF format.
+- **PDF to Excel** (`https://pottotools.in/pdf-to-excel`): Extracts tabular data from PDFs into structured spreadsheets.
+- **PowerPoint to PDF** (`https://pottotools.in/powerpoint-to-pdf`): Converts presentation slides to PDF format.
+
+### 8. Text Utilities
+- **PDF Text Extractor** (`https://pottotools.in/pdf-text-extractor`): Extracts raw text from digital PDF pages.
+- **Text Diff Comparator** (`https://pottotools.in/text-diff-comparator`): Side-by-side comparison highlighting character/word differences.
+- **Text Cleaner & Formatter** (`https://pottotools.in/text-cleaner`): Normalizes whitespace, removes duplicates, and reformats text.
