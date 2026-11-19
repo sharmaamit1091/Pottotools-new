@@ -9,6 +9,7 @@ import {
   SignPdfVisual,
   WatermarkPdfVisual,
   ProtectPdfVisual,
+  UnlockPdfVisual,
   PdfToImagesVisual,
   ImageToPdfVisual,
   SearchablePdfVisual,
@@ -34,6 +35,7 @@ import {
   TextCleanerVisual,
   SheetViewerVisual,
   RedactIdVisual,
+  RemoveScanWatermarkVisual,
   GenericToolVisual,
 } from '../components/visuals/ToolVisualIllustrations';
 
@@ -172,16 +174,40 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
       button: 'bg-purple-600 hover:bg-purple-700 text-white',
     },
   },
+  'remove-scan-watermark': {
+    visual: RemoveScanWatermarkVisual,
+    actionLabel: 'Clean scanner app labels',
+    shortExplanation: 'Remove unwanted scanner app labels from your scanned PDF pages.',
+    actionButtonText: 'Remove Watermark',
+    categoryTag: 'PDF Tools',
+    accentClass: {
+      borderHover: 'hover:border-teal-400 dark:hover:border-teal-500',
+      actionTag: 'bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200/60 dark:border-teal-900/60',
+      button: 'bg-teal-600 hover:bg-teal-700 text-white',
+    },
+  },
   'protect-pdf': {
     visual: ProtectPdfVisual,
-    actionLabel: 'Lock with password',
-    shortExplanation: 'Encrypt confidential PDF documents with custom master and user passwords.',
+    actionLabel: 'Lock with AES-256 password',
+    shortExplanation: 'Encrypt confidential PDFs with real AES-256 passwords and print/copy restrictions.',
     actionButtonText: 'Protect PDF',
-    categoryTag: 'Security & Sign',
+    categoryTag: 'PDF Security',
     accentClass: {
       borderHover: 'hover:border-red-400 dark:hover:border-red-500',
       actionTag: 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-red-200/60 dark:border-red-900/60',
       button: 'bg-red-600 hover:bg-red-700 text-white',
+    },
+  },
+  'unlock-pdf': {
+    visual: UnlockPdfVisual,
+    actionLabel: 'Remove PDF password',
+    shortExplanation: 'Decrypt password-locked PDFs (e-Aadhaar, bank statements) losslessly in-browser.',
+    actionButtonText: 'Unlock PDF',
+    categoryTag: 'PDF Security',
+    accentClass: {
+      borderHover: 'hover:border-emerald-400 dark:hover:border-emerald-500',
+      actionTag: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-900/60',
+      button: 'bg-emerald-600 hover:bg-emerald-700 text-white',
     },
   },
   'pdf-id-redactor': {

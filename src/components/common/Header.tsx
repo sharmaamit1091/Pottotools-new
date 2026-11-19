@@ -349,6 +349,21 @@ export const Header: React.FC<HeaderProps> = ({
             <span>All Tools (43)</span>
           </a>
 
+          {/* Guides & Blog */}
+          <a
+            href="/blog"
+            onClick={(e) => handleNavClick('blog', e)}
+            onMouseEnter={() => preloadView('blog')}
+            onTouchStart={() => preloadView('blog')}
+            className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl transition-all cursor-pointer shadow-sm ${
+              currentView === 'blog' || currentView.startsWith('blog/')
+                ? 'bg-[#0284C7] text-white ring-2 ring-sky-300 shadow-sky-500/30'
+                : 'bg-[#15233D] text-sky-100 hover:bg-[#0284C7] hover:text-white border border-sky-700/50'
+            }`}
+          >
+            <span>Guides</span>
+          </a>
+
           {/* About Us */}
           <a
             href="/about"

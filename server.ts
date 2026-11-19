@@ -62,7 +62,9 @@ const VALID_TOOL_SLUGS = new Set([
   'pdf-to-images',
   'ocr-tool',
   'protect-pdf',
+  'unlock-pdf',
   'pdf-id-redactor',
+  'remove-scan-watermark',
   'sign-pdf',
   'pdf-metadata',
   'custom-photo-studio',
@@ -157,7 +159,7 @@ async function createServer() {
     // Check forwarded protocol from reverse proxies/load balancers
     const proto = (req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http')).toLowerCase();
 
-    if (!isLocalhost) {
+    if (isProduction && !isLocalhost && !host.endsWith('.run.app')) {
       const normalizedHost = host.replace(/^www\./i, '');
       if (host.toLowerCase().startsWith('www.') || proto === 'http') {
         return res.redirect(301, `https://${normalizedHost}${req.originalUrl}`);
@@ -203,14 +205,14 @@ async function createServer() {
       'Content-Security-Policy',
       [
         "default-src 'self' https: data: blob:",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://tpc.googlesyndication.com https://www.googletagmanager.com https://*.google.com https://*.gstatic.com https://bauval.org https://*.bauval.org https://*.effectivegatecpm.com https://*.highperformanceformat.com https://*.topcreativeformat.com https://*.profitablecpmrate.com https://*.adsterra.com https:",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://tpc.googlesyndication.com https://www.googletagmanager.com https://*.google.com https://*.gstatic.com https://bauval.org https://*.bauval.org https://*.effectivegatecpm.com https://*.highperformanceformat.com https://*.topcreativeformat.com https://*.profitablecpmrate.com https://*.adsterra.com https:",
         "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com https://www.google.com https://*.google.com https:",
         "img-src 'self' data: blob: https:",
         "connect-src 'self' blob: https:",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https:",
         "font-src 'self' data: https://fonts.gstatic.com https:",
         "worker-src 'self' blob:",
-        "frame-ancestors 'self' https://adsense.google.com https://*.google.com",
+        "frame-ancestors 'self' https://adsense.google.com https://*.google.com https://*.googleusercontent.com https://*.run.app",
       ].join('; ')
     );
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -305,7 +307,7 @@ async function createServer() {
     vite = await createViteServer({
       server: {
         middlewareMode: true,
-        hmr: process.env.DISABLE_HMR === 'true' ? false : { server: httpServer },
+        hmr: false,
       },
       appType: 'custom',
     });

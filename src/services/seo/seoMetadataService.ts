@@ -97,12 +97,20 @@ const TOOL_SEO_MAP: Record<string, ToolSeoConfig> = {
     metaDesc: 'Extract text from scanned PDFs, receipts, and photos using in-browser Optical Character Recognition (OCR). Accurate and 100% private.',
   },
   'protect-pdf': {
-    title: 'PDF Privacy Sanitizer – Strip Metadata & Rebuild Clean PDF | PottoTools',
-    metaDesc: 'Strip hidden author, creator, and producer metadata and rebuild clean PDF streams locally in your browser. Use Offline PDF & ID Redactor for visual blackout.',
+    title: 'Protect PDF with Password Online Free – AES-256 PDF Encryption | PottoTools',
+    metaDesc: 'Encrypt and password-protect PDF files with real AES-256 or AES-128 security and print/copy restrictions 100% locally in your browser. Zero cloud uploads.',
+  },
+  'unlock-pdf': {
+    title: 'Unlock PDF Online Free – Remove PDF Password Losslessly | PottoTools',
+    metaDesc: 'Remove password protection and print/copy restrictions from e-Aadhaar, bank statements, and PDF files losslessly in your browser. 100% private.',
   },
   'pdf-id-redactor': {
     title: 'Offline PDF & ID Redactor – Hide Aadhaar, Bank & Salary Info Free | PottoTools',
     metaDesc: 'Permanently blackout or pixel-blur Aadhaar numbers, bank accounts, PAN, and salary slips 100% offline in your browser. Zero cloud uploads.',
+  },
+  'remove-scan-watermark': {
+    title: 'REMOVE SCAN WATERMARK – Remove CamScanner & Adobe Scan Labels Free | PottoTools',
+    metaDesc: 'Remove unwanted scanner app labels like Scanned with CamScanner and Adobe Scan from your scanned PDF pages in-browser with auto detection, manual selection, and Before & After preview.',
   },
   'sign-pdf': {
     title: 'Sign PDF Online – Draw Signature & Stamp PDF Locally | PottoTools',

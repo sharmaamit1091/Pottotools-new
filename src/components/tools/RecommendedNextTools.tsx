@@ -96,14 +96,26 @@ const RECOMMENDATION_MAP: Record<string, { slug: string; reason: string }[]> = {
     { slug: 'protect-pdf', reason: 'Add password protection to your application dossier' },
   ],
   'protect-pdf': [
+    { slug: 'unlock-pdf', reason: 'Remove password protection later whenever needed' },
     { slug: 'pdf-id-redactor', reason: 'Permanently mask Aadhaar, bank or salary info before locking' },
-    { slug: 'compress-pdf', reason: 'Verify encrypted file meets target KB limits' },
-    { slug: 'sign-pdf', reason: 'Add your hand-drawn or stamp signature' },
+    { slug: 'compress-pdf', reason: 'Shrink PDF file size to fit email or portal limits' },
+  ],
+  'unlock-pdf': [
+    { slug: 'compress-pdf', reason: 'Compress your unlocked PDF for email or portal upload' },
+    { slug: 'merge-pdf', reason: 'Combine your unlocked PDF with other documents' },
+    { slug: 'pdf-id-redactor', reason: 'Mask Aadhaar, PAN, or bank numbers before sharing' },
+    { slug: 'protect-pdf', reason: 'Re-lock your PDF with a new AES-256 password' },
   ],
   'pdf-id-redactor': [
     { slug: 'protect-pdf', reason: 'Add a password lock to your freshly redacted document' },
     { slug: 'compress-pdf', reason: 'Shrink your flattened PDF to fit portal KB limits' },
     { slug: 'watermark-pdf', reason: 'Stamp "For KYC Use Only" across your masked copy' },
+  ],
+  'remove-scan-watermark': [
+    { slug: 'compress-pdf', reason: 'Reduce your clean scanned PDF size for email or portal uploads' },
+    { slug: 'searchable-pdf-text-finder', reason: 'Make your cleaned scanned PDF searchable with Ctrl+F OCR' },
+    { slug: 'pdf-page-organizer', reason: 'Reorder, rotate, or tidy pages in your cleaned document' },
+    { slug: 'protect-pdf', reason: 'Lock your clean document with AES-256 password encryption' },
   ],
   'sign-pdf': [
     { slug: 'protect-pdf', reason: 'Password-lock your freshly signed document' },

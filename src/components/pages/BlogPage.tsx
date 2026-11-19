@@ -2,7 +2,7 @@ import React from 'react';
 import { BLOG_POSTS, BlogPost, getBlogPostBySlug } from '../../config/blogPosts';
 import { getToolBySlug, ToolDefinition } from '../../config/toolsRegistry';
 import { Breadcrumbs } from '../common/Breadcrumbs';
-import { ArrowRight, BookOpen, Calendar, Clock, HelpCircle, Wrench } from 'lucide-react';
+import { ArrowRight, BookOpen, Calendar, Clock, HelpCircle, UserCheck, Wrench } from 'lucide-react';
 
 interface BlogPageProps {
   slug?: string; // undefined = /blog index
@@ -66,6 +66,10 @@ export const BlogPage: React.FC<BlogPageProps> = ({
               {post.category}
             </span>
             <span className="inline-flex items-center gap-1">
+              <UserCheck className="w-3.5 h-3.5" />
+              PottoTools Editorial Team
+            </span>
+            <span className="inline-flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
               Updated {post.updatedAt}
             </span>
@@ -96,6 +100,38 @@ export const BlogPage: React.FC<BlogPageProps> = ({
                   {para}
                 </p>
               ))}
+              {sec.table && sec.table.headers.length > 0 && (
+                <div className="overflow-x-auto my-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800">
+                        {sec.table.headers.map((header, hIdx) => (
+                          <th
+                            key={hIdx}
+                            className="px-4 py-3 font-bold text-slate-900 dark:text-white whitespace-nowrap"
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {sec.table.rows.map((row, rIdx) => (
+                        <tr key={rIdx} className="bg-white dark:bg-slate-900">
+                          {row.map((cell, cIdx) => (
+                            <td
+                              key={cIdx}
+                              className="px-4 py-3 text-slate-600 dark:text-slate-300 align-top"
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               {sec.bullets && sec.bullets.length > 0 && (
                 <ul className="space-y-2 pl-5 list-disc text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
                   {sec.bullets.map((b, bIdx) => (
@@ -168,7 +204,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">More Practical Document Guides</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {otherPosts.map((other) => (
+            {otherPosts.slice(0, 4).map((other) => (
               <a
                 key={other.slug}
                 href={`/blog/${other.slug}`}
@@ -205,13 +241,13 @@ export const BlogPage: React.FC<BlogPageProps> = ({
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-10 shadow-xs space-y-3">
         <div className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
           <BookOpen className="w-4 h-4" />
-          <span>PottoTools Practical Knowledge Base</span>
+          <span>PottoTools Practical Knowledge Base ({BLOG_POSTS.length} Guides)</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           Document, PDF &amp; Image Guides
         </h1>
-        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-          Clear, step-by-step tutorials explaining how PDF compression, page rotation, OCR Word conversion, exact KB photo sizing, and offline document redaction work in practice.
+        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
+          In-depth technical tutorials explaining PDF compression byte budgets, lossless page rotation, Word-to-PDF layout rules, CSV/UTF-8 spreadsheets, OCR search workflows, exact KB photo sizing, and offline ID redaction.
         </p>
       </div>
 

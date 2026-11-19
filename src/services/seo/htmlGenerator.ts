@@ -101,12 +101,20 @@ const TOOL_SEO_MAP: Record<string, SeoConfig> = {
     metaDesc: 'Extract editable text from scanned documents, photos, and invoices with in-browser optical character recognition (OCR) supporting English and Hindi.',
   },
   'protect-pdf': {
-    title: 'PDF Privacy Sanitizer – Strip Metadata & Rebuild Clean PDF | PottoTools',
-    metaDesc: 'Strip hidden author, creator, and producer metadata and rebuild clean PDF streams locally in your browser. Use Offline PDF & ID Redactor for visual blackout.',
+    title: 'Protect PDF with Password Online Free – AES-256 PDF Encryption | PottoTools',
+    metaDesc: 'Encrypt and password-protect PDF files with real AES-256 or AES-128 security and print/copy restrictions 100% locally in your browser. Zero cloud uploads.',
+  },
+  'unlock-pdf': {
+    title: 'Unlock PDF Online Free – Remove PDF Password Losslessly | PottoTools',
+    metaDesc: 'Remove password protection and print/copy restrictions from e-Aadhaar, bank statements, and PDF files losslessly in your browser. 100% private.',
   },
   'pdf-id-redactor': {
     title: 'Offline PDF & ID Redactor – Hide Aadhaar, Bank & Salary Info Free | PottoTools',
     metaDesc: 'Permanently blackout or pixel-blur Aadhaar numbers, bank accounts, PAN, and salary slips 100% offline in your browser. Zero server uploads.',
+  },
+  'remove-scan-watermark': {
+    title: 'REMOVE SCAN WATERMARK – Remove CamScanner & Adobe Scan Labels Free | PottoTools',
+    metaDesc: 'Remove unwanted scanner app labels like Scanned with CamScanner and Adobe Scan from your scanned PDF pages in-browser with auto detection, manual selection, and Before & After preview.',
   },
   'sign-pdf': {
     title: 'Sign PDF Online – Draw Signature & Stamp PDF Locally | PottoTools',
@@ -320,12 +328,12 @@ export function buildToolPageHtml(templateHtml: string, tool: ToolDefinition): s
         <div><strong>Privacy Guarantee:</strong> 100% In-Browser (Zero Cloud Uploads)</div>
       </div>
 
-      <div id="tool-workspace-placeholder" style="border: 2px dashed #93c5fd; background: #eff6ff; border-radius: 16px; padding: 3rem 1.5rem; text-align: center; margin-bottom: 2.5rem;">
+      <div id="tool-workspace-placeholder" style="border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 16px; padding: 2rem 1.5rem; text-align: center; margin-bottom: 2.5rem;">
         <p style="font-size: 1.125rem; font-weight: 700; color: #1e40af; margin-bottom: 0.5rem;">
-          Ready to use ${escapeHtml(tool.title)}?
+          ${escapeHtml(tool.title)} Workspace (${escapeHtml(tool.outputFormat)})
         </p>
-        <p style="font-size: 0.875rem; color: #3b82f6;">
-          Select or drag and drop your file to begin processing locally on your device.
+        <p style="font-size: 0.875rem; color: #1d4ed8;">
+          Drop ${escapeHtml(tool.acceptedFormats.join(', '))} files (up to ${tool.maxFileSizeMB} MB) inside the interactive browser workspace${profile.settingsAndOptions[0] ? ` &mdash; includes ${escapeHtml(profile.settingsAndOptions[0].toLowerCase())}` : ''}.
         </p>
       </div>
 
@@ -359,18 +367,16 @@ export function buildToolPageHtml(templateHtml: string, tool: ToolDefinition): s
 
         <section style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 2rem;">
           <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">
-            Why Choose PottoTools for ${escapeHtml(tool.title)}
+            Format Scope &amp; Local Workflow
           </h2>
           <p style="font-size: 0.925rem; color: #475569; line-height: 1.6; margin-bottom: 0.75rem;">
-            Every operation in ${escapeHtml(tool.title)} runs locally inside your browser using client-side WebAssembly and HTML5 memory streams—meaning your ${escapeHtml(tool.acceptedFormats.join(', '))} files up to ${tool.maxFileSizeMB} MB never leave your device or touch external servers.
+            ${escapeHtml(tool.title)} converts or processes ${escapeHtml(tool.acceptedFormats.join(', '))} inputs up to ${tool.maxFileSizeMB} MB directly inside browser memory, generating ${escapeHtml(tool.outputFormat)} output without uploading files to external servers.
           </p>
           <p style="font-size: 0.875rem; color: #475569; line-height: 1.6;">
-            Part of our <a href="/${categorySlug}" style="color: #0284c7; font-weight: 600; text-decoration: none;">${escapeHtml(tool.categoryName)}</a> suite, it exports ${escapeHtml(tool.outputFormat)} files with zero registration${
-              tool.id === 'sign-pdf'
-                ? ' and embeds a subtle low-opacity PottoTools logo watermark across signed pages.'
-                : ['ocr-tool', 'searchable-pdf-text-finder', 'pdf-to-editable-word'].includes(tool.id)
-                  ? ', zero watermarks, and local CPU processing (downloads ~10–25 MB language data on first OCR run before caching offline).'
-                  : ', zero watermarks, and full offline PWA support.'
+            Browse more utilities inside <a href="/${categorySlug}" style="color: #0284c7; font-weight: 600; text-decoration: none;">${escapeHtml(tool.categoryName)}</a>${
+              relatedGuides[0]
+                ? ` or read our walkthrough: <a href="/blog/${relatedGuides[0].slug}" style="color: #0284c7; font-weight: 600; text-decoration: none;">${escapeHtml(relatedGuides[0].title)}</a>.`
+                : ` or read step-by-step tutorials in <a href="/blog" style="color: #0284c7; font-weight: 600; text-decoration: none;">PottoTools Guides</a>.`
             }
           </p>
         </section>
@@ -682,11 +688,12 @@ export function buildCategoryPageHtml(templateHtml: string, categoryData: (typeo
   const rootContent = `
     <header style="padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
       <a href="/" style="font-weight: 800; font-size: 1.25rem; color: #0f172a; text-decoration: none;">Potto<span style="color: #0284c7;">Tools</span></a>
-      <nav aria-label="Primary Navigation" style="display: flex; gap: 1rem; font-size: 0.875rem;">
+      <nav aria-label="Primary Navigation" style="display: flex; gap: 1rem; font-size: 0.875rem; flex-wrap: wrap;">
         <a href="/" style="color: #0284c7; text-decoration: none;">Home</a>
         <a href="/pdf-tools" style="color: #475569; text-decoration: none;">PDF Tools</a>
         <a href="/image-tools" style="color: #475569; text-decoration: none;">Image Tools</a>
         <a href="/convert-docs" style="color: #475569; text-decoration: none;">Document Conversion</a>
+        <a href="/blog" style="color: #475569; text-decoration: none;">Guides</a>
         <a href="/directory" style="color: #475569; text-decoration: none;">All Tools</a>
         <a href="/about" style="color: #475569; text-decoration: none;">About</a>
         <a href="/contact" style="color: #475569; text-decoration: none;">Contact</a>
@@ -813,19 +820,19 @@ export const INFORMATIONAL_PAGES_DATA = [
     h1: 'About PottoTools: Private, Free & Client-Side Utility Platform',
     content: `
       <h2>Our Mission: Simple, Private &amp; Accessible Document Tools</h2>
-      <p>PottoTools was created with a clear objective: to give students, job applicants, office teams, and everyday users instant access to reliable PDF, document, spreadsheet, and photo tools without forcing paid subscriptions, email sign-ups, or invasive cloud server uploads.</p>
-      <p>Whether you need to shrink a dense application PDF down to 100 KB, convert locked scans into editable Word files, prepare compliant exam photographs, or permanently blackout sensitive bank and Aadhaar numbers before sharing, PottoTools puts 43+ focused utilities in one clean workspace.</p>
+      <p>PottoTools is an independent platform built in India to help students, job applicants, office teams, and everyday users handle everyday PDF, Word, Excel, OCR, and photograph tasks directly inside the web browser—without forced subscriptions, email capture, or cloud server uploads.</p>
+      <h2>Who PottoTools Serves &amp; Editorial Standards</h2>
+      <p>Visitors commonly arrive on PottoTools when solving concrete portal rules—compressing multi-page application PDFs under 100 KB or 200 KB, converting centimeter/millimeter passport specifications into pixels at 200 or 300 DPI, running bilingual OCR on scanned circulars, or permanently masking sensitive Aadhaar and bank numbers before emailing documents.</p>
+      <p>Alongside our utilities, our editorial team maintains practical how-to guides in the <a href="/blog" style="color: #0284c7; font-weight: 600; text-decoration: none;">PottoTools Practical Guides &amp; Blog</a> section covering file-format trade-offs, formulas, and documented limitations. PottoTools is sustained by standard display advertising rather than paywalls.</p>
       <h2>Zero-Server Upload &amp; Offline PWA Architecture</h2>
-      <p>Traditional converter websites upload your confidential contracts, tax forms, payslips, and identity photos to remote servers for processing. PottoTools works fundamentally differently. Every conversion, compression, redaction, and OCR task executes locally inside your own browser memory using WebAssembly, HTML5 Canvas, and modern open web standards.</p>
-      <p>Because processing stays on your device, your files never leave your computer or smartphone, and once cached, PottoTools works even offline in Airplane Mode as an installable Progressive Web App (PWA).</p>
-      <h2>100% Free Forever — Explore Core Categories</h2>
-      <p>There are no trial periods or daily conversion limits across our client-side utilities (only Sign PDF includes a visible subtle full-page PottoTools watermark, clearly noted before download). Browse our flagship suites directly:</p>
+      <p>Unlike converter sites that upload tax forms, contracts, and identity scans to remote servers, PottoTools executes file operations locally inside your browser memory using open web standards, and works offline once cached as an installable Progressive Web App (PWA).</p>
+      <h2>Explore Core Categories</h2>
       <ul style="padding-left: 1.5rem; margin-top: 0.75rem;">
         <li><a href="/pdf-tools" style="color: #0284c7; font-weight: 600; text-decoration: none;">PDF Tools Suite</a> — Compress PDF, Merge PDF, Split PDF, PDF Page Organizer, and PDF &amp; ID Redactor.</li>
         <li><a href="/image-tools" style="color: #0284c7; font-weight: 600; text-decoration: none;">Image Tools &amp; Photo Studio</a> — Custom Photo Studio (px, cm, mm, in), Exam Photo &amp; Signature Resizer, Passport Cropper, and format converters.</li>
         <li><a href="/convert-docs" style="color: #0284c7; font-weight: 600; text-decoration: none;">Document Conversion &amp; OCR</a> — Word to PDF, PDF to Editable Word, PowerPoint to PDF, and bilingual English/Hindi OCR.</li>
         <li><a href="/excel-tools" style="color: #0284c7; font-weight: 600; text-decoration: none;">Excel &amp; Spreadsheet Tools</a> — CSV to XLSX, XLSX to CSV, Excel to PDF, and PDF Table Extractor.</li>
-        <li><a href="/directory" style="color: #0284c7; font-weight: 600; text-decoration: none;">Complete 43+ Tools Directory</a> — View every utility in one searchable catalog.</li>
+        <li><a href="/blog" style="color: #0284c7; font-weight: 600; text-decoration: none;">Practical Guides &amp; Blog</a> — Step-by-step formatting tutorials and reference tables.</li>
       </ul>
     `,
   },
@@ -974,11 +981,12 @@ export function buildInformationalPageHtml(templateHtml: string, pageData: (type
   const rootContent = `
     <header style="padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
       <a href="/" style="font-weight: 800; font-size: 1.25rem; color: #0f172a; text-decoration: none;">Potto<span style="color: #0284c7;">Tools</span></a>
-      <nav aria-label="Primary Navigation" style="display: flex; gap: 1rem; font-size: 0.875rem;">
+      <nav aria-label="Primary Navigation" style="display: flex; gap: 1rem; font-size: 0.875rem; flex-wrap: wrap;">
         <a href="/" style="color: #0284c7; text-decoration: none;">Home</a>
         <a href="/pdf-tools" style="color: #475569; text-decoration: none;">PDF Tools</a>
         <a href="/image-tools" style="color: #475569; text-decoration: none;">Image Tools</a>
         <a href="/convert-docs" style="color: #475569; text-decoration: none;">Document Conversion</a>
+        <a href="/blog" style="color: #475569; text-decoration: none;">Guides</a>
         <a href="/directory" style="color: #475569; text-decoration: none;">All Tools</a>
         <a href="/about" style="color: #475569; text-decoration: none;">About</a>
         <a href="/contact" style="color: #475569; text-decoration: none;">Contact</a>
@@ -1171,18 +1179,39 @@ export function buildBlogPostHtml(templateHtml: string, post: BlogPost): string 
         <span>${post.title}</span>
       </nav>
       <article>
-        <div style="font-size: 0.8rem; color: #0284c7; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">${post.category} &bull; ${post.readTime} &bull; Updated ${post.updatedAt}</div>
-        <h1 style="font-size: 2.15rem; font-weight: 800; color: #0f172a; line-height: 1.25; margin-bottom: 1rem;">${post.title}</h1>
-        <p style="font-size: 1.05rem; color: #475569; line-height: 1.6; margin-bottom: 2rem;">${post.excerpt}</p>
+        <div style="font-size: 0.8rem; color: #0284c7; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">${escapeHtml(post.category)} &bull; PottoTools Editorial Team &bull; ${escapeHtml(post.readTime)} &bull; Updated ${escapeHtml(post.updatedAt)}</div>
+        <h1 style="font-size: 2.15rem; font-weight: 800; color: #0f172a; line-height: 1.25; margin-bottom: 1rem;">${escapeHtml(post.title)}</h1>
+        <p style="font-size: 1.05rem; color: #475569; line-height: 1.6; margin-bottom: 2rem;">${escapeHtml(post.excerpt)}</p>
         ${post.sections
           .map(
             (sec) => `
           <section style="margin-bottom: 1.75rem;">
-            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 0.6rem;">${sec.heading}</h2>
-            ${sec.paragraphs.map((p) => `<p style="color: #334155; line-height: 1.7; margin-bottom: 0.75rem;">${p}</p>`).join('\n')}
+            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 0.6rem;">${escapeHtml(sec.heading)}</h2>
+            ${sec.paragraphs.map((p) => `<p style="color: #334155; line-height: 1.7; margin-bottom: 0.75rem;">${escapeHtml(p)}</p>`).join('\n')}
+            ${
+              sec.table && sec.table.headers.length > 0
+                ? `<div style="overflow-x: auto; margin: 1rem 0;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; border: 1px solid #cbd5e1;">
+                      <thead>
+                        <tr style="background: #f8fafc;">
+                          ${sec.table.headers.map((h) => `<th style="border: 1px solid #e2e8f0; padding: 0.65rem; text-align: left; color: #0f172a;">${escapeHtml(h)}</th>`).join('')}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${sec.table.rows
+                          .map(
+                            (row) =>
+                              `<tr>${row.map((cell) => `<td style="border: 1px solid #e2e8f0; padding: 0.65rem; color: #334155;">${escapeHtml(cell)}</td>`).join('')}</tr>`
+                          )
+                          .join('\n')}
+                      </tbody>
+                    </table>
+                  </div>`
+                : ''
+            }
             ${
               sec.bullets && sec.bullets.length > 0
-                ? `<ul style="padding-left: 1.5rem; color: #334155; line-height: 1.7;">${sec.bullets.map((b) => `<li>${b}</li>`).join('\n')}</ul>`
+                ? `<ul style="padding-left: 1.5rem; color: #334155; line-height: 1.7;">${sec.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join('\n')}</ul>`
                 : ''
             }
           </section>
@@ -1194,7 +1223,7 @@ export function buildBlogPostHtml(templateHtml: string, post: BlogPost): string 
             ? `<section style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-top: 2rem;">
             <h2 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">Tools Featured in This Guide</h2>
             <ul style="list-style: none; padding: 0; line-height: 1.8;">
-              ${linkedTools.map((t) => `<li><a href="/${t.slug}" style="color: #0284c7; font-weight: 600; text-decoration: none;">&bull; ${t.title} — ${t.shortDesc}</a></li>`).join('\n')}
+              ${linkedTools.map((t) => `<li><a href="/${t.slug}" style="color: #0284c7; font-weight: 600; text-decoration: none;">&bull; ${escapeHtml(t.title)} — ${escapeHtml(t.shortDesc)}</a></li>`).join('\n')}
             </ul>
           </section>`
             : ''
@@ -1205,7 +1234,7 @@ export function buildBlogPostHtml(templateHtml: string, post: BlogPost): string 
             <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem;">Frequently Asked Questions</h2>
             ${post.faqs
               .map(
-                (f) => `<div style="margin-bottom: 1rem;"><h3 style="font-size: 1rem; font-weight: 700; color: #0f172a;">${f.q}</h3><p style="color: #475569; line-height: 1.6;">${f.a}</p></div>`
+                (f) => `<div style="margin-bottom: 1rem;"><h3 style="font-size: 1rem; font-weight: 700; color: #0f172a;">${escapeHtml(f.q)}</h3><p style="color: #475569; line-height: 1.6;">${escapeHtml(f.a)}</p></div>`
               )
               .join('\n')}
           </section>`

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ToolDefinition } from '../../types/tools';
 import { FileUploadZone } from '../common/FileUploadZone';
 import { ProgressBar } from '../common/ProgressBar';
@@ -8,6 +8,7 @@ import {
   initOcrWorker,
   processPageOcr,
   searchInPageData,
+  buildSearchRegex,
   generateSearchablePdf,
   renderSinglePage,
   PageTextData,
@@ -28,22 +29,62 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  Sliders,
   Sparkles,
-  Info,
   Copy,
   Check,
   StopCircle,
   FileSearch,
-  Layers,
   ArrowRight,
+  Highlighter,
 } from 'lucide-react';
 import { Worker } from 'tesseract.js';
 
 interface SearchablePdfTextFinderToolProps {
   tool: ToolDefinition;
   onSelectNextTool?: (tool: ToolDefinition) => void;
+}
+
+/**
+ * Helper to highlight all regex matches inside plain extracted text view using <mark>.
+ */
+function renderHighlightedPlainText(
+  text: string,
+  query: string,
+  matchCase: boolean,
+  exactPhrase: boolean
+): React.ReactNode {
+  const regex = buildSearchRegex(query, { matchCase, exactPhrase });
+  if (!regex || !text) return text;
+
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+  let keyIdx = 0;
+  regex.lastIndex = 0;
+
+  while ((m = regex.exec(text)) !== null) {
+    if (m.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, m.index));
+    }
+    nodes.push(
+      <mark
+        key={`hl-${keyIdx++}`}
+        className="bg-amber-300 text-slate-950 font-bold px-0.5 rounded-xs"
+      >
+        {m[0]}
+      </mark>
+    );
+    lastIndex = m.index + m[0].length;
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes.length > 0 ? nodes : text;
 }
 
 export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolProps> = ({
@@ -54,13 +95,14 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
   const [file, setFile] = useState<File | null>(null);
   const [isInspecting, setIsInspecting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [docReadyVersion, setDocReadyVersion] = useState(0);
 
   // PDF Document instance references
   const pdfDocRef = useRef<any>(null);
-  const objectUrlRef = useRef<string | null>(null);
 
-  // Extracted pages data
+  // Extracted pages data (+ ref for synchronous access inside async OCR/download handlers)
   const [pagesData, setPagesData] = useState<PageTextData[]>([]);
+  const pagesDataRef = useRef<PageTextData[]>([]);
   const [scannedCount, setScannedCount] = useState(0);
   const [digitalCount, setDigitalCount] = useState(0);
 
@@ -70,19 +112,26 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrStatusText, setOcrStatusText] = useState('');
   const ocrWorkerRef = useRef<Worker | null>(null);
+  const ocrWorkerLangRef = useRef<'eng' | 'hin' | null>(null);
   const cancelOcrRef = useRef(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [matchCase, setMatchCase] = useState(false);
   const [exactPhrase, setExactPhrase] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchMatch[]>([]);
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Active Page Preview state (Lazy on-demand rendering)
+  // Active Page Preview state (strict request-ID guarded rendering + clean bitmap cache for instant highlight painting)
   const [previewPageNum, setPreviewPageNum] = useState(1);
+  const [renderedPageNum, setRenderedPageNum] = useState(0);
+  const [previewRenderError, setPreviewRenderError] = useState<string | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const renderedPageBitmapRef = useRef<{ pageNum: number; canvas: HTMLCanvasElement; cleanup: () => void } | null>(null);
+  const renderTaskRef = useRef<any>(null);
+  const renderSeqRef = useRef(0);
   const [isPreviewRendering, setIsPreviewRendering] = useState(false);
   const [showExtractedText, setShowExtractedText] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
@@ -91,25 +140,83 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadStatus, setDownloadStatus] = useState('');
+  const [showPreDownloadOcrPrompt, setShowPreDownloadOcrPrompt] = useState(false);
 
-  // Clean up object URLs and OCR workers on unmount
+  // Keep pagesDataRef synchronized with React state
+  useEffect(() => {
+    pagesDataRef.current = pagesData;
+  }, [pagesData]);
+
+  // Clean up PDF.js doc, offscreen canvas, and OCR workers on unmount
   useEffect(() => {
     return () => {
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
+      try {
+        renderTaskRef.current?.cancel?.();
+      } catch {
+        // Ignore cancel error
+      }
+      if (renderedPageBitmapRef.current) {
+        renderedPageBitmapRef.current.cleanup();
+        renderedPageBitmapRef.current = null;
+      }
+      if (pdfDocRef.current?.destroy) {
+        pdfDocRef.current.destroy().catch(() => {});
+        pdfDocRef.current = null;
       }
       if (ocrWorkerRef.current) {
         ocrWorkerRef.current.terminate().catch(() => {});
+        ocrWorkerRef.current = null;
       }
     };
   }, []);
+
+  const resetSession = () => {
+    try {
+      renderTaskRef.current?.cancel?.();
+    } catch {
+      // Ignore cancel error
+    }
+    renderTaskRef.current = null;
+    renderSeqRef.current++;
+
+    if (renderedPageBitmapRef.current) {
+      renderedPageBitmapRef.current.cleanup();
+      renderedPageBitmapRef.current = null;
+    }
+    if (pdfDocRef.current?.destroy) {
+      pdfDocRef.current.destroy().catch(() => {});
+    }
+    pdfDocRef.current = null;
+
+    if (ocrWorkerRef.current) {
+      ocrWorkerRef.current.terminate().catch(() => {});
+      ocrWorkerRef.current = null;
+      ocrWorkerLangRef.current = null;
+    }
+
+    setFile(null);
+    setErrorMsg(null);
+    setPagesData([]);
+    pagesDataRef.current = [];
+    setScannedCount(0);
+    setDigitalCount(0);
+    setSearchQuery('');
+    setActiveSearchQuery('');
+    setSearchResults([]);
+    setHasSearched(false);
+    setActiveMatchIndex(0);
+    setPreviewPageNum(1);
+    setRenderedPageNum(0);
+    setPreviewRenderError(null);
+    setShowExtractedText(false);
+    setShowPreDownloadOcrPrompt(false);
+  };
 
   // Handle PDF upload
   const handleFileSelected = async (selectedFiles: File[]) => {
     if (selectedFiles.length === 0) return;
     const selectedFile = selectedFiles[0];
 
-    // Validation
     if (
       !selectedFile.name.toLowerCase().endsWith('.pdf') &&
       selectedFile.type !== 'application/pdf'
@@ -119,34 +226,22 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
       return;
     }
 
-    // Reset previous session
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
-    }
-    if (ocrWorkerRef.current) {
-      ocrWorkerRef.current.terminate().catch(() => {});
-      ocrWorkerRef.current = null;
-    }
-
+    resetSession();
     setFile(selectedFile);
-    setErrorMsg(null);
     setIsInspecting(true);
-    setPagesData([]);
-    setSearchResults([]);
-    setHasSearched(false);
-    setActiveMatchIndex(0);
-    setPreviewPageNum(1);
 
     try {
-      const { inspection, pdfDoc, objectUrl } = await inspectPdfDocument(selectedFile);
+      const { inspection, pdfDoc } = await inspectPdfDocument(selectedFile);
       pdfDocRef.current = pdfDoc;
-      objectUrlRef.current = objectUrl;
 
+      pagesDataRef.current = inspection.pages;
       setPagesData(inspection.pages);
       setScannedCount(inspection.scannedCount);
       setDigitalCount(inspection.digitalCount);
+      setPreviewPageNum(1);
       setIsInspecting(false);
+      // Increment docReadyVersion so preview effect ALWAYS renders Page 1 once pdfDoc is ready
+      setDocReadyVersion((v) => v + 1);
 
       triggerToast(
         'success',
@@ -154,7 +249,8 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
       );
     } catch (err: any) {
       setIsInspecting(false);
-      const msg = err?.message || 'Failed to read PDF document. It may be corrupted or password-protected.';
+      const msg =
+        err?.message || 'Failed to read PDF document. It may be corrupted or password-protected.';
       setErrorMsg(msg);
       triggerToast('error', msg);
     }
@@ -169,80 +265,253 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     }
   }, []);
 
-  // Render preview canvas whenever previewPageNum changes
+  // Derive per-page match summaries & matches on the currently previewed page
+  const pageMatchSummary = useMemo(() => {
+    const map = new Map<number, { pageNum: number; count: number; firstMatchIdx: number }>();
+    searchResults.forEach((m, idx) => {
+      const existing = map.get(m.pageNum);
+      if (!existing) {
+        map.set(m.pageNum, { pageNum: m.pageNum, count: 1, firstMatchIdx: idx });
+      } else {
+        existing.count += 1;
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.pageNum - b.pageNum);
+  }, [searchResults]);
+
+  const pageMatchCountMap = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const item of pageMatchSummary) {
+      m.set(item.pageNum, item.count);
+    }
+    return m;
+  }, [pageMatchSummary]);
+
+  const matchesOnCurrentPage = useMemo(
+    () =>
+      searchResults
+        .map((match, globalIndex) => ({ match, globalIndex }))
+        .filter((entry) => entry.match.pageNum === previewPageNum),
+    [searchResults, previewPageNum]
+  );
+
+  // Step 1: Render exact requested PDF page into an offscreen bitmap whenever previewPageNum or document changes
   useEffect(() => {
-    let isCancelled = false;
+    const doc = pdfDocRef.current;
+    if (!doc || docReadyVersion === 0 || previewPageNum < 1 || previewPageNum > doc.numPages) {
+      return;
+    }
 
-    const renderPreview = async () => {
-      if (!pdfDocRef.current || previewPageNum < 1) return;
+    // Cancel any previous in-flight PDF.js render so older pages can NEVER overwrite newer selections
+    try {
+      renderTaskRef.current?.cancel?.();
+    } catch {
+      // Ignore cancel error
+    }
+    renderTaskRef.current = null;
 
-      setIsPreviewRendering(true);
+    const myReqId = ++renderSeqRef.current;
+    setIsPreviewRendering(true);
+    setPreviewRenderError(null);
+
+    const runRender = async () => {
       try {
-        const { canvas, cleanup } = await renderSinglePage(pdfDocRef.current, previewPageNum, 1.25);
+        const rendered = await renderSinglePage(doc, previewPageNum, 1.5, (task) => {
+          renderTaskRef.current = task;
+        });
 
-        if (isCancelled) {
-          cleanup();
+        // Stale render guard: discard if user clicked another page while rendering
+        if (myReqId !== renderSeqRef.current) {
+          rendered.cleanup();
           return;
         }
 
-        const targetCanvas = previewCanvasRef.current;
-        if (targetCanvas) {
-          targetCanvas.width = canvas.width;
-          targetCanvas.height = canvas.height;
-          const ctx = targetCanvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(canvas, 0, 0);
-          }
+        // Swap clean bitmap cache
+        if (renderedPageBitmapRef.current) {
+          renderedPageBitmapRef.current.cleanup();
         }
-        cleanup();
-      } catch (previewErr) {
-        console.warn('Page preview rendering notice:', previewErr);
+        renderedPageBitmapRef.current = {
+          pageNum: previewPageNum,
+          canvas: rendered.canvas,
+          cleanup: rendered.cleanup,
+        };
+        setRenderedPageNum(previewPageNum);
+      } catch (previewErr: any) {
+        if (myReqId !== renderSeqRef.current) return;
+        if (previewErr?.name === 'RenderingCancelledException') return;
+        console.warn(`Page ${previewPageNum} preview rendering error:`, previewErr);
+        setPreviewRenderError(`Could not render Page ${previewPageNum}.`);
       } finally {
-        if (!isCancelled) setIsPreviewRendering(false);
+        if (myReqId === renderSeqRef.current) {
+          setIsPreviewRendering(false);
+        }
       }
     };
 
-    renderPreview();
+    runRender();
 
     return () => {
-      isCancelled = true;
+      try {
+        renderTaskRef.current?.cancel?.();
+      } catch {
+        // Ignore cancel error
+      }
     };
-  }, [previewPageNum, file]);
+  }, [previewPageNum, docReadyVersion]);
 
-  // Execute Search
-  const handlePerformSearch = (overrideQuery?: string) => {
-    const q = overrideQuery !== undefined ? overrideQuery : searchQuery;
-    if (!q.trim()) {
+  // Step 2: Paint cached clean PDF page bitmap + crisp word highlight overlays onto visible <canvas>
+  useEffect(() => {
+    if (showExtractedText) return;
+    const targetCanvas = previewCanvasRef.current;
+    const cached = renderedPageBitmapRef.current;
+    if (!targetCanvas || !cached || cached.pageNum !== previewPageNum) return;
+
+    const src = cached.canvas;
+    targetCanvas.width = src.width;
+    targetCanvas.height = src.height;
+
+    const ctx = targetCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // 1. Paint exact PDF page image
+    ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+    ctx.drawImage(src, 0, 0);
+
+    // 2. Draw highlights directly in exact pixel space for EVERY match on this page
+    if (matchesOnCurrentPage.length > 0) {
+      const W = targetCanvas.width;
+      const H = targetCanvas.height;
+      const padX = Math.max(2, Math.round(W * 0.003));
+      const padY = Math.max(2, Math.round(H * 0.002));
+
+      // Draw non-active matches first, then active match on top so its border is never obscured
+      const ordered = [...matchesOnCurrentPage].sort((a, b) => {
+        const aActive = a.globalIndex === activeMatchIndex ? 1 : 0;
+        const bActive = b.globalIndex === activeMatchIndex ? 1 : 0;
+        return aActive - bActive;
+      });
+
+      for (const { match, globalIndex } of ordered) {
+        const isActive = globalIndex === activeMatchIndex;
+        for (const box of match.highlightBoxes || []) {
+          const rx = Math.max(0, box.x0 * W - padX);
+          const ry = Math.max(0, box.y0 * H - padY);
+          const rw = Math.min(W - rx, (box.x1 - box.x0) * W + padX * 2);
+          const rh = Math.min(H - ry, (box.y1 - box.y0) * H + padY * 2);
+
+          if (rw <= 0 || rh <= 0) continue;
+
+          ctx.save();
+          if (isActive) {
+            ctx.fillStyle = 'rgba(249, 115, 22, 0.40)';
+            ctx.strokeStyle = 'rgba(234, 88, 12, 0.98)';
+            ctx.lineWidth = Math.max(2.5, W * 0.0028);
+          } else {
+            ctx.fillStyle = 'rgba(250, 204, 21, 0.42)';
+            ctx.strokeStyle = 'rgba(202, 138, 4, 0.92)';
+            ctx.lineWidth = Math.max(1.5, W * 0.0016);
+          }
+
+          ctx.beginPath();
+          const radius = Math.min(4, rh * 0.2);
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(rx, ry, rw, rh, radius);
+          } else {
+            ctx.rect(rx, ry, rw, rh);
+          }
+          ctx.fill();
+          ctx.stroke();
+
+          // Small occurrence tag on the active match when multiple occurrences exist on this page
+          if (isActive && matchesOnCurrentPage.length > 1) {
+            const label = `#${match.matchIndexOnPage}`;
+            const fontSize = Math.max(11, Math.round(W * 0.013));
+            ctx.font = `700 ${fontSize}px system-ui, -apple-system, sans-serif`;
+            const textWidth = ctx.measureText(label).width;
+            const tagW = textWidth + 8;
+            const tagH = fontSize + 5;
+            const tagX = Math.min(W - tagW - 2, rx);
+            const tagY = Math.max(2, ry - tagH - 2);
+
+            ctx.fillStyle = '#ea580c';
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+              ctx.roundRect(tagX, tagY, tagW, tagH, 3);
+            } else {
+              ctx.rect(tagX, tagY, tagW, tagH);
+            }
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, tagX + 4, tagY + tagH / 2 + 0.5);
+          }
+
+          ctx.restore();
+        }
+      }
+    }
+  }, [renderedPageNum, previewPageNum, showExtractedText, matchesOnCurrentPage, activeMatchIndex]);
+
+  // Execute Search (pure parameter-driven to avoid stale React closures)
+  const executeSearch = (
+    pages: PageTextData[],
+    q: string,
+    useMatchCase: boolean,
+    useExactPhrase: boolean,
+    silentToast = false
+  ) => {
+    const trimmed = q.trim();
+    if (!trimmed) {
       setSearchResults([]);
+      setActiveSearchQuery('');
       setHasSearched(false);
       return;
     }
 
     setHasSearched(true);
-    const matches = searchInPageData(pagesData, q, { matchCase, exactPhrase });
+    setActiveSearchQuery(trimmed);
+
+    const matches = searchInPageData(pages, trimmed, {
+      matchCase: useMatchCase,
+      exactPhrase: useExactPhrase,
+    });
     setSearchResults(matches);
     setActiveMatchIndex(0);
 
     if (matches.length > 0) {
       setPreviewPageNum(matches[0].pageNum);
+      setShowExtractedText(false);
       trackToolCompleted('search-match', matches.length, 'searchable-pdf-text-finder');
-      triggerToast('success', `Found ${matches.length} match${matches.length === 1 ? '' : 'es'} across document!`);
-    } else {
+      if (!silentToast) {
+        const uniquePages = new Set(matches.map((m) => m.pageNum)).size;
+        triggerToast(
+          'success',
+          `Found ${matches.length} match${matches.length === 1 ? '' : 'es'} across ${uniquePages} page${uniquePages === 1 ? '' : 's'}!`
+        );
+      }
+    } else if (!silentToast) {
       triggerToast('info', 'No matching text found in currently scanned/digital pages.');
     }
   };
 
-  // Run OCR on scanned pages
-  const handleStartOcr = async () => {
-    if (!pdfDocRef.current || !file) return;
+  const handlePerformSearch = (overrideQuery?: string) => {
+    const q = overrideQuery !== undefined ? overrideQuery : searchQuery;
+    executeSearch(pagesDataRef.current, q, matchCase, exactPhrase);
+  };
 
-    // Filter pages that need OCR
-    const scannedPages = pagesData.filter((p) => p.isScanned && p.ocrStatus !== 'done');
+  // Run OCR on scanned pages — returns the freshly updated PageTextData[] synchronously
+  const handleStartOcr = async (): Promise<PageTextData[]> => {
+    if (!pdfDocRef.current || !file) return pagesDataRef.current;
+
+    const currentPages = pagesDataRef.current;
+    const scannedPages = currentPages.filter((p) => p.isScanned && p.ocrStatus !== 'done');
     if (scannedPages.length === 0) {
       triggerToast('info', 'All pages already have recognized text. Ready to search!');
-      return;
+      return currentPages;
     }
 
+    setShowPreDownloadOcrPrompt(false);
     setIsOcrRunning(true);
     cancelOcrRef.current = false;
     setOcrProgress(5);
@@ -250,12 +519,27 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
 
     let worker = ocrWorkerRef.current;
 
+    // Reinitialize worker if user switched OCR language
+    if (worker && ocrWorkerLangRef.current !== ocrLanguage) {
+      try {
+        await worker.terminate();
+      } catch {
+        // Ignore terminate error
+      }
+      worker = null;
+      ocrWorkerRef.current = null;
+      ocrWorkerLangRef.current = null;
+    }
+
+    let workingPages = [...currentPages];
+
     try {
       if (!worker) {
-        worker = await initOcrWorker(ocrLanguage, (pct, status) => {
+        worker = await initOcrWorker(ocrLanguage, (_pct, status) => {
           setOcrStatusText(status);
         });
         ocrWorkerRef.current = worker;
+        ocrWorkerLangRef.current = ocrLanguage;
       }
 
       let processedCount = 0;
@@ -270,66 +554,71 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
 
         const currentPct = Math.round(10 + (processedCount / totalToProcess) * 85);
         setOcrProgress(currentPct);
-        setOcrStatusText(`Recognizing page ${pageItem.pageNum} of ${pdfDocRef.current.numPages} (${processedCount + 1}/${totalToProcess})...`);
-
-        // Mark page as processing in state
-        setPagesData((prev) =>
-          prev.map((p) =>
-            p.pageNum === pageItem.pageNum ? { ...p, ocrStatus: 'processing' } : p
-          )
+        setOcrStatusText(
+          `Recognizing page ${pageItem.pageNum} of ${pdfDocRef.current.numPages} (${processedCount + 1}/${totalToProcess})...`
         );
 
-        try {
-          const ocrResult = await processPageOcr(worker, pdfDocRef.current, pageItem.pageNum, 1.5);
+        workingPages = workingPages.map((p) =>
+          p.pageNum === pageItem.pageNum ? { ...p, ocrStatus: 'processing' as const } : p
+        );
+        pagesDataRef.current = workingPages;
+        setPagesData(workingPages);
 
-          // Update page with recognized text and line bounding boxes
-          setPagesData((prev) =>
-            prev.map((p) =>
-              p.pageNum === pageItem.pageNum
-                ? {
-                    ...p,
-                    ocrStatus: 'done',
-                    text: ocrResult.text,
-                    wordCount: ocrResult.text.split(/\s+/).filter(Boolean).length,
-                    confidence: ocrResult.confidence,
-                    ocrLines: ocrResult.lines,
-                    canvasWidth: ocrResult.canvasWidth,
-                    canvasHeight: ocrResult.canvasHeight,
-                  }
-                : p
-            )
+        try {
+          const ocrResult = await processPageOcr(worker, pdfDocRef.current, pageItem.pageNum, 1.75);
+
+          workingPages = workingPages.map((p) =>
+            p.pageNum === pageItem.pageNum
+              ? {
+                  ...p,
+                  ocrStatus: 'done' as const,
+                  text: ocrResult.text,
+                  wordCount: ocrResult.text.split(/\s+/).filter(Boolean).length,
+                  confidence: ocrResult.confidence,
+                  ocrLines: ocrResult.lines,
+                  canvasWidth: ocrResult.canvasWidth,
+                  canvasHeight: ocrResult.canvasHeight,
+                }
+              : p
           );
+          pagesDataRef.current = workingPages;
+          setPagesData(workingPages);
         } catch (pageErr: any) {
           console.warn(`OCR failed for page ${pageItem.pageNum}:`, pageErr);
-          setPagesData((prev) =>
-            prev.map((p) =>
-              p.pageNum === pageItem.pageNum
-                ? { ...p, ocrStatus: 'failed', error: pageErr?.message || 'Recognition error' }
-                : p
-            )
+          workingPages = workingPages.map((p) =>
+            p.pageNum === pageItem.pageNum
+              ? {
+                  ...p,
+                  ocrStatus: 'failed' as const,
+                  error: pageErr?.message || 'Recognition error',
+                }
+              : p
           );
+          pagesDataRef.current = workingPages;
+          setPagesData(workingPages);
         }
 
         processedCount++;
       }
 
       setOcrProgress(100);
-      setOcrStatusText('OCR scanning complete! All text is now indexed.');
+      setOcrStatusText('OCR scanning complete! All text is now indexed and searchable.');
       if (processedCount > 0) {
         trackToolCompleted('ocr-index', processedCount, 'searchable-pdf-text-finder');
       }
-      triggerToast('success', `Completed OCR processing for scanned pages!`);
+      triggerToast('success', 'Completed OCR processing for scanned pages!');
 
-      // If user had already entered a search term, re-evaluate search with the new OCR text
+      // Re-run search immediately with freshly updated workingPages (zero stale closure)
       if (searchQuery.trim()) {
-        setTimeout(() => {
-          handlePerformSearch();
-        }, 200);
+        executeSearch(workingPages, searchQuery, matchCase, exactPhrase);
       }
+
+      return workingPages;
     } catch (ocrErr: any) {
       console.error('OCR initialization error:', ocrErr);
       setErrorMsg(`OCR engine error: ${ocrErr?.message || 'Failed to initialize worker.'}`);
       triggerToast('error', 'OCR failed to process.');
+      return workingPages;
     } finally {
       setIsOcrRunning(false);
     }
@@ -340,12 +629,20 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     setOcrStatusText('Stopping OCR...');
   };
 
-  // Jump to specific search match
+  // Jump to specific search match & show its exact page on the right with highlight
   const handleSelectMatch = (index: number) => {
     if (index < 0 || index >= searchResults.length) return;
     setActiveMatchIndex(index);
     const match = searchResults[index];
     setPreviewPageNum(match.pageNum);
+    setShowExtractedText(false);
+  };
+
+  // Jump directly to a page from the matched-page summary strip
+  const handleSelectMatchedPage = (pageNum: number, firstMatchIdx: number) => {
+    setActiveMatchIndex(firstMatchIdx);
+    setPreviewPageNum(pageNum);
+    setShowExtractedText(false);
   };
 
   const handleNextMatch = () => {
@@ -372,29 +669,19 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     });
   };
 
-  // Generate and Download Searchable PDF
-  const handleDownloadSearchablePdf = async () => {
+  // Internal helper to build & download searchable PDF using explicit up-to-date pages array
+  const performDownloadSearchablePdf = async (latestPages: PageTextData[]) => {
     if (!file) return;
 
-    // Check if any OCR text exists
-    const hasAnyOcr = pagesData.some((p) => p.ocrLines && p.ocrLines.length > 0);
-    if (!hasAnyOcr && scannedCount > 0) {
-      const confirmProceed = window.confirm(
-        'Some scanned pages have not been OCR-scanned yet. Would you like to run OCR first, or download with whatever text has been processed so far?'
-      );
-      if (confirmProceed) {
-        await handleStartOcr();
-      }
-    }
-
+    setShowPreDownloadOcrPrompt(false);
     setIsDownloadingPdf(true);
     setDownloadProgress(10);
-    setDownloadStatus('Initializing PDF text layer injection...');
+    setDownloadStatus('Initializing searchable PDF text layer injection...');
 
     try {
       const searchableBlob = await generateSearchablePdf(
         file,
-        pagesData,
+        latestPages,
         (progress, status) => {
           setDownloadProgress(progress);
           setDownloadStatus(status);
@@ -405,7 +692,7 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
       const downloadName = `${baseName}-searchable.pdf`;
 
       triggerDownload(searchableBlob, downloadName);
-      triggerToast('success', 'Searchable PDF downloaded successfully!');
+      triggerToast('success', 'Searchable PDF downloaded! Open it and press Ctrl+F to search.');
     } catch (dlErr: any) {
       console.error('Download searchable PDF error:', dlErr);
       const msg = dlErr?.message || 'Failed to construct searchable PDF.';
@@ -413,6 +700,28 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
       triggerToast('error', msg);
     } finally {
       setIsDownloadingPdf(false);
+    }
+  };
+
+  // Generate and Download Searchable PDF (inline non-blocking prompt if scanned pages still need OCR)
+  const handleDownloadSearchablePdf = async () => {
+    if (!file || isDownloadingPdf || isOcrRunning) return;
+
+    const pendingScanned = pagesDataRef.current.filter(
+      (p) => p.isScanned && p.ocrStatus !== 'done'
+    );
+    if (pendingScanned.length > 0) {
+      setShowPreDownloadOcrPrompt(true);
+      return;
+    }
+
+    await performDownloadSearchablePdf(pagesDataRef.current);
+  };
+
+  const handleRunOcrThenDownload = async () => {
+    const updatedPages = await handleStartOcr();
+    if (!cancelOcrRef.current) {
+      await performDownloadSearchablePdf(updatedPages);
     }
   };
 
@@ -435,7 +744,7 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
           </h2>
           <p className="text-sm sm:text-base text-blue-100 leading-relaxed">
             Search for names, amounts, reference numbers, and phrases inside scanned and image-only PDFs.
-            Extract recognized text with client-side OCR (English &amp; Hindi in-app; first run caches ~10–25 MB language data) and download a searchable PDF with an invisible Latin/ASCII text layer.
+            Extract recognized text with client-side OCR (English &amp; Hindi in-app; first run caches ~10–25 MB language data), see highlighted matches directly on each page, and download a Ctrl+F searchable PDF.
           </p>
         </div>
       </div>
@@ -445,6 +754,13 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
 
       {/* Main Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 sm:p-8 space-y-6">
+        {errorMsg && (
+          <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
         {/* Upload Zone */}
         {!file ? (
           <div className="space-y-4">
@@ -464,11 +780,11 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
               </div>
               <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
                 <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
-                <span>Zero File Uploads to Cloud Servers</span>
+                <span>Live On-Page Word Highlighting</span>
               </div>
               <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
                 <CheckCircle2 className="w-4 h-4 text-purple-500 shrink-0" />
-                <span>Invisible Searchable PDF Export</span>
+                <span>Ctrl+F Searchable PDF Export</span>
               </div>
             </div>
           </div>
@@ -487,15 +803,19 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     <span>{formatBytes(file.size)}</span>
                     <span>•</span>
-                    <span>{totalPages} Pages total</span>
-                    <span>•</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                      {digitalCount} Digital
-                    </span>
-                    <span>•</span>
-                    <span className="text-amber-600 dark:text-amber-400 font-medium">
-                      {scannedCount} Scanned
-                    </span>
+                    <span>{isInspecting ? 'Inspecting pages...' : `${totalPages} Pages total`}</span>
+                    {!isInspecting && (
+                      <>
+                        <span>•</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                          {digitalCount} Digital
+                        </span>
+                        <span>•</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-medium">
+                          {scannedCount} Scanned
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -503,13 +823,9 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
-                  onClick={() => {
-                    setFile(null);
-                    setPagesData([]);
-                    setSearchResults([]);
-                    setHasSearched(false);
-                  }}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  onClick={resetSession}
+                  disabled={isOcrRunning}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Upload Another File
                 </button>
@@ -517,7 +833,7 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                 <button
                   type="button"
                   onClick={handleDownloadSearchablePdf}
-                  disabled={isDownloadingPdf}
+                  disabled={isDownloadingPdf || isOcrRunning || isInspecting}
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
@@ -525,6 +841,43 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                 </button>
               </div>
             </div>
+
+            {/* Inline non-blocking pre-download OCR notice (replaces browser confirm dialog) */}
+            {showPreDownloadOcrPrompt && ocrPendingCount > 0 && (
+              <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="text-xs text-blue-900 dark:text-blue-200 space-y-0.5">
+                  <p className="font-bold">
+                    {ocrPendingCount} scanned page{ocrPendingCount === 1 ? '' : 's'} have not been OCR-processed yet.
+                  </p>
+                  <p className="text-blue-700 dark:text-blue-300">
+                    Run OCR first so Ctrl+F works on every scanned page in your downloaded PDF.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleRunOcrThenDownload}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer"
+                  >
+                    Run OCR &amp; Download
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => performDownloadSearchablePdf(pagesDataRef.current)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  >
+                    Download As-Is
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreDownloadOcrPrompt(false)}
+                    className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-700 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* OCR Notice & Language Controls if document has scanned pages */}
             {scannedCount > 0 && (
@@ -541,7 +894,9 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                           : 'All Scanned Pages Have Been Processed with OCR!'}
                       </h4>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Convert image-based pages into searchable text (English &amp; Hindi in-app search &amp; copy; exported PDF invisible Ctrl+F layer encodes Latin/ASCII text).
+                        {ocrPendingCount > 0
+                          ? 'Convert image-based pages into searchable text (English & Hindi in-app search & highlight; exported PDF Ctrl+F layer embeds invisible Latin/ASCII text).'
+                          : 'Ready! Search any word below to highlight it directly on the page, or click Download Searchable PDF for Ctrl+F support.'}
                       </p>
                     </div>
                   </div>
@@ -573,7 +928,7 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                       ) : (
                         <button
                           type="button"
-                          onClick={handleStartOcr}
+                          onClick={() => handleStartOcr()}
                           className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition-all cursor-pointer"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
@@ -606,7 +961,7 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handlePerformSearch();
                     }}
-                    placeholder="Search anything: name, order #, date, price, sentence, or phrase..."
+                    placeholder="Search anything: name, city (e.g. BILASPUR), order #, date, or phrase..."
                     className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
                   />
                 </div>
@@ -615,7 +970,8 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                   <button
                     type="button"
                     onClick={() => handlePerformSearch()}
-                    className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                    disabled={isInspecting}
+                    className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
                   >
                     <FileSearch className="w-4 h-4" />
                     <span>Search</span>
@@ -631,7 +987,7 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 px-1">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 px-1.5 tabular-nums">
                         {activeMatchIndex + 1}/{searchResults.length}
                       </span>
                       <button
@@ -655,9 +1011,10 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                       type="checkbox"
                       checked={matchCase}
                       onChange={(e) => {
-                        setMatchCase(e.target.checked);
+                        const next = e.target.checked;
+                        setMatchCase(next);
                         if (searchQuery.trim()) {
-                          setTimeout(() => handlePerformSearch(), 50);
+                          executeSearch(pagesDataRef.current, searchQuery, next, exactPhrase, true);
                         }
                       }}
                       className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
@@ -670,14 +1027,15 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                       type="checkbox"
                       checked={exactPhrase}
                       onChange={(e) => {
-                        setExactPhrase(e.target.checked);
+                        const next = e.target.checked;
+                        setExactPhrase(next);
                         if (searchQuery.trim()) {
-                          setTimeout(() => handlePerformSearch(), 50);
+                          executeSearch(pagesDataRef.current, searchQuery, matchCase, next, true);
                         }
                       }}
                       className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span>Exact Phrase</span>
+                    <span>Exact Whole Word / Phrase</span>
                   </label>
                 </div>
 
@@ -685,17 +1043,20 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                   <span className="font-semibold text-slate-700 dark:text-slate-300">
                     {searchResults.length > 0 ? (
                       <span className="text-blue-600 dark:text-blue-400">
-                        {searchResults.length} match{searchResults.length === 1 ? '' : 'es'} found across pages
+                        {searchResults.length} match{searchResults.length === 1 ? '' : 'es'} across{' '}
+                        {pageMatchSummary.length} page{pageMatchSummary.length === 1 ? '' : 's'}
                       </span>
                     ) : (
-                      <span className="text-rose-500">No matches found for &quot;{searchQuery}&quot;</span>
+                      <span className="text-rose-500">
+                        No matches found for &quot;{activeSearchQuery}&quot;
+                      </span>
                     )}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Split Screen Workspace: Results Snippets & Interactive Page Preview */}
+            {/* Split Screen Workspace: Results Snippets & Interactive Highlighted Page Preview */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
               {/* Left Column: Search Results List (5 cols) */}
               <div className="lg:col-span-5 space-y-3">
@@ -705,30 +1066,70 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                   </span>
                   {hasSearched && searchResults.length > 0 && (
                     <span className="text-[11px] text-slate-400">
-                      Click to inspect page
+                      Click any page or match to highlight
                     </span>
                   )}
                 </div>
+
+                {/* Quick Page Jump Summary Strip (e.g. Page 6 • 7×) */}
+                {pageMatchSummary.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      Jump to Matched Page:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {pageMatchSummary.map((item) => {
+                        const isViewingThisPage = previewPageNum === item.pageNum;
+                        return (
+                          <button
+                            key={item.pageNum}
+                            type="button"
+                            onClick={() =>
+                              handleSelectMatchedPage(item.pageNum, item.firstMatchIdx)
+                            }
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                              isViewingThisPage
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                : 'bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                            }`}
+                          >
+                            <span>Page {item.pageNum}</span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                                isViewingThisPage
+                                  ? 'bg-white/20 text-white'
+                                  : 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200'
+                              }`}
+                            >
+                              {item.count} {item.count === 1 ? 'time' : 'times'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {searchResults.length > 0 ? (
                   <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
                     {searchResults.map((match, idx) => {
                       const isActive = activeMatchIndex === idx;
+                      const countOnPage = pageMatchCountMap.get(match.pageNum) || 1;
                       return (
                         <div
                           key={match.id}
                           onClick={() => handleSelectMatch(idx)}
                           className={`p-3 rounded-2xl border text-xs cursor-pointer transition-all ${
                             isActive
-                              ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-500 shadow-xs ring-2 ring-blue-500/20'
+                              ? 'bg-blue-50/90 dark:bg-blue-950/40 border-blue-500 shadow-xs ring-2 ring-blue-500/20'
                               : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700'
                           }`}
                         >
                           <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800/80">
-                            <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                            <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
                               <span>Page {match.pageNum}</span>
-                              <span className="text-[10px] text-slate-400 font-normal">
-                                (Match #{match.matchIndexOnPage})
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                                • Match {match.matchIndexOnPage} of {countOnPage}
                               </span>
                             </span>
                             <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
@@ -757,22 +1158,22 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                 )}
               </div>
 
-              {/* Right Column: Live Page Preview & Extracted OCR Text (7 cols) */}
+              {/* Right Column: Live Highlighted Page Preview & Extracted OCR Text (7 cols) */}
               <div className="lg:col-span-7 space-y-3">
                 {/* Page Navigation Header */}
-                <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Page {previewPageNum} of {totalPages}
+                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">
+                      Page {previewPageNum} of {totalPages || 1}
                     </span>
                     {currentPage && (
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                           currentPage.isScanned
                             ? currentPage.ocrStatus === 'done'
-                              ? 'bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300'
+                              ? 'bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300'
                               : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
-                            : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-300'
+                            : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
                         }`}
                       >
                         {currentPage.isScanned
@@ -789,17 +1190,19 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                       type="button"
                       disabled={previewPageNum <= 1}
                       onClick={() => setPreviewPageNum((p) => Math.max(1, p - 1))}
+                      title="Previous Page"
                       className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="text-xs text-slate-500 px-1">
-                      {previewPageNum} / {totalPages}
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 px-1 tabular-nums">
+                      {previewPageNum} / {totalPages || 1}
                     </span>
                     <button
                       type="button"
                       disabled={previewPageNum >= totalPages}
                       onClick={() => setPreviewPageNum((p) => Math.min(totalPages, p + 1))}
+                      title="Next Page"
                       className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -811,33 +1214,107 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                       className={`ml-2 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
                         showExtractedText
                           ? 'bg-blue-600 text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                       }`}
                     >
-                      {showExtractedText ? 'Show Scan' : 'View Text'}
+                      {showExtractedText ? 'Show Page View' : 'View Text'}
                     </button>
                   </div>
                 </div>
 
-                {/* Display Area: Canvas or Extracted Text */}
-                <div className="relative min-h-[420px] max-h-[560px] bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center p-2 border border-slate-800 shadow-inner">
-                  {isPreviewRendering && (
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-10 text-white text-xs gap-2">
+                {/* Active Page Match Highlight Banner */}
+                {hasSearched && activeSearchQuery && (
+                  <div
+                    className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl border text-xs ${
+                      matchesOnCurrentPage.length > 0
+                        ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/70 text-amber-900 dark:text-amber-200'
+                        : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-semibold">
+                      <Highlighter
+                        className={`w-4 h-4 shrink-0 ${
+                          matchesOnCurrentPage.length > 0
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-slate-400'
+                        }`}
+                      />
+                      {matchesOnCurrentPage.length > 0 ? (
+                        <span>
+                          <strong>Page {previewPageNum}</strong>: &quot;{activeSearchQuery}&quot; found{' '}
+                          <strong>
+                            {matchesOnCurrentPage.length}{' '}
+                            {matchesOnCurrentPage.length === 1 ? 'time' : 'times'}
+                          </strong>{' '}
+                          (highlighted below)
+                        </span>
+                      ) : (
+                        <span>
+                          <strong>Page {previewPageNum}</strong>: No occurrences of &quot;
+                          {activeSearchQuery}&quot; on this page
+                        </span>
+                      )}
+                    </div>
+
+                    {matchesOnCurrentPage.length === 0 && pageMatchSummary.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleSelectMatchedPage(
+                            pageMatchSummary[0].pageNum,
+                            pageMatchSummary[0].firstMatchIdx
+                          )
+                        }
+                        className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                      >
+                        Jump to Page {pageMatchSummary[0].pageNum} →
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Display Area: Canvas with Direct Pixel-Aligned Highlights OR Highlighted Extracted Text */}
+                <div className="relative min-h-[440px] max-h-[600px] bg-slate-900 rounded-2xl overflow-auto flex items-center justify-center p-3 border border-slate-800 shadow-inner">
+                  {/* Floating Page Number & Highlight Count Badge */}
+                  {!showExtractedText && totalPages > 0 && (
+                    <div className="absolute top-3 left-3 z-20 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950/85 text-white text-[11px] font-bold shadow border border-white/15 backdrop-blur-xs pointer-events-none">
+                      <span>Page {previewPageNum}</span>
+                      {matchesOnCurrentPage.length > 0 && (
+                        <>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-amber-300">
+                            {matchesOnCurrentPage.length} highlighted
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {isPreviewRendering && !showExtractedText && (
+                    <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center z-10 text-white text-xs gap-2">
                       <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
-                      <span>Loading page preview...</span>
+                      <span>Rendering Page {previewPageNum}...</span>
                     </div>
                   )}
 
                   {!showExtractedText ? (
-                    <canvas
-                      ref={previewCanvasRef}
-                      className="max-h-[540px] max-w-full object-contain rounded shadow-lg bg-white"
-                    />
+                    previewRenderError ? (
+                      <div className="text-xs text-rose-300 text-center p-6 space-y-2">
+                        <AlertTriangle className="w-6 h-6 mx-auto text-rose-400" />
+                        <p>{previewRenderError}</p>
+                      </div>
+                    ) : (
+                      <canvas
+                        ref={previewCanvasRef}
+                        className="max-h-[560px] max-w-full w-auto h-auto rounded shadow-lg bg-white"
+                      />
+                    )
                   ) : (
-                    <div className="w-full h-full max-h-[520px] overflow-y-auto p-4 bg-slate-950 text-slate-200 font-mono text-xs rounded-xl space-y-3">
+                    <div className="w-full h-full max-h-[540px] overflow-y-auto p-4 bg-slate-950 text-slate-200 font-mono text-xs rounded-xl space-y-3">
                       <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                         <span className="text-[11px] font-bold text-slate-400">
-                          Extracted Text • Page {previewPageNum} ({currentPage?.wordCount || 0} words)
+                          Extracted Text • Page {previewPageNum} ({currentPage?.wordCount || 0}{' '}
+                          words)
                         </span>
                         <button
                           type="button"
@@ -860,7 +1337,16 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
 
                       <div className="whitespace-pre-wrap leading-relaxed select-text">
                         {currentPage?.text ? (
-                          currentPage.text
+                          activeSearchQuery ? (
+                            renderHighlightedPlainText(
+                              currentPage.text,
+                              activeSearchQuery,
+                              matchCase,
+                              exactPhrase
+                            )
+                          ) : (
+                            currentPage.text
+                          )
                         ) : (
                           <span className="text-slate-500 italic">
                             No text recognized on this page yet. Run OCR above to extract text.
@@ -905,7 +1391,7 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
               Instant Text Inspection
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              When you upload a document, PottoTools instantly checks each page to see if digital text already exists. If so, it extracts it in milliseconds without running heavy OCR.
+              When you upload a document, PottoTools instantly checks each page to see if digital text already exists. If so, it extracts text and coordinates in milliseconds without running heavy OCR.
             </p>
           </div>
 
@@ -914,10 +1400,10 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
               2
             </div>
             <h3 className="font-bold text-slate-900 dark:text-white text-sm">
-              In-Browser Optical Recognition (OCR)
+              In-Browser OCR &amp; Live Highlighting
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              For scanned receipts, contracts, and books, our integrated Tesseract.js engine recognizes characters in English or Hindi incrementally, keeping device memory light and smooth.
+              For scanned receipts, contracts, and books, our in-browser OCR recognizes every word and its exact position so matches are highlighted directly on the page preview.
             </p>
           </div>
 
@@ -926,10 +1412,10 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
               3
             </div>
             <h3 className="font-bold text-slate-900 dark:text-white text-sm">
-              Invisible Searchable PDF Layer
+              Ctrl+F Invisible Searchable PDF Layer
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Downloading injects an invisible Latin/ASCII text layer aligned to scanned coordinates. Open English PDFs anywhere to press Ctrl+F, or use the in-app search and copy view for Hindi scans.
+              Downloading injects a PDF-standard invisible text layer aligned to scanned word coordinates across normal and rotated pages, so Ctrl+F works in Chrome, Edge, Adobe Acrobat, and Preview.
             </p>
           </div>
         </div>

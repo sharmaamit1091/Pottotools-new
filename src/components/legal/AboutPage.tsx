@@ -1,13 +1,17 @@
 import React from 'react';
 import { SITE_CONFIG } from '../../config/site';
-import { Mail, CheckCircle2, ArrowRight, Compass, Shield, Zap, Sparkles } from 'lucide-react';
+import { Mail, ArrowRight, Compass, BookOpen, Sparkles, ShieldCheck } from 'lucide-react';
 import { AdSlot } from '../common/AdSlot';
 
 interface AboutPageProps {
   onNavigateDirectory?: () => void;
+  onNavigateBlog?: () => void;
 }
 
-export const AboutPage: React.FC<AboutPageProps> = ({ onNavigateDirectory }) => {
+export const AboutPage: React.FC<AboutPageProps> = ({
+  onNavigateDirectory,
+  onNavigateBlog,
+}) => {
   const supportEmail = SITE_CONFIG.supportEmail || 'sharma.amit1091@gmail.com';
 
   return (
@@ -28,16 +32,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigateDirectory }) => 
       <div className="space-y-6 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 space-y-4 shadow-xs">
           <p className="text-base sm:text-lg font-medium text-slate-900 dark:text-slate-100 leading-relaxed">
-            <strong>{SITE_CONFIG.name}</strong> is an online platform designed to make everyday PDF and document tasks simpler and more convenient. Our goal is to bring useful PDF tools, document conversion utilities, and image tools together in one accessible place.
+            <strong>{SITE_CONFIG.name}</strong> is an independent online platform built in India for users worldwide to handle everyday PDF, Word, Excel, OCR, and photograph tasks directly inside the web browser.
           </p>
           <p>
-            Whether you need to organize a PDF, convert a document, compress a file, or change an image format, PottoTools aims to provide a straightforward and convenient experience across devices.
+            Instead of requiring account registration, email capture, or uploading sensitive bank statements, exam applications, and personal identity scans to external servers, PottoTools executes document tasks directly on your own device using local browser memory.
           </p>
           <p>
-            We continuously aim to improve the platform by making our tools easier to discover and simpler to use.
+            To keep every utility free for students, job applicants, and office teams, PottoTools is sustained by standard display advertising rather than paywalls or subscription quotas.
           </p>
-          {onNavigateDirectory && (
-            <div className="pt-2">
+
+          <div className="flex flex-wrap gap-3 pt-2">
+            {onNavigateDirectory && (
               <a
                 href="/directory"
                 onClick={(e) => {
@@ -52,9 +57,48 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigateDirectory }) => 
                 <span>Explore All Tools</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
-            </div>
-          )}
+            )}
+            <a
+              href="/blog"
+              onClick={(e) => {
+                if (onNavigateBlog && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  onNavigateBlog();
+                }
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-semibold text-sm transition-all no-underline"
+            >
+              <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span>Read Practical Guides</span>
+            </a>
+          </div>
         </div>
+
+        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 space-y-4 shadow-xs">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <span>Who PottoTools Serves &amp; Editorial Standards</span>
+          </h2>
+          <p>
+            Many visitors arrive on PottoTools when trying to solve concrete formatting constraints—shrinking multi-page application PDFs under 100 KB or 200 KB, converting centimeter/millimeter passport specifications into exact pixels at 200 or 300 DPI, extracting editable text from scanned notices, or masking Aadhaar and bank account numbers locally before emailing documents.
+          </p>
+          <p>
+            Alongside our browser utilities, our editorial team maintains practical how-to tutorials in our{' '}
+            <a
+              href="/blog"
+              onClick={(e) => {
+                if (onNavigateBlog && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  onNavigateBlog();
+                }
+              }}
+              className="text-blue-600 dark:text-blue-400 font-semibold underline"
+            >
+              Practical Guides &amp; Blog
+            </a>{' '}
+            hub. Every guide documents real file-format trade-offs, verified formulas, and honest tool limitations (such as when 100 KB compression shifts from vector text to raster pages, or why Latin-font PDFs differ from Devanagari in-app OCR search) so users know what to expect before downloading.
+          </p>
+        </section>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
           <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 shadow-xs">
@@ -97,10 +141,10 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigateDirectory }) => 
         <section className="p-6 bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Mail className="w-4 h-4 text-blue-600" />
-            Contact & Support
+            Contact &amp; Support
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-300">
-            For questions, feedback, or suggestions, please contact{' '}
+            For questions, feedback, bug reports, or guide corrections, please contact{' '}
             <strong className="text-slate-800 dark:text-slate-200 font-mono">{supportEmail}</strong>.
           </p>
           <div className="flex flex-wrap gap-2 pt-1">

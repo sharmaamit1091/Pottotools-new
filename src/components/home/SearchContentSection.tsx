@@ -616,6 +616,7 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
             { label: 'Make PDF Searchable Online', slug: 'searchable-pdf-text-finder' },
             { label: 'Visual PDF Page Organizer', slug: 'pdf-page-organizer' },
             { label: 'Password Protect PDF', slug: 'protect-pdf' },
+            { label: 'Unlock PDF Online Free', slug: 'unlock-pdf' },
             { label: 'Convert Excel to PDF Tables', slug: 'excel-to-pdf' },
             { label: 'CSV to Excel Converter', slug: 'csv-to-xlsx' },
             { label: 'PowerPoint to PDF Converter', slug: 'powerpoint-to-pdf' },

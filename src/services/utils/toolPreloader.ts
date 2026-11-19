@@ -22,6 +22,7 @@ const chunkLoaders: Record<string, PreloadFn> = {
   'ocr-tool': () => import('../../components/tools/OcrTool'),
   'pdf-security': () => import('../../components/tools/PdfSecurityTool'),
   'pdf-id-redactor': () => import('../../components/tools/PdfRedactorTool'),
+  'remove-scan-watermark': () => import('../../components/tools/RemoveScanWatermarkTool'),
   'spreadsheet': () => import('../../components/tools/SpreadsheetTool'),
   'smart-text': () => import('../../components/tools/SmartTextTools'),
   'powerpoint-to-pdf': () => import('../../components/tools/PowerPointTool'),
@@ -32,6 +33,7 @@ const chunkLoaders: Record<string, PreloadFn> = {
   'about': () => import('../../components/legal/AboutPage'),
   'contact': () => import('../../components/legal/ContactPage'),
   'disclaimer': () => import('../../components/legal/DisclaimerPage'),
+  'blog': () => import('../../components/pages/BlogPage'),
 };
 
 const toolToChunkKey: Record<string, string> = {
@@ -68,7 +70,9 @@ const toolToChunkKey: Record<string, string> = {
   'png-to-jpg': 'image-converter',
   'ocr-tool': 'ocr-tool',
   'protect-pdf': 'pdf-security',
+  'unlock-pdf': 'pdf-security',
   'pdf-id-redactor': 'pdf-id-redactor',
+  'remove-scan-watermark': 'remove-scan-watermark',
   'sign-pdf': 'pdf-security',
   'pdf-metadata': 'pdf-security',
   'csv-to-xlsx': 'spreadsheet',

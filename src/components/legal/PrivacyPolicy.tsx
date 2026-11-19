@@ -55,7 +55,7 @@ export const PrivacyPolicy: React.FC = () => {
           <ul className="list-disc list-inside space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
             <li><strong>Document Contents:</strong> We NEVER collect, transmit, inspect, store, or log the contents of your documents or images.</li>
             <li><strong>Personal Identity:</strong> We do not require account registration, usernames, passwords, phone numbers, or credit card numbers.</li>
-            <li><strong>Local Settings:</strong> User preferences (such as dark mode toggle and recently accessed tool shortcuts) are stored strictly on your device using HTML5 LocalStorage and are never sent to external analytics.</li>
+            <li><strong>Aggregate Traffic Analytics:</strong> We use Google Analytics via Google Tag Manager to understand aggregate page visits and tool completions so we can maintain reliability, without inspecting your document names or file bytes.</li>
           </ul>
         </section>
 
@@ -64,14 +64,14 @@ export const PrivacyPolicy: React.FC = () => {
             3. Google AdSense, Advertising &amp; Third-Party Cookies Policy
           </h2>
           <p>
-            {SITE_CONFIG.name} partners with third-party advertising networks, including <strong>Google AdSense</strong>, to serve non-intrusive advertisements when you visit our website. To maintain compliance with Google Publisher Policies, please review the following required advertising disclosures:
+            {SITE_CONFIG.name} uses <strong>Google AdSense</strong> to help fund free access across all utilities without accounts or paid subscriptions. Please review the following advertising disclosures:
           </p>
           <ul className="list-disc list-inside space-y-2 text-xs text-slate-600 dark:text-slate-400 pl-2">
             <li>
-              <strong>Google Advertising Cookies:</strong> Third-party vendors, including Google, use cookies (such as the DoubleClick cookie) to serve ads based on a user's prior visits to {SITE_CONFIG.name} or other websites across the Internet.
+              <strong>Google Advertising Cookies:</strong> Third-party vendors, including Google, use cookies (such as the DoubleClick cookie) to serve ads based on a visitor's prior visits to {SITE_CONFIG.name} or other websites across the Internet.
             </li>
             <li>
-              <strong>Personalized Advertising:</strong> Google's use of advertising cookies enables it and its partners to serve ads to your users based on their visit to your sites and/or other sites on the Internet.
+              <strong>Personalized Advertising:</strong> Google's use of advertising cookies enables it and its partners to serve ads to PottoTools visitors based on their visits to PottoTools and/or other sites on the Internet.
             </li>
             <li>
               <strong>Opt-Out of Personalized Ads:</strong> Users may opt out of personalized advertising at any time by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 font-semibold underline">Google Ads Settings</a>.

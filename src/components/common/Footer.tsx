@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import { SITE_CONFIG } from '../../config/site';
 import { PottoLogo } from './PottoLogo';
-import { ShieldCheck, Heart, Lock, Zap, Mail, ArrowUpRight, TrendingUp, Copy, Check, ExternalLink, WifiOff } from 'lucide-react';
+import { ShieldCheck, Heart, Lock, Zap, Mail, ArrowUpRight, Copy, Check, ExternalLink, WifiOff } from 'lucide-react';
 import { AdSlot } from './AdSlot';
 import { MONETIZATION_CONFIG } from '../../config/monetization';
 import { ToolDefinition, getToolBySlug } from '../../config/toolsRegistry';
-
-const SearchAnalyticsModal = React.lazy(() =>
-  import('./SearchAnalyticsModal').then((m) => ({ default: m.SearchAnalyticsModal }))
-);
 
 interface FooterProps {
   onNavigate: (view: string) => void;
@@ -16,7 +12,6 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
-  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const officialEmail = SITE_CONFIG.supportEmail || 'sharma.amit1091@gmail.com';
 
@@ -208,7 +203,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                   onClick={(e) => handleNavClick('protect-pdf', e)}
                   className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  PDF Privacy Sanitizer
+                  Protect PDF (AES-256 Lock)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/unlock-pdf"
+                  onClick={(e) => handleNavClick('unlock-pdf', e)}
+                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                >
+                  Unlock PDF (Remove Password)
                 </a>
               </li>
               <li>
@@ -488,15 +492,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                   All Tools (43+)
                 </a>
               </li>
-              <li>
-                <button
-                  onClick={() => setIsAnalyticsOpen(true)}
-                  className="text-slate-400 hover:text-white transition-colors text-left font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1.5"
-                >
-                  <TrendingUp className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Search Analytics Dashboard</span>
-                </button>
-              </li>
             </ul>
           </div>
         </div>
@@ -507,13 +502,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
             <span>© {new Date().getFullYear()} {SITE_CONFIG.name}. All rights reserved.</span>
             <span>·</span>
             <span className="text-slate-400">Pure In-Browser WebAssembly Engine</span>
-            <span>·</span>
-            <button
-              onClick={() => setIsAnalyticsOpen(true)}
-              className="text-slate-400 hover:text-blue-400 underline transition-colors"
-            >
-              Search Analytics
-            </button>
           </div>
 
           <div className="flex items-center gap-1.5 text-slate-400">
@@ -522,16 +510,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
           </div>
         </div>
       </div>
-
-      {/* Local Search Analytics Modal - Lazy Loaded on user click */}
-      {isAnalyticsOpen && (
-        <React.Suspense fallback={null}>
-          <SearchAnalyticsModal
-            isOpen={isAnalyticsOpen}
-            onClose={() => setIsAnalyticsOpen(false)}
-          />
-        </React.Suspense>
-      )}
     </footer>
   );
 };

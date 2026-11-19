@@ -133,6 +133,9 @@ const PhotoStudioWorkspace = lazyWithRetry(() =>
 const PdfToEditableWordTool = lazyWithRetry(() =>
   import('./components/tools/PdfToEditableWordTool').then((m) => ({ default: m.PdfToEditableWordTool }))
 );
+const RemoveScanWatermarkTool = lazyWithRetry(() =>
+  import('./components/tools/RemoveScanWatermarkTool').then((m) => ({ default: m.RemoveScanWatermarkTool }))
+);
 const DocumentConverterTool = lazyWithRetry(() =>
   import('./components/tools/DocumentConverterTool').then((m) => ({ default: m.DocumentConverterTool }))
 );
@@ -541,8 +544,12 @@ export default function App() {
       return <PdfRedactorTool tool={tool} onSelectNextTool={handleSelectTool} />;
     }
 
-    if (['protect-pdf', 'sign-pdf', 'pdf-metadata'].includes(tool.id)) {
-      return <PdfSecurityTool tool={tool} />;
+    if (tool.id === 'remove-scan-watermark') {
+      return <RemoveScanWatermarkTool tool={tool} onSelectNextTool={handleSelectTool} />;
+    }
+
+    if (['protect-pdf', 'unlock-pdf', 'sign-pdf', 'pdf-metadata'].includes(tool.id)) {
+      return <PdfSecurityTool tool={tool} onSelectNextTool={handleSelectTool} />;
     }
 
     if (['csv-to-xlsx', 'xlsx-to-csv', 'sheet-viewer', 'excel-to-pdf', 'pdf-to-excel'].includes(tool.id)) {
@@ -739,7 +746,10 @@ export default function App() {
           </React.Suspense>
         ) : currentView === 'about' ? (
           <React.Suspense fallback={<ToolSkeleton />}>
-            <AboutPage onNavigateDirectory={() => navigateTo('directory')} />
+            <AboutPage
+              onNavigateDirectory={() => navigateTo('directory')}
+              onNavigateBlog={() => navigateTo('blog')}
+            />
           </React.Suspense>
         ) : currentView === 'contact' ? (
           <React.Suspense fallback={<ToolSkeleton />}>

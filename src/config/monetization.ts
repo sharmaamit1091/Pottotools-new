@@ -84,10 +84,12 @@ export const MONETIZATION_CONFIG: MonetizationConfig = {
   testMode: false,
   // Google Auto Ads script in <head> automatically places and optimizes ads without manual AdSlot containers
   approvalReviewMode: false,
+  // Temporarily disabled while Google AdSense reviews the site to keep inventory single-network and clean.
+  // Re-enable only after Google AdSense approves pottotools.in if dual-network testing is desired.
   adsterra: {
-    enabled: true,
+    enabled: false,
     nativeBanner: {
-      enabled: true,
+      enabled: false,
       containerId: 'container-6a9207452e2cae1a847c1817b0ebb799',
       scriptSrc: 'https://bauval.org/21/6a9207452e2cae1a847c1817b0ebb799',
     },

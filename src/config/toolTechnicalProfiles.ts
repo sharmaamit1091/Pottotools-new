@@ -223,19 +223,39 @@ export const TOOL_TECHNICAL_PROFILES: Record<string, ToolTechnicalProfile> = {
   },
   'protect-pdf': {
     settingsAndOptions: [
-      'Removes hidden Author, Title, Subject, Creator, and Producer metadata tags',
-      'Rebuilds clean PDF object streams via client-side pdf-lib in browser RAM',
-      'Direct handoff to Offline PDF & ID Redactor when visual pixel-flattening is needed',
+      'Real ISO 32000-2 AES-256 (R=6) and AES-128 (R=4) cryptographic PDF encryption in WebAssembly',
+      'User Open Password required to open/view the PDF in Chrome, Edge, Adobe Acrobat, and Preview',
+      'Granular Owner Permissions controls: Printing (Full / Low-Res / Blocked), Copying Text & Images, and Editing/Annotations',
+      'Automatic cryptographic self-verification confirming the downloaded PDF is genuinely locked',
     ],
     outputExplanation:
-      'Generates a clean, metadata-sanitized PDF (.pdf) rebuilt in local browser memory with identifying document properties stripped.',
+      'Generates a genuinely encrypted PDF (.pdf) locked with AES-256 or AES-128 directly in local browser memory with zero server uploads.',
     limitations: [
-      'Client-side pdf-lib does not implement cryptographic open-password PDF encryption; use this tool for metadata/stream cleanup and use Offline PDF & ID Redactor for irreversible visual blackout masking.',
+      'Genuine AES-256 encryption cannot be recovered if you forget the password — store your password securely.',
     ],
     troubleshooting: [
       {
-        issue: 'Need to require a password before anyone can open the PDF',
-        solution: 'Our browser-side pdf-lib engine strips metadata and rebuilds clean streams rather than locking with an open password. Use desktop Adobe Acrobat, Preview (macOS Export as PDF), or qpdf for open-password encryption.',
+        issue: 'Uploaded PDF is already password-protected',
+        solution: 'Enter the PDF’s current open password in the prompt field to re-encrypt it with your new password, or unlock it first using Unlock PDF.',
+      },
+    ],
+  },
+  'unlock-pdf': {
+    settingsAndOptions: [
+      'Real lossless WebAssembly cryptographic decryption supporting AES-256 (R=6/R=5), AES-128 (R=4), and RC4-128/40 PDFs',
+      'Automatic encryption detection distinguishing open-password PDFs from owner-restricted-only PDFs',
+      'Removes print, copy, and editing restrictions instantaneously even without a password when no open password is set',
+      'Preserves 100% original vector text, fonts, hyperlinks, bookmarks, and Ctrl+F searchability',
+    ],
+    outputExplanation:
+      'Produces a permanently unlocked, lossless PDF (.pdf) that opens without any password prompt and allows unrestricted viewing, printing, merging, and editing.',
+    limitations: [
+      'Open-password encrypted PDFs require the authorized password; PottoTools does not crack or brute-force unknown passwords.',
+    ],
+    troubleshooting: [
+      {
+        issue: 'Incorrect password error on e-Aadhaar or bank statement PDF',
+        solution: 'Passwords are case-sensitive. For Indian e-Aadhaar PDFs, enter the first 4 letters of your name in CAPITAL letters followed by your 4-digit birth year (e.g., AMIT1992).',
       },
     ],
   },
@@ -279,6 +299,31 @@ export const TOOL_TECHNICAL_PROFILES: Record<string, ToolTechnicalProfile> = {
       {
         issue: 'Aadhaar photo text looks slightly soft after flattening',
         solution: 'Increase the flatten export resolution selector to High (300 DPI) prior to clicking Apply Redactions & Download.',
+      },
+    ],
+  },
+  'remove-scan-watermark': {
+    settingsAndOptions: [
+      'Automatic scanner-app label detection across text layers and optional in-browser OCR for scanned images',
+      'Full interactive manual selection: draw, move, resize rectangles and apply to all pages or specific page ranges',
+      'Lossless PDF text-stream removal for text-based scanner footers + smart directional paper reconstruction for image scans',
+      'Mandatory Before-and-After comparison (draggable slider & side-by-side view) with zoom up to 300%, change highlights, and overlap warnings',
+    ],
+    outputExplanation:
+      'Produces a clean PDF (.pdf) preserving original page dimensions, orientation, and unmodified pages. Text-based scanner footers are stripped losslessly where safe, while image-based labels are blended smoothly using local border-sampled paper color and grain.',
+    limitations: [
+      'Designed only for removing unwanted scanner-app promotional labels on documents you own or are authorized to modify—not copyright notices, official seals, or signatures.',
+      'When a scanner label overlaps important text or signatures, pixel reconstruction may affect overlapping strokes; always inspect the mandatory Before-and-After comparison closely.',
+      'Password-protected PDFs must be unlocked first before loading into the preview canvas.',
+    ],
+    troubleshooting: [
+      {
+        issue: 'Automatic detection did not highlight my scanner watermark',
+        solution: 'Click "Auto-Detect Scan Labels (OCR)" for scanned image PDFs, or drag a rectangle directly over the unwanted label on the PDF preview and apply it to all pages.',
+      },
+      {
+        issue: 'A faint seam is visible on a shaded phone scan',
+        solution: 'Keep "Smart Paper Match" selected (instead of Pure White Paper) and tighten the selection rectangle closely around only the scanner-app label.',
       },
     ],
   },
