@@ -5,36 +5,36 @@ export const HowItWorksSection: React.FC = () => {
   const steps = [
     {
       step: '01',
-      title: 'Select a Tool',
-      description: 'Choose the specific tool you need from our PDF, image, or document conversion categories.',
+      title: 'Pick a Tool',
+      description: 'Choose the PDF, photo, or document tool you need.',
       icon: MousePointerClick,
       color: 'bg-blue-500 text-white',
     },
     {
       step: '02',
-      title: 'Upload a Supported File',
-      description: 'Drop your file into the workspace or browse your device. Supported formats include PDF, JPG, PNG, WebP, Word, Excel, and PowerPoint.',
+      title: 'Choose Your File',
+      description: 'Select or drop a PDF, photo, Word, Excel, or PowerPoint file from your device.',
       icon: UploadCloud,
       color: 'bg-indigo-500 text-white',
     },
     {
       step: '03',
-      title: 'Adjust Available Settings',
-      description: 'Configure available options such as target file size (KB/MB), custom dimensions (px/cm/mm), page ranges, or output formats.',
+      title: 'Pick Your Options',
+      description: 'Set your target size (like 100KB), dimensions, page numbers, or output format.',
       icon: Sliders,
       color: 'bg-purple-500 text-white',
     },
     {
       step: '04',
-      title: 'Process Your File',
-      description: 'Click the action button. Your browser executes the conversion, compression, or editing logic locally in memory.',
+      title: 'Click Start',
+      description: 'Your device handles the conversion or edit right inside your browser in seconds.',
       icon: Cpu,
       color: 'bg-pink-500 text-white',
     },
     {
       step: '05',
-      title: 'Preview & Download the Result',
-      description: 'Review the output directly in your browser and save the finished file immediately to your computer or phone.',
+      title: 'Check & Download',
+      description: 'Preview your finished file and save it straight to your phone or computer.',
       icon: Download,
       color: 'bg-emerald-500 text-white',
     },
@@ -46,13 +46,13 @@ export const HowItWorksSection: React.FC = () => {
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-3.5 py-1 rounded-full border border-indigo-200/60 dark:border-indigo-900/40">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>5-Step Workflow</span>
+            <span>5 Easy Steps</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
             How It Works
           </h2>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-            Follow five straightforward steps to process your files quickly and accurately.
+            Follow five simple steps to edit, shrink, or convert any file in seconds.
           </p>
         </div>
 
@@ -74,7 +74,7 @@ export const HowItWorksSection: React.FC = () => {
                     </div>
                   </div>
 
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
                     {s.title}
                   </h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
@@ -84,7 +84,7 @@ export const HowItWorksSection: React.FC = () => {
 
                 <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                  <span>Step {s.step} Verified</span>
+                  <span>Step {s.step}</span>
                 </div>
               </div>
             );

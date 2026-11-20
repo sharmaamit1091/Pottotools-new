@@ -874,7 +874,7 @@ export const INFORMATIONAL_PAGES_DATA = [
       <h2>3. Essential Preferences &amp; Analytics</h2>
       <p>We store minimal non-personal preferences in your browser's local storage (such as your Dark/Light theme selection and recently opened tool shortcuts). Aggregate site analytics help us understand which utilities users value most without ever inspecting file names or document contents.</p>
       <h2>4. Third-Party Advertising Partners</h2>
-      <p>To keep all 43+ utilities 100% free with zero paywalls, PottoTools displays advertisements served by third-party networks such as Google AdSense. These partners may set cookies or use standard web beacons to display relevant ads subject to their respective privacy disclosures and your browser consent preferences. For further cookie details, review our <a href="/cookie-policy" style="color: #0284c7;">Cookie Policy</a> or email <a href="mailto:sharma.amit1091@gmail.com" style="color: #0284c7;">sharma.amit1091@gmail.com</a>.</p>
+      <p>To keep all ${TOOLS.length} tools 100% free with zero paywalls, PottoTools displays advertisements served by third-party networks such as Google AdSense. These partners may set cookies or use standard web beacons to display relevant ads subject to their respective privacy disclosures and your browser consent preferences. For further cookie details, review our <a href="/cookie-policy" style="color: #0284c7;">Cookie Policy</a> or email <a href="mailto:sharma.amit1091@gmail.com" style="color: #0284c7;">sharma.amit1091@gmail.com</a>.</p>
     `,
   },
   {
@@ -925,11 +925,11 @@ export const INFORMATIONAL_PAGES_DATA = [
   },
   {
     slug: 'directory',
-    title: 'All 43+ Free Tools Directory | PottoTools',
-    metaDesc: 'Browse all 43+ free document, PDF, Word, Excel, image, OCR, and text utilities available on PottoTools.',
-    h1: 'All Tools Directory: 43+ Free Online Utilities',
+    title: `All ${TOOLS.length} Free Tools Directory | PottoTools`,
+    metaDesc: `Browse all ${TOOLS.length} free document, PDF, Word, Excel, image, OCR, and text tools available on PottoTools.`,
+    h1: `All Tools Directory: ${TOOLS.length} Free Online Tools`,
     content: `
-      <p style="margin-bottom: 1.5rem;">Explore our comprehensive catalog of 43+ free, private, client-side PDF, image, and office utilities:</p>
+      <p style="margin-bottom: 1.5rem;">Explore all ${TOOLS.length} free, private PDF, photo, and document tools that work right in your browser:</p>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
         ${TOOLS.map(
           (t) => `

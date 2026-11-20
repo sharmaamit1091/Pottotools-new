@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Monitor, Smartphone, Play, Pause } from 'lucide-react';
+import { TOOLS } from '../../config/toolsRegistry';
 
 type PlatformId = 'desktop' | 'android' | 'ios';
 type StepIndex = 0 | 1 | 2;
@@ -135,12 +136,12 @@ export const OfflineInstallationGuide: React.FC = () => {
               </h3>
             </div>
 
-            {/* Animated SVG 1: Browser Vault Downloading 42+ Tools */}
+            {/* Animated SVG 1: Browser Saving All Tools Offline */}
             <div className="w-full rounded-lg bg-slate-900/90 border border-slate-800/80 p-2">
               <svg
                 viewBox="0 0 280 156"
                 role="img"
-                aria-label="Animated diagram showing pottotools.in downloading all tools locally into browser storage"
+                aria-label="Animated diagram showing pottotools.in saving all tools locally onto your device"
                 className="w-full h-auto block"
               >
                 {/* Browser Frame */}
@@ -151,10 +152,10 @@ export const OfflineInstallationGuide: React.FC = () => {
                   pottotools.in
                 </text>
                 <text x="206" y="26" fill="#38bdf8" fontSize="9" fontWeight="700" fontFamily="monospace">
-                  SW CACHE
+                  OFFLINE
                 </text>
 
-                {/* Animated Data Packets Dropping into Local Vault */}
+                {/* Animated Data Packets Dropping into Local Device */}
                 <g className="svg-packet-drop">
                   <rect x="118" y="42" width="12" height="12" rx="3" fill="#38bdf8" />
                   <rect x="136" y="38" width="12" height="12" rx="3" fill="#34d399" />
@@ -164,10 +165,10 @@ export const OfflineInstallationGuide: React.FC = () => {
                 {/* Local Device Storage Box */}
                 <rect x="34" y="76" width="212" height="54" rx="8" fill="#0f172a" stroke="#334155" strokeWidth="1" />
                 <text x="48" y="96" fill="#f8fafc" fontSize="11" fontWeight="700" fontFamily="sans-serif">
-                  43+ PDF &amp; Image Engines
+                  {TOOLS.length} PDF &amp; Image Tools
                 </text>
                 <text x="48" y="110" fill="#94a3b8" fontSize="9" fontFamily="monospace">
-                  Saved in local browser vault
+                  Saved on your device
                 </text>
 
                 {/* Progress Track & Keyframed ScaleX Bar */}
@@ -185,7 +186,7 @@ export const OfflineInstallationGuide: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed">
-              Visit once online—PottoTools automatically caches every tool locally with zero extra installer files.
+              Open PottoTools once online — all {TOOLS.length} tools are automatically saved on your device.
             </p>
           </button>
         </li>

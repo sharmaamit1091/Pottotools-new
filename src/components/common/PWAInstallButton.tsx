@@ -221,7 +221,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
                 <div>
                   <strong className="text-slate-900 dark:text-white">100% Offline Capability:</strong>
                   <p className="mt-0.5 text-slate-600 dark:text-slate-400">
-                    Unlike typical online utilities that require active cloud connections, PottoTools processes all files locally via WebAssembly and HTML5 Canvas. Install it once, and compress, convert, or resize files anytime, anywhere.
+                    Unlike typical websites that need internet to upload your files, PottoTools works directly on your phone or computer. Install it once, and compress, convert, or resize files anytime, even offline.
                   </p>
                 </div>
               </div>

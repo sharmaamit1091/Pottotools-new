@@ -5,6 +5,7 @@
  */
 
 import { ToolDefinition } from '../../types/tools';
+import { TOOLS } from '../../config/toolsRegistry';
 import { SITE_CONFIG } from '../../config/site';
 import { getBlogPostBySlug } from '../../config/blogPosts';
 import { getHindiPageBySlug, getHindiCounterpartForEnglishSlug } from '../../config/hindiPages';
@@ -251,9 +252,8 @@ export function updatePageSeoMetadata(tool: ToolDefinition | null, view: string)
       'Learn how PottoTools uses essential local storage, analytics, and advertising cookies, and how you can manage or opt out of cookies.';
     canonicalPath = '/cookie-policy';
   } else if (view === 'directory') {
-    title = `All 43+ Free Tools Directory | PottoTools`;
-    description =
-      'Browse all 43+ free document, PDF, Word, Excel, image, OCR, and text utilities available on PottoTools.';
+    title = `All ${TOOLS.length} Free Tools Directory | PottoTools`;
+    description = `Browse all ${TOOLS.length} free document, PDF, Word, Excel, image, OCR, and text tools available on PottoTools.`;
     canonicalPath = '/directory';
   } else if (view === 'blog') {
     title = `Document, PDF & Image Guides Blog | PottoTools`;

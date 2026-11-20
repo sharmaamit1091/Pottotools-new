@@ -30,13 +30,13 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ onSelectTool, onNa
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
             <ShieldCheck className="w-4 h-4" />
-            <span>Complete Catalog &bull; {TOOLS.length} Browser-Based Tools</span>
+            <span>Complete List &bull; {TOOLS.length} Free Tools</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            All Tools Directory
+          <h1 className="text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+            All Tools Directory ({TOOLS.length})
           </h1>
           <p className="text-sm text-slate-500 mt-2 max-w-2xl">
-            Browse our complete directory of free online PDF, document conversion, image editing, OCR, and government application tools. All tools execute locally on your device.
+            Browse all {TOOLS.length} free PDF, Word, Excel, photo, and exam form tools. Every tool works safely right inside your browser without uploading your files.
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ onSelectTool, onNa
           return (
             <div key={cat.id} className="space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                <h2 className="text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
                   <a
                     href={categoryHref}
                     onClick={(e) => {

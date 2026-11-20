@@ -73,8 +73,8 @@ export const ToolCard: React.FC<ToolCardProps> = ({
           )}
         </div>
 
-        {/* Short, Bold Tool Name */}
-        <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-1 mb-1">
+        {/* Short, Bold Capitalized Tool Name */}
+        <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 leading-snug mb-1.5">
           {tool.title}
         </h3>
 

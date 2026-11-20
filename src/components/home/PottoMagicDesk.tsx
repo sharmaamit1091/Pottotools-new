@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ToolDefinition } from '../../types/tools';
-import { getToolBySlug } from '../../config/toolsRegistry';
+import { TOOLS, getToolBySlug } from '../../config/toolsRegistry';
 import { formatBytes } from '../../services/utils/downloadUtils';
 import { stageFileForTool } from '../../services/utils/stagedFileService';
 import { preloadTool } from '../../services/utils/toolPreloader';
@@ -316,7 +316,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
           ...getMatched('split-pdf', 'Extract Specific Pages'),
           ...getMatched('searchable-pdf-text-finder', 'Search Inside Scans'),
           ...getMatched('pdf-to-images', 'Save Pages as JPG/PNG'),
-          ...getMatched('protect-pdf', 'Password Lock PDF (AES-256)'),
+          ...getMatched('protect-pdf', 'Add Password to PDF'),
           ...getMatched('unlock-pdf', 'Unlock Password-Protected PDF'),
           ...getMatched('sign-pdf', 'Draw & Stamp Signature'),
           ...getMatched('pdf-to-excel', 'Extract Tables to Excel'),
@@ -617,7 +617,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
                   }}
                   className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
-                  <span>All 43+ Tools</span>
+                  <span>All {TOOLS.length} Tools</span>
                   <ArrowRight className="w-3 h-3" />
                 </a>
               )}
@@ -649,7 +649,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
                       </span>
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
+                      <div className="text-xs font-extrabold uppercase tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
                         {goal.title}
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">

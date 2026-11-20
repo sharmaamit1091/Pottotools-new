@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Sun, Moon, Sparkles, FileText, ArrowRight } from 'lucide-react';
-import { ToolDefinition, searchTools } from '../../config/toolsRegistry';
+import { TOOLS, ToolDefinition, searchTools } from '../../config/toolsRegistry';
 import { PottoLogo } from './PottoLogo';
 import { PWAInstallButton } from './PWAInstallButton';
 import { preloadTool, preloadView } from '../../services/utils/toolPreloader';
@@ -346,7 +346,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'bg-[#15233D] text-white hover:bg-[#4F46E5] border border-slate-700/60'
             }`}
           >
-            <span>All Tools (43)</span>
+            <span>All Tools ({TOOLS.length})</span>
           </a>
 
           {/* Guides & Blog */}
@@ -447,7 +447,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <span className="text-sm font-extrabold uppercase tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {tool.title}
                         </span>
                         <span className="text-[10px] text-slate-400 font-medium">

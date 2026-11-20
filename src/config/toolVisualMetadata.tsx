@@ -116,8 +116,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'pdf-to-editable-word': {
     visual: PdfToWordVisual,
-    actionLabel: 'Convert to editable DOCX',
-    shortExplanation: 'High-fidelity conversion preserving formatted headings, paragraphs, and tables.',
+    actionLabel: 'Convert to editable Word',
+    shortExplanation: 'Turn PDFs into editable Word files while keeping headings, layout, and tables.',
     actionButtonText: 'Convert to Word',
     categoryTag: 'Word & Docs',
     accentClass: {
@@ -129,7 +129,7 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   'pdf-to-word': {
     visual: PdfToWordVisual,
     actionLabel: 'Convert PDF to Word',
-    shortExplanation: 'Transform PDF documents into editable Microsoft Word (.docx) files smoothly.',
+    shortExplanation: 'Turn any PDF document into an editable Microsoft Word (.docx) file easily.',
     actionButtonText: 'PDF to Word',
     categoryTag: 'Word & Docs',
     accentClass: {
@@ -141,7 +141,7 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   'word-to-pdf': {
     visual: WordToPdfVisual,
     actionLabel: 'Convert Word to PDF',
-    shortExplanation: 'Render Word DOCX files into polished, shareable, print-ready PDF documents.',
+    shortExplanation: 'Turn Word (.docx) files into clean, ready-to-share PDF documents.',
     actionButtonText: 'Word to PDF',
     categoryTag: 'Word & Docs',
     accentClass: {
@@ -188,8 +188,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'protect-pdf': {
     visual: ProtectPdfVisual,
-    actionLabel: 'Lock with AES-256 password',
-    shortExplanation: 'Encrypt confidential PDFs with real AES-256 passwords and print/copy restrictions.',
+    actionLabel: 'Lock PDF with password',
+    shortExplanation: 'Add a strong password to lock your PDF and stop unwanted printing or copying.',
     actionButtonText: 'Protect PDF',
     categoryTag: 'PDF Security',
     accentClass: {
@@ -201,7 +201,7 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   'unlock-pdf': {
     visual: UnlockPdfVisual,
     actionLabel: 'Remove PDF password',
-    shortExplanation: 'Decrypt password-locked PDFs (e-Aadhaar, bank statements) losslessly in-browser.',
+    shortExplanation: 'Unlock password-protected PDFs like e-Aadhaar and bank statements safely on your device.',
     actionButtonText: 'Unlock PDF',
     categoryTag: 'PDF Security',
     accentClass: {
@@ -212,9 +212,9 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'pdf-id-redactor': {
     visual: RedactIdVisual,
-    actionLabel: 'Mask Aadhaar / Bank / Salary',
-    shortExplanation: 'Permanently blackout or blur sensitive IDs, account numbers & salary figures 100% offline.',
-    actionButtonText: 'Redact PDF / ID',
+    actionLabel: 'Hide Aadhaar / Bank / Salary',
+    shortExplanation: 'Blackout or blur private ID numbers, bank details, and salary figures safely offline.',
+    actionButtonText: 'Hide Private Info',
     categoryTag: 'Offline Privacy',
     accentClass: {
       borderHover: 'hover:border-emerald-400 dark:hover:border-emerald-500',
@@ -224,8 +224,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'pdf-to-images': {
     visual: PdfToImagesVisual,
-    actionLabel: 'Export pages as images',
-    shortExplanation: 'Convert every PDF page into high-resolution JPG or PNG pictures.',
+    actionLabel: 'Save pages as photos',
+    shortExplanation: 'Turn every PDF page into clear JPG or PNG pictures you can easily share.',
     actionButtonText: 'PDF to Images',
     categoryTag: 'PDF Tools',
     accentClass: {
@@ -237,7 +237,7 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   'image-to-pdf': {
     visual: ImageToPdfVisual,
     actionLabel: 'Combine photos into PDF',
-    shortExplanation: 'Turn multiple photos, receipts, or scans into a single neatly bound PDF file.',
+    shortExplanation: 'Turn multiple photos, bills, or scans into one clean PDF file.',
     actionButtonText: 'Image to PDF',
     categoryTag: 'PDF Tools',
     accentClass: {
@@ -248,8 +248,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'searchable-pdf-text-finder': {
     visual: SearchablePdfVisual,
-    actionLabel: 'Search & OCR scanned PDF',
-    shortExplanation: 'Run in-browser OCR to find names, dates & words inside scanned PDF documents.',
+    actionLabel: 'Search words in scanned PDF',
+    shortExplanation: 'Find names, dates, and words inside scanned PDFs and download a searchable PDF.',
     actionButtonText: 'Find in PDF',
     categoryTag: 'OCR & Search',
     accentClass: {
@@ -260,8 +260,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'page-numbers-pdf': {
     visual: PageNumbersVisual,
-    actionLabel: 'Add footer page numbers',
-    shortExplanation: 'Insert automatic page numbers or Bates numbering in clean headers and footers.',
+    actionLabel: 'Add page numbers',
+    shortExplanation: 'Add clean automatic page numbers to the top or bottom of every PDF page.',
     actionButtonText: 'Add Page Numbers',
     categoryTag: 'PDF Tools',
     accentClass: {
@@ -272,9 +272,9 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'pdf-metadata': {
     visual: ProtectPdfVisual,
-    actionLabel: 'Inspect & wipe metadata',
-    shortExplanation: 'Read and permanently sanitize author, creator, and camera metadata from PDFs.',
-    actionButtonText: 'Wipe Metadata',
+    actionLabel: 'Remove hidden file info',
+    shortExplanation: 'View and clear hidden details like author name, device info, and creation date.',
+    actionButtonText: 'Remove Hidden Info',
     categoryTag: 'Security & Sign',
     accentClass: {
       borderHover: 'hover:border-slate-400 dark:hover:border-slate-500',
@@ -284,8 +284,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'pdf-text-extractor': {
     visual: OcrToolVisual,
-    actionLabel: 'Extract readable text stream',
-    shortExplanation: 'Copy entire document text, get word counts, and export raw text streams.',
+    actionLabel: 'Copy text from PDF',
+    shortExplanation: 'Copy all text from a PDF, count words, and save it as a plain text file.',
     actionButtonText: 'Extract Text',
     categoryTag: 'Smart Utilities',
     accentClass: {
@@ -346,8 +346,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'hd-image-enhancer': {
     visual: ImageEnhancerVisual,
-    actionLabel: 'Sharpen & enhance clarity',
-    shortExplanation: 'Intelligently enhance blurry photos, sharpen edges, and increase clarity locally.',
+    actionLabel: 'Make blurry photos sharper',
+    shortExplanation: 'Sharpen blurry photos, reduce grain, and improve photo clarity right on your device.',
     actionButtonText: 'Enhance Photo',
     categoryTag: 'Image Tools',
     accentClass: {
@@ -358,8 +358,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'crop-rotate-straighten': {
     visual: ImageCropVisual,
-    actionLabel: 'Crop & angle straightening',
-    shortExplanation: 'Precise aspect ratio framing, angle leveling, and custom image cropping.',
+    actionLabel: 'Crop & straighten photos',
+    shortExplanation: 'Crop, rotate, flip, and fix tilted photos in seconds.',
     actionButtonText: 'Crop & Rotate',
     categoryTag: 'Image Tools',
     accentClass: {
@@ -370,8 +370,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'passport-photo-cropper': {
     visual: PassportCropVisual,
-    actionLabel: 'Official passport crop',
-    shortExplanation: 'Cut portraits to standard 2×2 inch, 35×45mm government passport specifications.',
+    actionLabel: 'Passport size crop',
+    shortExplanation: 'Crop photos to standard 35×45mm or 2×2 inch passport and visa sizes.',
     actionButtonText: 'Passport Cropper',
     categoryTag: 'Gov & Exam',
     accentClass: {
@@ -383,7 +383,7 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   'photo-signature-resizer': {
     visual: ExamPhotoSignatureVisual,
     actionLabel: 'UPSC / SSC exam presets',
-    shortExplanation: 'One-click exact sizing (20KB–50KB / 140×60 px) for official exam portals.',
+    shortExplanation: 'One-click exact photo & signature sizing (20KB–50KB) for exam forms.',
     actionButtonText: 'Exam Presets',
     categoryTag: 'Gov & Exam',
     accentClass: {
@@ -394,8 +394,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'photo-editor': {
     visual: ImageCropVisual,
-    actionLabel: 'Adjust brightness & filters',
-    shortExplanation: 'Full photo editing suite with exposure, contrast, temperature, and crop controls.',
+    actionLabel: 'Brightness, crop & filters',
+    shortExplanation: 'Easy photo editor to adjust brightness, contrast, crop, and rotate photos.',
     actionButtonText: 'Photo Editor',
     categoryTag: 'Image Tools',
     accentClass: {
@@ -406,8 +406,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'photo-background-changer': {
     visual: PhotoBgChangerVisual,
-    actionLabel: 'Replace background color',
-    shortExplanation: 'Segment photo subjects and replace background with official white or studio blue.',
+    actionLabel: 'Change background color',
+    shortExplanation: 'Change your photo background to clean white, light blue, or any color.',
     actionButtonText: 'Change Background',
     categoryTag: 'Image Tools',
     accentClass: {
@@ -456,8 +456,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   // =================== SPREADSHEETS & TABLES ===================
   'excel-to-pdf': {
     visual: ExcelToPdfVisual,
-    actionLabel: 'Export spreadsheet as PDF',
-    shortExplanation: 'Render Excel XLSX tables into clean, formatted, print-ready PDF reports.',
+    actionLabel: 'Save Excel as PDF',
+    shortExplanation: 'Turn Excel (.xlsx) sheets into neat, ready-to-share PDF tables.',
     actionButtonText: 'Excel to PDF',
     categoryTag: 'Spreadsheets',
     accentClass: {
@@ -468,8 +468,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'pdf-to-excel': {
     visual: PdfToExcelVisual,
-    actionLabel: 'Extract tables to Excel',
-    shortExplanation: 'Extract financial statements and tables from PDF files into editable spreadsheets.',
+    actionLabel: 'PDF tables to Excel',
+    shortExplanation: 'Copy tables and rows from PDF files into an editable Excel spreadsheet.',
     actionButtonText: 'PDF to Excel',
     categoryTag: 'Spreadsheets',
     accentClass: {
@@ -480,8 +480,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'csv-to-xlsx': {
     visual: CsvToXlsxVisual,
-    actionLabel: 'Format CSV as Excel',
-    shortExplanation: 'Convert raw comma-separated CSV text into formatted Excel workbook spreadsheets.',
+    actionLabel: 'Convert CSV to Excel',
+    shortExplanation: 'Turn simple CSV files into neat Excel (.xlsx) spreadsheets.',
     actionButtonText: 'CSV to Excel',
     categoryTag: 'Spreadsheets',
     accentClass: {
@@ -492,8 +492,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'xlsx-to-csv': {
     visual: XlsxToCsvVisual,
-    actionLabel: 'Export Excel to CSV',
-    shortExplanation: 'Flatten Excel spreadsheet worksheets into lightweight, universal CSV files.',
+    actionLabel: 'Convert Excel to CSV',
+    shortExplanation: 'Save any Excel spreadsheet sheet as a simple, universal CSV file.',
     actionButtonText: 'Excel to CSV',
     categoryTag: 'Spreadsheets',
     accentClass: {
@@ -504,8 +504,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'sheet-viewer': {
     visual: SheetViewerVisual,
-    actionLabel: 'Preview spreadsheet rows',
-    shortExplanation: 'Open and inspect Excel and CSV tables in an interactive tabular grid viewer.',
+    actionLabel: 'Open Excel & CSV files',
+    shortExplanation: 'View, search, and filter Excel and CSV tables right in your browser.',
     actionButtonText: 'View Spreadsheet',
     categoryTag: 'Spreadsheets',
     accentClass: {
@@ -518,8 +518,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   // =================== POWERPOINT TOOLS ===================
   'powerpoint-to-pdf': {
     visual: PptToPdfVisual,
-    actionLabel: 'Convert presentation to PDF',
-    shortExplanation: 'Turn PowerPoint presentation slides (.pptx) into clean, shareable PDF documents.',
+    actionLabel: 'Convert slides to PDF',
+    shortExplanation: 'Turn PowerPoint (.pptx) slides into clean, easy-to-share PDF pages.',
     actionButtonText: 'PPTX to PDF',
     categoryTag: 'PowerPoint',
     accentClass: {
@@ -531,7 +531,7 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   'pptx-to-txt': {
     visual: TextCleanerVisual,
     actionLabel: 'Extract slide text',
-    shortExplanation: 'Extract speaker notes and slide text content from PowerPoint presentations.',
+    shortExplanation: 'Copy all text and notes from PowerPoint slides into plain text.',
     actionButtonText: 'Extract Slide Text',
     categoryTag: 'PowerPoint',
     accentClass: {
@@ -544,9 +544,9 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   // =================== TEXT & WORD UTILITIES ===================
   'docx-to-txt': {
     visual: TextCleanerVisual,
-    actionLabel: 'Strip formatting to text',
-    shortExplanation: 'Extract raw, clean, unformatted plain text from Microsoft Word documents.',
-    actionButtonText: 'Word to Plain Text',
+    actionLabel: 'Word to plain text',
+    shortExplanation: 'Copy clean plain text from Microsoft Word files without extra styling.',
+    actionButtonText: 'Word to Text',
     categoryTag: 'Word & Docs',
     accentClass: {
       borderHover: 'hover:border-blue-400 dark:hover:border-blue-500',
@@ -556,8 +556,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'docx-to-html': {
     visual: WordToPdfVisual,
-    actionLabel: 'Convert DOCX to HTML',
-    shortExplanation: 'Convert Microsoft Word documents into clean, semantic HTML5 web markup.',
+    actionLabel: 'Word to HTML',
+    shortExplanation: 'Turn Microsoft Word documents into clean HTML code for websites and blogs.',
     actionButtonText: 'Word to HTML',
     categoryTag: 'Word & Docs',
     accentClass: {
@@ -569,7 +569,7 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   'txt-to-pdf': {
     visual: WordToPdfVisual,
     actionLabel: 'Convert text to PDF',
-    shortExplanation: 'Turn raw text notes and code into paginated, formatted PDF documents.',
+    shortExplanation: 'Turn plain text notes into clean, printable PDF pages.',
     actionButtonText: 'Text to PDF',
     categoryTag: 'Word & Docs',
     accentClass: {
@@ -580,8 +580,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'markdown-to-pdf': {
     visual: WordToPdfVisual,
-    actionLabel: 'Render Markdown to PDF',
-    shortExplanation: 'Convert Markdown notes, headings, and code blocks into styled PDF reports.',
+    actionLabel: 'Markdown to PDF',
+    shortExplanation: 'Turn Markdown (.md) notes and headings into a neatly formatted PDF.',
     actionButtonText: 'Markdown to PDF',
     categoryTag: 'Word & Docs',
     accentClass: {
@@ -592,8 +592,8 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'text-cleaner': {
     visual: TextCleanerVisual,
-    actionLabel: 'Normalize spacing & case',
-    shortExplanation: 'Clean up erratic whitespace, duplicate line breaks, and convert letter cases.',
+    actionLabel: 'Fix spacing & text case',
+    shortExplanation: 'Remove extra spaces, fix blank lines, and switch between UPPERCASE and lowercase.',
     actionButtonText: 'Clean Text',
     categoryTag: 'Smart Utilities',
     accentClass: {
@@ -604,9 +604,9 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   },
   'text-diff-comparator': {
     visual: TextDiffVisual,
-    actionLabel: 'Compare text differences',
-    shortExplanation: 'Inspect two versions of text side-by-side with added and deleted line highlights.',
-    actionButtonText: 'Compare Diff',
+    actionLabel: 'Compare two texts',
+    shortExplanation: 'Compare two pieces of text side by side to quickly see what was added or removed.',
+    actionButtonText: 'Compare Text',
     categoryTag: 'Smart Utilities',
     accentClass: {
       borderHover: 'hover:border-cyan-400 dark:hover:border-cyan-500',

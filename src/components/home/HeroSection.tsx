@@ -77,22 +77,22 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Hero Metadata & Clickable Vibrant 100% Offline Badge */}
         <div className="flex flex-col items-center justify-center gap-2">
           <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-            <span>Free Online Utilities</span>
+            <span>Free Online Tools</span>
             <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
-            <span>In-Browser Processing</span>
+            <span>No File Uploads</span>
             <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
             <OfflineStatusBadge align="center" />
           </div>
         </div>
 
         {/* Required H1 Heading */}
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
-          Free Online PDF, Photo Resizer &amp; OCR Tools
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white leading-[1.15]">
+          Free Online PDF, Photo &amp; Document Tools
         </h1>
 
         {/* Required Subheading */}
         <p className="max-w-2xl mx-auto text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-          Compress PDFs to 100KB, convert PDF to Word, resize exam photos (px/cm/mm &amp; 20KB–50KB), and redact sensitive IDs locally in your browser.
+          Shrink PDFs to 100KB, convert PDF to Word, resize exam photos (20KB–50KB), and hide private info on your documents — safely on your own device.
         </p>
 
         {/* Signature Offline Highlights Strip */}
@@ -103,11 +103,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <WifiOff className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0">
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                  Works Without Wi-Fi or Internet
+                <span className="text-xs font-extrabold uppercase text-slate-900 dark:text-white block">
+                  Works Without Internet
                 </span>
                 <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
-                  Installable PWA app for Airplane Mode.
+                  Install once &amp; use even in Airplane Mode.
                 </p>
               </div>
             </div>
@@ -130,11 +130,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <EyeOff className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0">
-                <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 block truncate">
-                  Unique: Offline PDF &amp; ID Redactor
+                <span className="text-xs font-extrabold uppercase text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 block truncate">
+                  Hide Private Info in PDFs &amp; IDs
                 </span>
                 <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
-                  Hide Aadhaar, Bank &amp; Salary info permanently.
+                  Blackout Aadhaar, bank &amp; salary details safely.
                 </p>
               </div>
             </div>

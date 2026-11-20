@@ -38,57 +38,57 @@ const COMMON_TASKS: CommonTaskItem[] = [
     id: 'redact-id-info',
     toolSlug: 'pdf-id-redactor',
     icon: EyeOff,
-    tagline: 'Unique Offline Privacy',
-    title: 'Hide Aadhaar, Bank Account or Salary info before sharing',
-    description: 'Permanently blackout or blur sensitive numbers on PDFs & ID scans with zero cloud uploads.',
+    tagline: 'Private & Safe',
+    title: 'Hide Aadhaar, Bank Account or Salary Info',
+    description: 'Blackout or blur private numbers on PDFs and ID photos right on your device.',
     accentBg: 'hover:border-emerald-300 dark:hover:border-emerald-700 bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/30 dark:from-slate-900 dark:to-emerald-950/20',
     iconBg: 'bg-emerald-600 text-white',
     textColor: 'text-emerald-700 dark:text-emerald-400',
-    badge: '100% Offline Redactor',
+    badge: '100% Offline',
   },
   {
     id: 'email-attachment',
     toolSlug: 'compress-pdf',
     icon: Mail,
-    tagline: 'Email & Portal Ceilings',
-    title: 'Shrink a heavy PDF to fit email attachment limits',
-    description: 'Compress any PDF down to target 100KB, 200KB or 500KB with zero text fuzziness.',
+    tagline: 'Smaller File Size',
+    title: 'Shrink a Large PDF for Email or Forms',
+    description: 'Reduce any PDF size to 100KB, 200KB, or 500KB while keeping text clear to read.',
     accentBg: 'hover:border-rose-300 dark:hover:border-rose-700 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/30 dark:from-slate-900 dark:to-rose-950/20',
     iconBg: 'bg-rose-500 text-white',
     textColor: 'text-rose-600 dark:text-rose-400',
-    badge: '100KB / 200KB Presets',
+    badge: '100KB / 200KB',
   },
   {
     id: 'resize-photo',
     toolSlug: 'custom-photo-studio',
     icon: Maximize2,
-    tagline: 'Precision Photo Resizing',
-    title: 'Resize images to exact pixels, cm, mm, or inches',
-    description: 'Crisp multi-step resampling with custom DPI settings, aspect ratio lock, and live preview.',
+    tagline: 'Easy Photo Resizing',
+    title: 'Resize Photos in Pixels, cm, mm, or Inches',
+    description: 'Change photo size, crop, adjust brightness, or reduce KB size with live preview.',
     accentBg: 'hover:border-emerald-300 dark:hover:border-emerald-700 bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 dark:from-slate-900 dark:to-emerald-950/20',
     iconBg: 'bg-emerald-500 text-white',
     textColor: 'text-emerald-600 dark:text-emerald-400',
-    badge: 'Custom DPI & Units',
+    badge: 'Exact Size',
   },
   {
     id: 'edit-contract',
     toolSlug: 'pdf-to-word',
     icon: FileEdit,
-    tagline: 'Document Editing',
-    title: 'Convert a locked PDF into an editable Word document',
-    description: 'Extract paragraph flow and layout directly into standard Microsoft Word (.docx) format.',
+    tagline: 'Edit Your PDF',
+    title: 'Turn a PDF into an Editable Word File',
+    description: 'Convert PDF pages into a Microsoft Word (.docx) file so you can edit text easily.',
     accentBg: 'hover:border-blue-300 dark:hover:border-blue-700 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30 dark:from-slate-900 dark:to-blue-950/20',
     iconBg: 'bg-blue-600 text-white',
     textColor: 'text-blue-600 dark:text-blue-400',
-    badge: 'Editable DOCX',
+    badge: 'Editable Word',
   },
   {
     id: 'scanned-doc',
     toolSlug: 'ocr-tool',
     icon: ScanText,
-    tagline: 'In-Browser OCR',
-    title: 'Extract copyable text from photos or scanned paper',
-    description: 'Read English and Hindi text from scans using optical character recognition right on your device.',
+    tagline: 'Photo to Text',
+    title: 'Copy Text from Photos or Scanned Papers',
+    description: 'Read English and Hindi text from photos and scanned PDFs in seconds.',
     accentBg: 'hover:border-teal-300 dark:hover:border-teal-700 bg-gradient-to-br from-teal-50/50 via-white to-cyan-50/30 dark:from-slate-900 dark:to-teal-950/20',
     iconBg: 'bg-teal-500 text-white',
     textColor: 'text-teal-600 dark:text-teal-400',
@@ -98,21 +98,21 @@ const COMMON_TASKS: CommonTaskItem[] = [
     id: 'combine-receipts',
     toolSlug: 'merge-pdf',
     icon: Combine,
-    tagline: 'File Organization',
-    title: 'Combine invoices, bills, or certificates into one PDF',
-    description: 'Drag, reorder, and stitch multiple documents into a single professional PDF portfolio.',
+    tagline: 'Join Files Together',
+    title: 'Combine Bills or Certificates into One PDF',
+    description: 'Join multiple PDF files together in the exact order you want.',
     accentBg: 'hover:border-purple-300 dark:hover:border-purple-700 bg-gradient-to-br from-purple-50/50 via-white to-pink-50/30 dark:from-slate-900 dark:to-purple-950/20',
     iconBg: 'bg-purple-600 text-white',
     textColor: 'text-purple-600 dark:text-purple-400',
-    badge: 'Custom Page Order',
+    badge: 'Easy Reorder',
   },
   {
     id: 'photos-to-pdf',
     toolSlug: 'image-to-pdf',
     icon: Images,
-    tagline: 'Photo Submission',
-    title: 'Turn camera snapshots into a neat multi-page PDF',
-    description: 'Package phone photos or image scans into a single standardized document in seconds.',
+    tagline: 'Photos to PDF',
+    title: 'Turn Phone Photos into One Clean PDF',
+    description: 'Combine JPG or PNG photos into a single neat PDF ready to share or upload.',
     accentBg: 'hover:border-cyan-300 dark:hover:border-cyan-700 bg-gradient-to-br from-cyan-50/50 via-white to-sky-50/30 dark:from-slate-900 dark:to-cyan-950/20',
     iconBg: 'bg-cyan-600 text-white',
     textColor: 'text-cyan-600 dark:text-cyan-400',
@@ -128,19 +128,19 @@ export const CommonTasksSection: React.FC<CommonTasksSectionProps> = ({ onSelect
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-3 py-1 rounded-full border border-purple-200/60 dark:border-purple-900/40 mb-2">
             <Zap className="w-3.5 h-3.5" />
-            <span>Problem-Solver Workflows</span>
+            <span>Quick Shortcuts</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            What do you want to accomplish today?
+          <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+            What Do You Want To Do Today?
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-xl">
-            Pick your goal below and PottoTools will load the right tool configured with optimal presets.
+            Pick a common task below to open the right tool right away.
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
           <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          <span>Client-side execution · Zero data upload</span>
+          <span>100% Private · Files stay on your device</span>
         </div>
       </div>
 
@@ -179,7 +179,7 @@ export const CommonTasksSection: React.FC<CommonTasksSectionProps> = ({ onSelect
                   <div className={`text-[11px] font-bold uppercase tracking-wider ${task.textColor}`}>
                     {task.tagline}
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white mt-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
+                  <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-white mt-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
                     {task.title}
                   </h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed">
@@ -189,7 +189,7 @@ export const CommonTasksSection: React.FC<CommonTasksSectionProps> = ({ onSelect
               </div>
 
               <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold">
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="font-bold uppercase text-slate-500 dark:text-slate-400">
                   {tool.title}
                 </span>
                 <span className="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">

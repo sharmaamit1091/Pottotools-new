@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronDown, HelpCircle, Sparkles } from 'lucide-react';
+import { ChevronDown, HelpCircle } from 'lucide-react';
+import { TOOLS } from '../../config/toolsRegistry';
 
 interface FaqItem {
   question: string;
@@ -8,49 +9,49 @@ interface FaqItem {
 
 const FAQS: FaqItem[] = [
   {
-    question: 'What types of files can I process with PottoTools?',
+    question: 'What types of files can I use on PottoTools?',
     answer:
-      'PottoTools supports major document and image formats including PDF documents, images (JPG, PNG, WebP, BMP), Microsoft Word documents (.docx), Excel spreadsheets (.xlsx, .csv), PowerPoint presentations (.pptx), and plain text or Markdown files.',
+      'You can work with PDFs, photos (JPG, PNG, WebP, BMP), Microsoft Word (.docx), Excel (.xlsx, .csv), PowerPoint (.pptx), and plain text files.',
   },
   {
-    question: 'How do I download, install, and use PottoTools 100% offline without internet?',
+    question: 'How do I install and use PottoTools offline without internet?',
     answer:
-      'Visit pottotools.in once while connected to the internet so our Service Worker automatically caches all 43+ PDF, document, and image tools into your browser. Then click "Install App (Works Offline)" (on Desktop Chrome/Edge click the address bar install icon; on Android tap Chrome menu ⋮ → Install app; on iPhone/iPad tap Safari Share → Add to Home Screen). After installation, turn off Wi-Fi or enable Airplane Mode and open the PottoTools icon to use every tool 100% offline.',
+      `Open pottotools.in once while connected to the internet so all ${TOOLS.length} PDF, document, and photo tools are saved on your device. Then click "Install App" (on Chrome/Edge click the install icon in the address bar; on Android tap Chrome menu ⋮ → Install app; on iPhone/iPad tap Safari Share → Add to Home Screen). After that, you can open the app and use it even in Airplane Mode.`,
   },
   {
-    question: 'How does in-browser file processing work?',
+    question: 'Are my files uploaded to any online server?',
     answer:
-      'Our utilities run directly inside your web browser utilizing modern WebAssembly and HTML5 Canvas engines. Instead of uploading your documents to remote cloud servers, the processing logic executes locally on your device processor. This minimizes network data transfer and keeps your files on your machine.',
+      'No. Every tool runs directly inside your own browser on your phone or computer. Your files are never sent to any outside server, so your personal documents stay completely private.',
   },
   {
-    question: 'Do I need an account or subscription to use the tools?',
+    question: 'Do I need an account or payment to use the tools?',
     answer:
-      'No. All tools are freely available without registration, sign-up forms, subscription plans, or hidden paywalls. You can open any tool and start processing immediately.',
+      'No. Every tool is 100% free with no login, no sign-up, and no hidden fees. Just open any tool and start right away.',
   },
   {
-    question: 'Can I compress a file to an exact target size like 100 KB or 200 KB?',
+    question: 'Can I shrink a PDF or photo to an exact size like 100 KB or 200 KB?',
     answer:
-      'Yes. Both the PDF Compressor and Photo Size Compressor allow you to pick standard presets (20KB, 50KB, 100KB, 200KB, 500KB) or type in a custom target byte ceiling. The engine iteratively adjusts stream quality to reach your target. Note that if a file is already heavily compressed, further reduction may be limited by data entropy.',
+      'Yes. Both the PDF Compressor and Photo Size Compressor let you pick quick presets (20KB, 50KB, 100KB, 200KB, 500KB) or type your own target size. The tool automatically adjusts the file to fit under your limit while keeping it clear to read.',
   },
   {
-    question: 'Why does PDF to Word conversion sometimes look different from the original PDF?',
+    question: 'Why does PDF to Word sometimes look slightly different from the original PDF?',
     answer:
-      'Standard PDFs store visual glyph coordinates rather than structured paragraphs and tables. Our converter reconstructs the document structure into an editable Word document. For scanned PDFs (which are pictures of text rather than digital text), our OCR scanner must be used to recognize the characters.',
+      'PDF files are designed for printing and viewing, while Word files are made for editing. Our converter rebuilds the text and layout so you can edit it easily in Word. If your PDF is a scanned photo of paper, use our OCR tool to turn the scanned words into editable text.',
   },
   {
-    question: 'How do I resize a photo or signature for official government application portals?',
+    question: 'How do I resize a photo or signature for exam and government forms?',
     answer:
-      'Government exam and recruitment portals (such as UPSC, SSC, state PSCs, and passport agencies) require specific pixel or millimeter dimensions (e.g. 3.5×4.5 cm or 200×230 px) along with strict file size limits (20KB to 50KB). The Photo & Signature Resizer allows you to set both dimensions and file weight simultaneously.',
+      'Exam portals like UPSC, SSC, and bank exams ask for an exact size (such as 3.5×4.5 cm or 200×230 px) AND a small file size (like 20KB to 50KB). Our Exam Photo & Signature Resizer sets both the dimensions and the KB size together in one step.',
   },
   {
-    question: 'What should I do if a file fails to process or an error appears?',
+    question: 'What should I do if a file does not open or shows an error?',
     answer:
-      'First, verify that the file is not password-protected (unlock it first or enter the password in the security tool). Second, check that the file is not empty or corrupted. Third, for very large files (over 200 MB), ensure your browser has sufficient available RAM by closing background tabs.',
+      'First, check if the PDF has a password — if it does, use our Unlock PDF tool first. Second, make sure the file is not damaged or empty. For very large files (over 200 MB), closing extra browser tabs helps your device run faster.',
   },
   {
-    question: 'Can I use PottoTools on my smartphone or tablet?',
+    question: 'Can I use PottoTools on my phone or tablet?',
     answer:
-      'Yes. The interface is fully responsive and supports touch interactions across mobile browsers including Safari on iOS and Chrome on Android.',
+      'Yes. Every tool works smoothly on Android phones, iPhones, tablets, and computers.',
   },
 ];
 
@@ -64,11 +65,11 @@ export const FaqSection: React.FC = () => {
           <HelpCircle className="w-3.5 h-3.5" />
           <span>Helpful Answers</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
           Frequently Asked Questions
         </h2>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-          Common questions about file processing, format compatibility, and troubleshooting on PottoTools.
+          Quick, simple answers to common questions about using PottoTools.
         </p>
       </div>
 

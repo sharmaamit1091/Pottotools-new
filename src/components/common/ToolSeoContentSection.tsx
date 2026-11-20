@@ -283,12 +283,12 @@ export const ToolSeoContentSection: React.FC<ToolSeoContentSectionProps> = ({
       <section className="bg-slate-900 text-white border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-md">
         <div className="flex items-center gap-2.5 mb-3">
           <ShieldCheck className="w-5 h-5 text-emerald-400" />
-          <h2 className="text-lg font-bold text-white">
-            Client-Side File Processing &amp; Privacy Notice
+          <h2 className="text-lg font-extrabold uppercase tracking-tight text-white">
+            Your Files Stay Private on Your Device
           </h2>
         </div>
         <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          PottoTools executes all file conversion, compression, and image manipulation directly in your device web browser using client-side WebAssembly, HTML5 Canvas, and open-source libraries. Your documents are not transmitted over the network to external application servers. All memory buffers allocated during processing are released upon completion or when you navigate away.
+          PottoTools converts, compresses, and edits your files directly inside your web browser. Your documents are never uploaded to any server or stored online. As soon as you finish or close the page, everything is cleared automatically from your device.
         </p>
       </section>
 
@@ -297,8 +297,8 @@ export const ToolSeoContentSection: React.FC<ToolSeoContentSectionProps> = ({
         <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xs">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
-                Related Free Productivity Tools
+              <h2 className="text-base sm:text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+                Related Free Tools
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Complementary utilities you might also need:

@@ -8,6 +8,10 @@ import {
   generateOrganizedPdf,
   renderPageThumbnail,
   PageOrganizeItem,
+  PageLayoutMode,
+  FitAlignment,
+  isVisuallyLandscape,
+  getOutputOrientation,
 } from '../../services/pdf/pdfPageOrganizerService';
 import * as pdfjsLib from 'pdfjs-dist';
 import {
@@ -18,20 +22,17 @@ import {
   Undo2,
   Download,
   RefreshCw,
-  ZoomIn,
-  ZoomOut,
-  Search,
   CheckCircle2,
   AlertTriangle,
   GripVertical,
   ShieldCheck,
-  Sparkles,
   Layers,
   ArrowRight,
   ArrowLeft,
-  Maximize2,
-  Minimize2,
-  Rotate3D,
+  RectangleVertical,
+  RectangleHorizontal,
+  Eye,
+  X,
 } from 'lucide-react';
 import { RecommendedNextTools } from './RecommendedNextTools';
 import { getStagedFileForTool, clearStagedFileForTool } from '../../services/utils/stagedFileService';
@@ -67,11 +68,16 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
   const [gridSize, setGridSize] = useState<'sm' | 'md' | 'lg'>('md');
   const [jumpToPageInput, setJumpToPageInput] = useState('');
   const [lastDeletedItem, setLastDeletedItem] = useState<{ item: PageOrganizeItem; index: number } | null>(null);
+  const [fitAlignment, setFitAlignment] = useState<FitAlignment>('center');
+
+  // High-resolution Page Preview Modal state
+  const [previewPageId, setPreviewPageId] = useState<string | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   // Drag and Drop state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [dropPosition, setDropPosition] = useState<'before' | 'after' | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfJsDocRef = useRef<any>(null);
@@ -165,15 +171,31 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
       }
 
       setLoadProgress(45);
-      setLoadStatus(`Detected ${numPages} pages. Initializing page grid...`);
+      setLoadStatus(`Detected ${numPages} pages. Checking portrait & landscape pages...`);
 
-      // Initialize page list
+      // Initialize page list and inspect true visual dimensions (respecting built-in /Rotate)
       const initialPages: PageOrganizeItem[] = [];
       for (let i = 0; i < numPages; i++) {
+        let origW = 595.28;
+        let origH = 841.89;
+        try {
+          const pObj = await pdfDoc.getPage(i + 1);
+          const vp = pObj.getViewport({ scale: 1.0 });
+          if (vp.width > 0 && vp.height > 0) {
+            origW = vp.width;
+            origH = vp.height;
+          }
+        } catch {
+          // fallback to standard A4 portrait dimensions
+        }
+
         initialPages.push({
           id: `page-${i}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
           originalIndex: i,
           rotation: 0,
+          layoutMode: 'original',
+          originalWidth: origW,
+          originalHeight: origH,
           isDeleted: false,
         });
       }
@@ -185,7 +207,7 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
 
       for (let p = 1; p <= initialBatch; p++) {
         try {
-          const thumb = await renderPageThumbnail(pdfDoc, p, 150);
+          const thumb = await renderPageThumbnail(pdfDoc, p, 220);
           cacheUpdates[p - 1] = thumb;
           setLoadProgress(45 + Math.round((p / initialBatch) * 45));
           setLoadStatus(`Rendering initial page previews (${p}/${initialBatch})...`);
@@ -279,9 +301,83 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
   };
 
   const handleResetAllRotations = () => {
-    setPages((prev) => prev.map((p) => ({ ...p, rotation: 0 })));
-    triggerToast('info', 'All rotations have been reset to default.');
+    setPages((prev) => prev.map((p) => ({ ...p, rotation: 0, layoutMode: 'original' })));
+    triggerToast('info', 'All rotations and page orientations reset to original.');
   };
+
+  // Portrait / Landscape Fit Conversion Controls (Keeps tables upright & undistorted)
+  const handleToggleLayoutMode = (pageId: string, targetMode: PageLayoutMode) => {
+    setPages((prev) =>
+      prev.map((p) => {
+        if (p.id !== pageId) return p;
+        const nextMode: PageLayoutMode = p.layoutMode === targetMode ? 'original' : targetMode;
+        // If user previously clicked Rotate trying to make a landscape page portrait,
+        // automatically reset 90°/270° rotation when switching to Fit-to-Portrait so the table stays upright.
+        const shouldResetAccidentalRotation =
+          nextMode === 'fit-portrait' &&
+          p.originalWidth > p.originalHeight * 1.02 &&
+          (p.rotation === 90 || p.rotation === 270);
+        return {
+          ...p,
+          layoutMode: nextMode,
+          rotation: shouldResetAccidentalRotation ? 0 : p.rotation,
+        };
+      })
+    );
+  };
+
+  const handleConvertAllLandscapeToPortrait = () => {
+    let convertedCount = 0;
+    setPages((prev) =>
+      prev.map((p) => {
+        const naturallyLandscape = p.originalWidth > p.originalHeight * 1.02;
+        const currentlyLandscape = isVisuallyLandscape(p);
+        if (naturallyLandscape || currentlyLandscape) {
+          convertedCount += 1;
+          return {
+            ...p,
+            layoutMode: 'fit-portrait',
+            rotation: naturallyLandscape ? 0 : p.rotation,
+          };
+        }
+        return p;
+      })
+    );
+    if (convertedCount > 0) {
+      triggerToast(
+        'success',
+        `Converted ${convertedCount} landscape ${convertedCount === 1 ? 'page' : 'pages'} to Portrait — tables kept upright & undistorted!`
+      );
+    } else {
+      triggerToast('info', 'All pages are already in Portrait orientation.');
+    }
+  };
+
+  const handleOpenPreviewModal = async (page: PageOrganizeItem) => {
+    setPreviewPageId(page.id);
+    setPreviewImageUrl(thumbnailCache[page.originalIndex] || null);
+    if (!pdfJsDocRef.current) return;
+    setIsLoadingPreview(true);
+    try {
+      const highRes = await renderPageThumbnail(pdfJsDocRef.current, page.originalIndex + 1, 900);
+      setPreviewImageUrl(highRes);
+    } catch {
+      // keep existing thumbnail if high-res render fails
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  // Computed landscape & converted page counts for smart toolbar
+  const landscapePageCount = pages.filter(
+    (p) => getOutputOrientation(p) === 'landscape'
+  ).length;
+  const convertedPageCount = pages.filter((p) => p.layoutMode !== 'original').length;
+  const hasAnyLandscapeOrConverted =
+    landscapePageCount > 0 ||
+    convertedPageCount > 0 ||
+    pages.some((p) => p.originalWidth > p.originalHeight * 1.02);
+  const activePreviewPage = previewPageId ? pages.find((p) => p.id === previewPageId) || null : null;
 
   // Deletion Controls
   const handleDeletePage = (pageId: string) => {
@@ -463,6 +559,7 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
       const activeList = pages.map((p) => ({
         originalIndex: p.originalIndex,
         rotation: p.rotation,
+        layoutMode: p.layoutMode,
       }));
 
       // Pass activeFile directly so generateOrganizedPdf generates a fresh, non-detached Uint8Array
@@ -472,7 +569,8 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
         (pct, status) => {
           setGenerateProgress(pct);
           setGenerateStatus(status);
-        }
+        },
+        { alignment: fitAlignment }
       );
 
       const baseName = activeFile.name ? activeFile.name.replace(/\.pdf$/i, '') : 'organized';
@@ -516,12 +614,11 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
             <Layers className="w-3.5 h-3.5 text-amber-300" />
             PDF Tools • High-Capacity Organizer
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight">
             PDF Page Organizer
           </h2>
           <p className="text-red-100 text-sm sm:text-base max-w-3xl leading-relaxed">
-            Visually reorder, rotate individual pages, and delete unwanted sheets in large PDF files containing hundreds of scanned pages.
-            Mixed portrait and landscape orientations are preserved with zero image quality loss.
+            Reorder, rotate, delete, or convert landscape table pages into upright Portrait pages without stretching or distorting text. Works on large files up to 500 MB directly on your device.
           </p>
 
           <div className="pt-2 flex flex-wrap gap-2 text-xs font-medium text-red-100">
@@ -690,7 +787,7 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
                   onClick={handleResetAllRotations}
                   className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium cursor-pointer"
                 >
-                  Reset Angles
+                  Reset All
                 </button>
               </div>
 
@@ -732,6 +829,68 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Smart Landscape-to-Portrait Bar for Tables & Mixed Pages */}
+            {hasAnyLandscapeOrConverted && (
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5 text-xs">
+                  <RectangleVertical className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-extrabold uppercase tracking-tight text-emerald-950 dark:text-emerald-200">
+                      {landscapePageCount > 0
+                        ? `${landscapePageCount} Landscape ${landscapePageCount === 1 ? 'Page' : 'Pages'} Detected`
+                        : `${convertedPageCount} ${convertedPageCount === 1 ? 'Page' : 'Pages'} Converted to Portrait`}
+                    </p>
+                    <p className="text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
+                      <strong>Tip for tables:</strong> Rotating turns tables sideways. Click <strong>Fit to Portrait</strong> to convert landscape pages to portrait paper while keeping tables upright, sharp, and completely undistorted.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {convertedPageCount > 0 && (
+                    <div className="inline-flex items-center rounded-lg bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 p-0.5 text-[11px]">
+                      <span className="px-2 text-slate-500 dark:text-slate-400 font-semibold">
+                        Table Position:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setFitAlignment('top')}
+                        className={`px-2 py-1 rounded-md font-bold cursor-pointer transition-colors ${
+                          fitAlignment === 'top'
+                            ? 'bg-emerald-600 text-white'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        Top
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFitAlignment('center')}
+                        className={`px-2 py-1 rounded-md font-bold cursor-pointer transition-colors ${
+                          fitAlignment === 'center'
+                            ? 'bg-emerald-600 text-white'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        Center
+                      </button>
+                    </div>
+                  )}
+
+                  {landscapePageCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleConvertAllLandscapeToPortrait}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold uppercase tracking-tight text-[11px] shadow-xs active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <RectangleVertical className="w-3.5 h-3.5" />
+                      <span>Fit All Landscape → Portrait</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Undo Notification Banner */}
             {lastDeletedItem && (
@@ -852,33 +1011,156 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
                     </div>
                   </div>
 
-                  {/* Thumbnail Preview Area with CSS Rotation */}
-                  <div className="relative aspect-[3/4] bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center p-2 border border-slate-100 dark:border-slate-800/80 mb-3 select-none pointer-events-none">
-                    {thumbnailSrc ? (
-                      <img
-                        draggable={false}
-                        src={thumbnailSrc}
-                        alt={`Page ${index + 1}`}
-                        style={{
-                          transform: `rotate(${page.rotation}deg)`,
-                          transition: 'transform 0.25s ease-out',
-                        }}
-                        className="max-h-full max-w-full object-contain shadow-xs select-none pointer-events-none rounded-sm"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-slate-400 gap-1.5 animate-pulse">
-                        <FileText className="w-6 h-6" />
-                        <span className="text-[10px] font-mono">Loading #{page.originalIndex + 1}...</span>
-                      </div>
-                    )}
+                  {/* Thumbnail Preview Area with True Portrait/Landscape Paper Frame & Non-Clipping Rotation */}
+                  {(() => {
+                    const outOrientation = getOutputOrientation(page);
+                    const isFitPortrait = page.layoutMode === 'fit-portrait';
+                    const isFitLandscape = page.layoutMode === 'fit-landscape';
+                    const isQuarterTurn = page.rotation === 90 || page.rotation === 270;
 
-                    {/* Rotation Angle Badge if rotated */}
-                    {page.rotation !== 0 && (
-                      <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs">
-                        {page.rotation}°
+                    return (
+                      <div className="relative aspect-[3/4] bg-slate-100/80 dark:bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center p-2.5 border border-slate-200/80 dark:border-slate-800/80 mb-3 select-none">
+                        {thumbnailSrc ? (
+                          isFitPortrait ? (
+                            /* WYSIWYG Portrait Paper Sheet showing Landscape table upright & proportional */
+                            <div
+                              className={`h-full aspect-[210/297] max-w-full bg-white rounded-sm shadow-md border border-slate-200 flex px-1.5 py-2 overflow-hidden ${
+                                fitAlignment === 'top' ? 'items-start justify-center' : 'items-center justify-center'
+                              }`}
+                            >
+                              <img
+                                draggable={false}
+                                src={thumbnailSrc}
+                                alt={`Page ${index + 1} fitted to Portrait`}
+                                style={{
+                                  transform: `rotate(${page.rotation}deg)`,
+                                  transition: 'transform 0.25s ease-out',
+                                }}
+                                className="max-h-full max-w-full object-contain select-none pointer-events-none"
+                              />
+                            </div>
+                          ) : isFitLandscape ? (
+                            /* WYSIWYG Landscape Paper Sheet */
+                            <div className="w-full aspect-[297/210] max-h-full bg-white rounded-sm shadow-md border border-slate-200 flex items-center justify-center p-1.5 overflow-hidden">
+                              <img
+                                draggable={false}
+                                src={thumbnailSrc}
+                                alt={`Page ${index + 1} fitted to Landscape`}
+                                style={{
+                                  transform: `rotate(${page.rotation}deg)`,
+                                  transition: 'transform 0.25s ease-out',
+                                }}
+                                className="max-h-full max-w-full object-contain select-none pointer-events-none"
+                              />
+                            </div>
+                          ) : (
+                            <img
+                              draggable={false}
+                              src={thumbnailSrc}
+                              alt={`Page ${index + 1}`}
+                              style={{
+                                transform: isQuarterTurn
+                                  ? `rotate(${page.rotation}deg) scale(0.74)`
+                                  : `rotate(${page.rotation}deg)`,
+                                transition: 'transform 0.25s ease-out',
+                              }}
+                              className="max-h-full max-w-full object-contain shadow-xs select-none pointer-events-none rounded-sm bg-white"
+                            />
+                          )
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-slate-400 gap-1.5 animate-pulse">
+                            <FileText className="w-6 h-6" />
+                            <span className="text-[10px] font-mono">Loading #{page.originalIndex + 1}...</span>
+                          </div>
+                        )}
+
+                        {/* Orientation Badge */}
+                        {isFitPortrait ? (
+                          <div className="absolute top-2 left-2 bg-emerald-600 text-white text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md shadow-xs">
+                            Portrait Fit
+                          </div>
+                        ) : isFitLandscape ? (
+                          <div className="absolute top-2 left-2 bg-sky-600 text-white text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md shadow-xs">
+                            Landscape Fit
+                          </div>
+                        ) : outOrientation === 'landscape' ? (
+                          <div className="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md shadow-xs">
+                            Landscape
+                          </div>
+                        ) : null}
+
+                        {/* Rotation Angle Badge if rotated */}
+                        {page.rotation !== 0 && (
+                          <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs">
+                            {page.rotation}°
+                          </div>
+                        )}
+
+                        {/* Quick Full-Page Inspect Preview Button */}
+                        {thumbnailSrc && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenPreviewModal(page);
+                            }}
+                            title="Preview this page up close"
+                            className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-slate-900/75 hover:bg-slate-900 text-white shadow-sm opacity-85 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
+
+                  {/* Individual Page Orientation Conversion Toggle (Upright, Zero Distortion) */}
+                  {(() => {
+                    const naturallyLandscape = page.originalWidth > page.originalHeight * 1.02;
+                    const currentlyLandscape = isVisuallyLandscape(page);
+                    const isFitPortrait = page.layoutMode === 'fit-portrait';
+                    const isFitLandscape = page.layoutMode === 'fit-landscape';
+
+                    if (isFitPortrait || naturallyLandscape || currentlyLandscape) {
+                      return (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleLayoutMode(page.id, 'fit-portrait');
+                          }}
+                          title="Convert this landscape page to Portrait while keeping tables upright and undistorted"
+                          className={`w-full mb-2 py-1.5 px-2 rounded-lg text-[11px] font-extrabold uppercase tracking-tight flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                            isFitPortrait
+                              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                              : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                          }`}
+                        >
+                          <RectangleVertical className="w-3.5 h-3.5 shrink-0" />
+                          <span>{isFitPortrait ? 'Portrait Fit ✓' : 'Fit to Portrait'}</span>
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleLayoutMode(page.id, 'fit-landscape');
+                        }}
+                        title="Convert this portrait page to Landscape while keeping content upright"
+                        className={`w-full mb-2 py-1 px-2 rounded-lg text-[10px] font-bold uppercase tracking-tight flex items-center justify-center gap-1 transition-colors cursor-pointer ${
+                          isFitLandscape
+                            ? 'bg-sky-600 text-white hover:bg-sky-700'
+                            : 'bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        <RectangleHorizontal className="w-3 h-3 shrink-0" />
+                        <span>{isFitLandscape ? 'Landscape Fit ✓' : 'Fit to Landscape'}</span>
+                      </button>
+                    );
+                  })()}
 
                   {/* Individual Page Action Buttons */}
                   <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
@@ -887,7 +1169,7 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
                       <button
                         type="button"
                         onClick={() => handleRotatePage(page.id, -90)}
-                        title="Rotate 90° Counter-Clockwise"
+                        title="Rotate content 90° Counter-Clockwise"
                         className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
@@ -896,17 +1178,23 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
                       <button
                         type="button"
                         onClick={() => handleRotatePage(page.id, 90)}
-                        title="Rotate 90° Clockwise"
+                        title="Rotate content 90° Clockwise"
                         className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         <RotateCw className="w-3.5 h-3.5" />
                       </button>
 
-                      {page.rotation !== 0 && (
+                      {(page.rotation !== 0 || page.layoutMode !== 'original') && (
                         <button
                           type="button"
-                          onClick={() => handleResetPageRotation(page.id)}
-                          title="Reset rotation to 0°"
+                          onClick={() => {
+                            setPages((prev) =>
+                              prev.map((p) =>
+                                p.id === page.id ? { ...p, rotation: 0, layoutMode: 'original' } : p
+                              )
+                            );
+                          }}
+                          title="Reset page to original orientation"
                           className="text-[10px] text-red-600 dark:text-red-400 font-bold px-1 hover:underline cursor-pointer"
                         >
                           Reset
@@ -990,37 +1278,152 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
         />
       )}
 
+      {/* High-Resolution Page Preview Modal */}
+      {activePreviewPage && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setPreviewPageId(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+                  Page #{pages.findIndex((p) => p.id === activePreviewPage.id) + 1} Output Preview
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {activePreviewPage.layoutMode === 'fit-portrait'
+                    ? 'Portrait paper — table kept upright & proportional (zero distortion)'
+                    : activePreviewPage.layoutMode === 'fit-landscape'
+                    ? 'Landscape paper — content kept upright & proportional'
+                    : `Original paper size${activePreviewPage.rotation ? ` • Rotated ${activePreviewPage.rotation}°` : ''}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewPageId(null)}
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-slate-100 dark:bg-slate-950 p-6 flex items-center justify-center min-h-[360px]">
+              {previewImageUrl ? (
+                activePreviewPage.layoutMode === 'fit-portrait' ? (
+                  <div
+                    className={`w-full max-w-[440px] aspect-[210/297] bg-white rounded-md shadow-xl border border-slate-200 flex p-4 overflow-hidden ${
+                      fitAlignment === 'top' ? 'items-start justify-center' : 'items-center justify-center'
+                    }`}
+                  >
+                    <img
+                      src={previewImageUrl}
+                      alt="Full portrait preview"
+                      style={{ transform: `rotate(${activePreviewPage.rotation}deg)` }}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                ) : activePreviewPage.layoutMode === 'fit-landscape' ? (
+                  <div className="w-full max-w-[620px] aspect-[297/210] bg-white rounded-md shadow-xl border border-slate-200 flex items-center justify-center p-4 overflow-hidden">
+                    <img
+                      src={previewImageUrl}
+                      alt="Full landscape preview"
+                      style={{ transform: `rotate(${activePreviewPage.rotation}deg)` }}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={previewImageUrl}
+                    alt="Full page preview"
+                    style={{ transform: `rotate(${activePreviewPage.rotation}deg)` }}
+                    className="max-w-full max-h-[68vh] object-contain bg-white rounded-md shadow-xl"
+                  />
+                )
+              ) : null}
+              {isLoadingPreview && (
+                <span className="absolute bottom-6 bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full">
+                  Rendering crisp preview...
+                </span>
+              )}
+            </div>
+
+            <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-900">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleToggleLayoutMode(activePreviewPage.id, 'fit-portrait')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-tight flex items-center gap-1.5 cursor-pointer ${
+                    activePreviewPage.layoutMode === 'fit-portrait'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                  }`}
+                >
+                  <RectangleVertical className="w-3.5 h-3.5" />
+                  <span>
+                    {activePreviewPage.layoutMode === 'fit-portrait' ? 'Portrait Fit ✓' : 'Fit to Portrait'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRotatePage(activePreviewPage.id, 90)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCw className="w-3.5 h-3.5" />
+                  <span>Rotate 90°</span>
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewPageId(null)}
+                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Information & FAQ Section */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
         <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h3 className="text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            Designed for 500+ Page Documents & Scans
+            Built for Mixed Portrait &amp; Landscape PDFs
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            PottoTools PDF Page Organizer runs locally in your web browser. You can reorder, rotate mixed scans, and remove unwanted blank pages without uploading sensitive files to cloud servers.
+            PottoTools PDF Page Organizer runs directly on your device with zero uploads. Reorder pages, fix sideways scans, or convert landscape tables to clean portrait pages in one click.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
-            <span className="font-bold text-slate-900 dark:text-white block">Lossless Reordering</span>
+            <span className="font-extrabold uppercase tracking-tight text-slate-900 dark:text-white block">
+              Landscape Tables → Portrait
+            </span>
             <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
-              Internal PDF streams are re-indexed directly without re-rasterizing, preserving crisp scans, embedded photos, and vector text.
+              Use <strong>Fit to Portrait</strong> to place wide landscape tables upright on matching portrait pages. Proportions stay locked so tables never stretch or distort, and all text stays sharp and searchable.
             </p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
-            <span className="font-bold text-slate-900 dark:text-white block">Mixed Orientations</span>
+            <span className="font-extrabold uppercase tracking-tight text-slate-900 dark:text-white block">
+              Rotate vs. Fit to Portrait
+            </span>
             <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
-              Rotate individual landscape maps or sideways receipts independently without affecting the rest of the portrait document.
+              Use <strong>Rotate 90°</strong> when a page was scanned sideways. Use <strong>Fit to Portrait</strong> when a landscape table already reads upright and you want it on a vertical portrait page.
             </p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
-            <span className="font-bold text-slate-900 dark:text-white block">Up to 500 MB Capacity</span>
+            <span className="font-extrabold uppercase tracking-tight text-slate-900 dark:text-white block">
+              Up to 500 MB Private
+            </span>
             <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
-              Built with progressive rendering and low-memory canvas thumbs, handling high-resolution books and multipage archives smoothly.
+              Handles large reports and hundreds of pages smoothly on your phone or computer—your documents never leave your device.
             </p>
           </div>
         </div>

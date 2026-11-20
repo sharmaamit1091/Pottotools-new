@@ -704,7 +704,7 @@ export const ProtectPdfVisual: React.FC = () => (
   <VisualStage>
     <div className="flex items-center justify-center gap-2.5">
       <DocIcon type="pdf" label="PDF" sublabel="Open File" variant="contract" />
-      <ActionArrow label="AES-256" accent="red" />
+      <ActionArrow label="LOCK" accent="red" />
       <div className="relative">
         <DocIcon
           type="pdf"

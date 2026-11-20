@@ -16,7 +16,7 @@ import {
   Search,
   WifiOff,
 } from 'lucide-react';
-import { ToolDefinition, getToolBySlug } from '../../config/toolsRegistry';
+import { TOOLS, ToolDefinition, getToolBySlug } from '../../config/toolsRegistry';
 
 interface SearchContentSectionProps {
   onSelectTool: (tool: ToolDefinition) => void;
@@ -59,7 +59,7 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
       steps: [
         'Open the PDF to Editable Word converter on PottoTools.',
         'Upload your PDF file without giving any email address or creating an account.',
-        'The WebAssembly engine analyzes the layout structure, fonts, margins, and embedded images.',
+        'The tool reads the page layout, fonts, margins, and images directly on your device.',
         'If the document is a paper scan, built-in Optical Character Recognition (OCR) reads the characters.',
         'Download the converted .docx file ready for Microsoft Word, Google Docs, or LibreOffice.',
       ],
@@ -110,13 +110,13 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
       <div className="text-center max-w-3xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">
           <Award className="w-3.5 h-3.5" />
-          <span>Client-Side PDF, OCR &amp; Photo Studio</span>
+          <span>100% Free PDF, Word &amp; Photo Tools</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-          PottoTools: Client-Side PDF, Document Conversion &amp; Photo Resizing Suite
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
+          PottoTools: Free PDF, Document &amp; Photo Tools
         </h2>
         <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-          Compress PDFs to 100KB, convert PDF to Word, resize exam photos (px/cm/mm &amp; 20KB–50KB), and redact sensitive IDs directly in your browser—free to use with zero cloud file uploads or registration.
+          Reduce PDF size to 100KB, convert PDF to Word, resize exam photos (20KB–50KB), and hide private ID details directly on your device—100% free with no uploads or sign-up.
         </p>
       </div>
 
@@ -128,11 +128,11 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
             <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 flex items-center justify-center mb-4">
               <Layers className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-              Free In-Browser PDF Tools
+            <h3 className="text-lg sm:text-xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+              Free PDF Tools
             </h3>
             <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Handle everyday PDF workflows locally in browser RAM. Reduce file size to 100KB, 200KB, or 500KB for portal uploads, merge or split pages, visually reorder and rotate large documents up to 500 MB, strip metadata, sign PDFs, and permanently redact Aadhaar or bank details offline.
+              Handle everyday PDF tasks safely on your own device. Shrink PDF size to 100KB, 200KB, or 500KB for online forms, join or split pages, reorder and rotate files up to 500 MB, lock or unlock passwords, sign PDFs, and hide Aadhaar or bank details offline.
             </p>
             <div className="mt-4 space-y-2">
               <a
@@ -210,11 +210,11 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 flex items-center justify-center mb-4">
               <ImageIcon className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-              Precision Image Tools &amp; Photo Studio
+            <h3 className="text-lg sm:text-xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+              Photo &amp; Image Tools
             </h3>
             <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Comprehensive image editing and resizing. Resize photos by pixels (px), centimeters (cm), millimeters (mm), or inches (in), compress photos to strict 20KB–50KB limits, format passport photos (35x45mm / 2x2 in), enhance blurry pictures in HD, and convert between JPG, PNG, and WebP.
+              Easy photo editing and resizing. Resize photos in pixels, cm, mm, or inches, reduce photo size to 20KB–50KB for exam forms, crop passport photos (35x45mm / 2x2 in), make blurry pictures clearer, and convert between JPG, PNG, and WebP.
             </p>
             <div className="mt-4 space-y-2">
               <a
@@ -292,11 +292,11 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
             <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 flex items-center justify-center mb-4">
               <FileText className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-              Document Conversion &amp; In-Browser OCR
+            <h3 className="text-lg sm:text-xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+              Document Converters &amp; Text Scanner
             </h3>
             <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Convert between formats with complete layout fidelity. Convert PDF into fully editable Word (.docx) documents with OCR fallback, convert Word to PDF, spreadsheets (CSV &lt;-&gt; XLSX), presentations (PPTX to PDF), and extract copyable text from paper scans in English and Hindi.
+              Convert files cleanly in seconds. Turn PDFs into editable Word (.docx) files, convert Word to PDF, switch between Excel and CSV, turn PowerPoint slides into PDF, and copy text from scanned papers in English and Hindi.
             </p>
             <div className="mt-4 space-y-2">
               <a
@@ -383,11 +383,11 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
                 <span>Works 100% Offline (True PWA)</span>
               </div>
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-              Client-Side Browser Architecture vs. Cloud Converters
+            <h3 className="text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+              PottoTools vs. Typical Online Converters
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              See how our local-first architecture delivers <strong>offline capability (works without internet once cached)</strong>, in-browser privacy, and unlimited free conversions without remote file uploads.
+              See why processing files on your own device gives you <strong>offline access</strong>, complete privacy, and unlimited free conversions without uploading anything.
             </p>
           </div>
         </div>
@@ -457,7 +457,7 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
               <tr>
                 <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">Processing Speed</td>
                 <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400 bg-blue-50/50 dark:bg-blue-950/30">
-                  Instant WebAssembly execution
+                  Instant processing on your device
                 </td>
                 <td className="py-3.5 px-4 text-slate-500">Slow uploads and server queue waiting</td>
               </tr>
@@ -594,7 +594,7 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
             }}
             className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
           >
-            View All 43+ Tools &rarr;
+            View All {TOOLS.length} Tools &rarr;
           </a>
         </div>
 

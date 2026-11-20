@@ -26,7 +26,7 @@ export const OfflinePwaHighlightSection: React.FC = () => {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono font-bold tracking-wider text-emerald-400">
           <span className="inline-flex items-center gap-1.5">
             <WifiOff className="w-3.5 h-3.5" aria-hidden="true" />
-            100% Offline PWA
+            100% Offline Ready
           </span>
           <span className="text-slate-600" aria-hidden="true">·</span>
           <span>Works Without Internet</span>
@@ -40,23 +40,23 @@ export const OfflinePwaHighlightSection: React.FC = () => {
             <div className="text-5xl sm:text-6xl font-black tracking-tight leading-none text-transparent bg-clip-text bg-linear-to-br from-emerald-300 via-teal-300 to-sky-400 font-mono tabular-nums">
               100%
             </div>
-            <div className="mt-1.5 text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+            <div className="mt-1.5 text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-white">
               Offline Ready
             </div>
             <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-              Install once to run PDF, photo, and ID redactor tools offline without internet (OCR downloads language data on first run before caching).
+              Install once to use PDF, photo, and ID privacy tools even without internet.
             </p>
           </div>
 
           <div className="lg:col-span-8 space-y-4">
             <h2
               id="offline-feature-heading"
-              className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight text-balance"
+              className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-white leading-tight text-balance"
             >
-              100% Offline PDF, Redactor &amp; Image App: Download, Install &amp; Use Anywhere
+              Use PottoTools Offline: Install Once &amp; Edit Anywhere
             </h2>
             <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
-              Other online converters break without Wi-Fi and upload private documents to remote servers. Install PottoTools once to compress PDFs, resize photos, and permanently redact Aadhaar, bank &amp; salary details—even in Airplane Mode.
+              Other websites stop working when Wi-Fi disconnects and upload your files to outside servers. Install PottoTools once to shrink PDFs, resize photos, and hide private Aadhaar, bank, or salary details — even in Airplane Mode.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-1">

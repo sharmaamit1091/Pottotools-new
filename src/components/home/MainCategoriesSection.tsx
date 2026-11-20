@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layers, Image as ImageIcon, FileText, ArrowRight, ShieldCheck, Check, Sparkles } from 'lucide-react';
-import { ToolDefinition } from '../../config/toolsRegistry';
+import { TOOLS } from '../../config/toolsRegistry';
 
 interface MainCategoriesSectionProps {
   onSelectCategoryPage: (categoryId: string) => void;
@@ -76,13 +76,13 @@ export const MainCategoriesSection: React.FC<MainCategoriesSectionProps> = ({
       <div className="text-center max-w-2xl mx-auto mb-8 space-y-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
           <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-          <span>Core Utility Categories</span>
+          <span>Main Categories</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
           Explore Our Main Categories
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Choose a category below to access specialized tools tailored for your document and media workflows.
+          Pick a category below to quickly find the right PDF, photo, or document tool.
         </p>
       </div>
 
@@ -106,7 +106,7 @@ export const MainCategoriesSection: React.FC<MainCategoriesSectionProps> = ({
                   </span>
                 </div>
 
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                <h3 className="text-xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
                   {cat.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
@@ -115,7 +115,7 @@ export const MainCategoriesSection: React.FC<MainCategoriesSectionProps> = ({
 
                 <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Included Capabilities:
+                    What You Can Do:
                   </span>
                   <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
                     {cat.features.map((feature, idx) => (
@@ -159,7 +159,7 @@ export const MainCategoriesSection: React.FC<MainCategoriesSectionProps> = ({
           }}
           className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline cursor-pointer"
         >
-          <span>Looking for a specific utility? View all tools in the Directory</span>
+          <span>Looking for something else? View all {TOOLS.length} tools</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </a>
       </div>

@@ -17,9 +17,25 @@ export interface AdsterraNativeBannerConfig {
   scriptSrc: string;
 }
 
+export interface AdsterraBannerUnitConfig {
+  enabled: boolean;
+  key: string;
+  format: 'iframe';
+  width: number;
+  height: number;
+  scriptSrc: string;
+}
+
+export interface AdsterraBannersConfig {
+  leaderboard728x90: AdsterraBannerUnitConfig;
+  mobile320x50: AdsterraBannerUnitConfig;
+  rectangle300x250: AdsterraBannerUnitConfig;
+}
+
 export interface AdsterraConfig {
   enabled: boolean;
   nativeBanner: AdsterraNativeBannerConfig;
+  banners: AdsterraBannersConfig;
 }
 
 export interface MonetizationConfig {
@@ -34,7 +50,7 @@ export interface MonetizationConfig {
   testMode: boolean;
   /** Set to true while waiting for Google AdSense site approval. Prevents fake manual slot errors and empty ad boxes. */
   approvalReviewMode: boolean;
-  /** Adsterra native banner configuration running cleanly alongside Google AdSense */
+  /** Adsterra native & display banner configuration running cleanly alongside Google AdSense */
   adsterra: AdsterraConfig;
   /** Placement settings by zone */
   placements: Record<string, AdPlacementConfig>;
@@ -82,16 +98,40 @@ export const MONETIZATION_CONFIG: MonetizationConfig = {
   provider: 'adsense',
   adsenseClientId: DEFAULT_ADSENSE_CLIENT_ID,
   testMode: false,
-  // Google Auto Ads script in <head> automatically places and optimizes ads without manual AdSlot containers
+  // Google Auto Ads script in <head> runs alongside Adsterra Native & Display Banners
   approvalReviewMode: false,
-  // Temporarily disabled while Google AdSense reviews the site to keep inventory single-network and clean.
-  // Re-enable only after Google AdSense approves pottotools.in if dual-network testing is desired.
   adsterra: {
-    enabled: false,
+    enabled: true,
     nativeBanner: {
-      enabled: false,
+      enabled: true,
       containerId: 'container-6a9207452e2cae1a847c1817b0ebb799',
       scriptSrc: 'https://bauval.org/21/6a9207452e2cae1a847c1817b0ebb799',
+    },
+    banners: {
+      leaderboard728x90: {
+        enabled: true,
+        key: '18652e79ff1e4c30fb4cf81d9363f059',
+        format: 'iframe',
+        width: 728,
+        height: 90,
+        scriptSrc: 'https://bauval.org/22/18652e79ff1e4c30fb4cf81d9363f059',
+      },
+      mobile320x50: {
+        enabled: true,
+        key: '57b48f7c1b6828dd739beb384ef58939',
+        format: 'iframe',
+        width: 320,
+        height: 50,
+        scriptSrc: 'https://bauval.org/22/57b48f7c1b6828dd739beb384ef58939',
+      },
+      rectangle300x250: {
+        enabled: true,
+        key: '0ca5684bb216af15a929b06e812b5597',
+        format: 'iframe',
+        width: 300,
+        height: 250,
+        scriptSrc: 'https://bauval.org/22/0ca5684bb216af15a929b06e812b5597',
+      },
     },
   },
   placements: {

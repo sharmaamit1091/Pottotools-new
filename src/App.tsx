@@ -7,6 +7,7 @@ import { Breadcrumbs } from './components/common/Breadcrumbs';
 import { AdPlaceholder } from './components/common/AdPlaceholder';
 import { AdSlot } from './components/common/AdSlot';
 import { AdsterraNativeBanner } from './components/common/AdsterraNativeBanner';
+import { AdsterraBanner } from './components/common/AdsterraBanner';
 import { MONETIZATION_CONFIG } from './config/monetization';
 
 // Home sections
@@ -604,12 +605,15 @@ export default function App() {
             {/* Problem-Solver Tasks & Direct Goal Shortcuts */}
             <CommonTasksSection onSelectTool={handleSelectTool} />
 
-            {/* Ad Placement: Mid-Page Content Leaderboard */}
+            {/* Ad Placement: Mid-Page Content Leaderboard (728x90 Desktop / 320x50 Mobile) */}
             {!MONETIZATION_CONFIG.autoAdsOnly && (
               <div className="w-full max-w-5xl mx-auto my-4 px-2">
                 <AdSlot placement="home-mid-tools" format="horizontal" minHeight={90} />
               </div>
             )}
+            <div className="w-full max-w-5xl mx-auto my-4 px-2">
+              <AdsterraBanner variant="responsive-leaderboard" placement="home-mid-tools" />
+            </div>
 
             {/* Why Choose PottoTools? Section */}
             <WhyChooseSection />
@@ -672,12 +676,19 @@ export default function App() {
               ]}
             />
 
-            {/* Tool Top Banner Placement */}
+            {/* Tool Top Banner Placement (728x90 Desktop / 320x50 Mobile) */}
             {!MONETIZATION_CONFIG.autoAdsOnly && (
               <div className="mb-6">
                 <AdSlot placement="tool-top-banner" format="horizontal" minHeight={90} />
               </div>
             )}
+            <div className="mb-6">
+              <AdsterraBanner
+                key={`tool-top-${activeTool.slug}`}
+                variant="responsive-leaderboard"
+                placement="tool-top-banner"
+              />
+            </div>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
               <div className="flex-1 w-full min-w-0">
@@ -688,12 +699,19 @@ export default function App() {
                   {renderActiveToolComponent(activeTool)}
                 </React.Suspense>
 
-                {/* Below Tool Working Area Ad Placement */}
+                {/* Below Tool Working Area Ad Placement (300x250 High-RPM Rectangle) */}
                 {!MONETIZATION_CONFIG.autoAdsOnly && (
                   <div className="mt-8">
                     <AdSlot placement="tool-working-bottom" format="horizontal" minHeight={90} />
                   </div>
                 )}
+                <div className="mt-8">
+                  <AdsterraBanner
+                    key={`tool-rect-${activeTool.slug}`}
+                    variant="rectangle"
+                    placement="tool-working-bottom"
+                  />
+                </div>
 
                 {/* Pre-FAQ Section Ad Placement */}
                 {!MONETIZATION_CONFIG.autoAdsOnly && (

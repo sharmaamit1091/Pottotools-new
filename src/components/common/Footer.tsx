@@ -4,7 +4,7 @@ import { PottoLogo } from './PottoLogo';
 import { ShieldCheck, Heart, Lock, Zap, Mail, ArrowUpRight, Copy, Check, ExternalLink, WifiOff } from 'lucide-react';
 import { AdSlot } from './AdSlot';
 import { MONETIZATION_CONFIG } from '../../config/monetization';
-import { ToolDefinition, getToolBySlug } from '../../config/toolsRegistry';
+import { TOOLS, ToolDefinition, getToolBySlug } from '../../config/toolsRegistry';
 
 interface FooterProps {
   onNavigate: (view: string) => void;
@@ -203,7 +203,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                   onClick={(e) => handleNavClick('protect-pdf', e)}
                   className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Protect PDF (AES-256 Lock)
+                  Protect PDF (Add Password)
                 </a>
               </li>
               <li>
@@ -489,7 +489,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                   onClick={(e) => handleNavClick('directory', e)}
                   className="text-slate-400 hover:text-white transition-colors text-left font-medium text-indigo-400 hover:text-indigo-300 block"
                 >
-                  All Tools (43+)
+                  All Tools ({TOOLS.length})
                 </a>
               </li>
             </ul>
@@ -501,7 +501,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
           <div className="flex items-center gap-2">
             <span>© {new Date().getFullYear()} {SITE_CONFIG.name}. All rights reserved.</span>
             <span>·</span>
-            <span className="text-slate-400">Pure In-Browser WebAssembly Engine</span>
+            <span className="text-slate-400">100% Private — Files Stay on Your Device</span>
           </div>
 
           <div className="flex items-center gap-1.5 text-slate-400">

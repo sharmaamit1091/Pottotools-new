@@ -43,13 +43,13 @@ const GUIDES: GuideItem[] = [
     id: 'browser-privacy',
     category: 'Privacy & Security',
     readTime: '2 min read',
-    title: 'How In-Browser Client-Side Processing Protects Confidential Documents',
-    summary: 'Unlike legacy cloud converters that upload your PDFs to remote third-party servers, PottoTools processes data locally.',
+    title: 'How PottoTools Keeps Your Private Documents Safe',
+    summary: 'Unlike other websites that upload your PDFs to external servers, PottoTools handles everything right on your own device.',
     steps: [
-      'Documents are read into your browser memory (RAM) via the HTML5 File API and WebAssembly.',
-      'Compression, page merging, rotation, and conversions happen on your device CPU/GPU.',
-      'No files are transmitted to an external server or cloud bucket.',
-      'Closing the browser tab immediately frees the memory buffer.',
+      'Your file opens directly inside your web browser—nothing is sent over the internet.',
+      'Compressing, merging, rotating, and converting all happen locally on your phone or computer.',
+      'No copy of your file is ever uploaded or saved online.',
+      'Closing the tab clears everything immediately.',
     ],
     proTip: 'You can even test this yourself by turning on Airplane Mode or disabling Wi-Fi after opening the page—the tools continue working offline!',
   },
@@ -67,8 +67,8 @@ export const QuickGuidesSection: React.FC = () => {
             <BookOpen className="w-3.5 h-3.5" />
             <span>Practical Document Guides</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Helpful Document Guides & Best Practices
+          <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+            Helpful Document Guides &amp; Tips
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-xl">
             Quick answers, portal requirements, and actionable tips for common file preparation tasks.

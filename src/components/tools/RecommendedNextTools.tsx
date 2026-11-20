@@ -104,18 +104,18 @@ const RECOMMENDATION_MAP: Record<string, { slug: string; reason: string }[]> = {
     { slug: 'compress-pdf', reason: 'Compress your unlocked PDF for email or portal upload' },
     { slug: 'merge-pdf', reason: 'Combine your unlocked PDF with other documents' },
     { slug: 'pdf-id-redactor', reason: 'Mask Aadhaar, PAN, or bank numbers before sharing' },
-    { slug: 'protect-pdf', reason: 'Re-lock your PDF with a new AES-256 password' },
+    { slug: 'protect-pdf', reason: 'Lock your PDF again with a new password' },
   ],
   'pdf-id-redactor': [
-    { slug: 'protect-pdf', reason: 'Add a password lock to your freshly redacted document' },
-    { slug: 'compress-pdf', reason: 'Shrink your flattened PDF to fit portal KB limits' },
+    { slug: 'protect-pdf', reason: 'Add a password lock to your freshly hidden document' },
+    { slug: 'compress-pdf', reason: 'Shrink your PDF to fit portal KB limits' },
     { slug: 'watermark-pdf', reason: 'Stamp "For KYC Use Only" across your masked copy' },
   ],
   'remove-scan-watermark': [
     { slug: 'compress-pdf', reason: 'Reduce your clean scanned PDF size for email or portal uploads' },
-    { slug: 'searchable-pdf-text-finder', reason: 'Make your cleaned scanned PDF searchable with Ctrl+F OCR' },
+    { slug: 'searchable-pdf-text-finder', reason: 'Make your cleaned scanned PDF searchable with Ctrl+F' },
     { slug: 'pdf-page-organizer', reason: 'Reorder, rotate, or tidy pages in your cleaned document' },
-    { slug: 'protect-pdf', reason: 'Lock your clean document with AES-256 password encryption' },
+    { slug: 'protect-pdf', reason: 'Lock your clean document with a strong password' },
   ],
   'sign-pdf': [
     { slug: 'protect-pdf', reason: 'Password-lock your freshly signed document' },

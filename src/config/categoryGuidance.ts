@@ -35,7 +35,7 @@ export const CATEGORY_GUIDANCE_LIST: CategoryGuidance[] = [
       },
       {
         q: 'Are my PDF documents uploaded to a remote server?',
-        a: 'No. All PDF operations execute locally inside your browser memory using WebAssembly and HTML5 Canvas with zero server file uploads.',
+        a: 'No. All PDF tools run directly inside your web browser on your own device—nothing is uploaded to any server.',
       },
       {
         q: 'How many PDF pages can I reorder or organize at once?',
@@ -246,10 +246,10 @@ export const CATEGORY_GUIDANCE_LIST: CategoryGuidance[] = [
     slug: 'convert-images',
     metaTitle: 'Convert Image Formats Online – JPG, PNG, WebP, BMP & Image-PDF | PottoTools',
     metaDesc:
-      'Transcode raster formats losslessly or with custom quality sliders: convert JPG to transparent PNG, PNG to compact JPG, WebP/BMP batches, images to multi-page PDF, and PDF pages to JPG/PNG.',
-    h1: 'Raster Image Format Conversion Tools',
+      'Convert image formats cleanly with easy quality controls: change JPG to PNG, PNG to smaller JPG, WebP/BMP batches, combine photos into a PDF, or save PDF pages as JPG/PNG.',
+    h1: 'Image Format Conversion Tools',
     description:
-      'Convert pixels reliably between JPG, PNG, WebP, BMP, and PDF containers directly on an HTML5 Canvas—handling alpha transparency compositing, lossless PNG exports, lossy quality sliders, and multi-page PDF-to-image extraction locally.',
+      'Convert images smoothly between JPG, PNG, WebP, BMP, and PDF directly on your device—with clean quality controls, transparent background support, and fast PDF-to-photo conversion.',
     workflowTitle: 'Understanding Lossy vs Lossless Image Formats Before Converting',
     workflowSummary:
       'Choosing the wrong output format can inflate file size 5× or strip transparent backgrounds unexpectedly:',
@@ -276,10 +276,10 @@ export const CATEGORY_GUIDANCE_LIST: CategoryGuidance[] = [
       'Run in-browser Tesseract OCR on scanned PDFs and photos (English & Hindi), search inside scanned documents, copy editable text, or export DOCX & searchable PDFs locally.',
     h1: 'Free Online OCR & Scanned PDF Tools',
     description:
-      'Convert flat paper scans, receipts, and photographed documents into editable, searchable text directly in your browser using WebAssembly Tesseract OCR—no cloud document uploads required.',
-    workflowTitle: 'Getting Clean OCR Accuracy on Paper Scans & Bilingual Text',
+      'Turn scanned papers, receipts, and document photos into copyable, searchable text right inside your browser—no file uploads required.',
+    workflowTitle: 'Tips for Better Text Reading on Scans',
     workflowSummary:
-      'Optical character recognition depends heavily on scan contrast and script selection before running WebAssembly analysis:',
+      'Clear scan photos and picking the right language give the most accurate text results:',
     workflowBullets: [
       'Select the matching language first: Pick English or Hindi before launching OCR; your first run downloads ~10–25 MB of language traineddata from CDN and caches it in-browser for offline reuse.',
       'Search & export searchable PDFs: Use Find Anything in Scanned PDFs to locate names, dates, and reference numbers inside scans—note that Hindi text searches & copies inside the app, while exported Searchable PDF invisible layers encode Latin/ASCII characters.',
@@ -301,25 +301,25 @@ export const CATEGORY_GUIDANCE_LIST: CategoryGuidance[] = [
     metaTitle: 'PDF Privacy, Redaction, Signing & Metadata Sanitizer | PottoTools',
     metaDesc:
       'Protect confidential PDFs locally in your browser: permanently blackout or pixel-blur Aadhaar/bank details offline, stamp visual signatures, and inspect or wipe hidden PDF metadata.',
-    h1: 'PDF Privacy, Redaction & Signing Tools',
+    h1: 'PDF Password, Privacy & Signing Tools',
     description:
-      'Safeguard personal and financial PDFs locally in browser memory before sharing—permanently flatten visual redactions over sensitive Aadhaar or bank numbers, stamp drawn/uploaded signatures, and inspect or scrub hidden author and producer metadata.',
-    workflowTitle: 'Practical Document Privacy Checklist Before Sharing Files',
+      'Keep your personal and financial PDFs safe before sharing—lock or unlock PDF passwords, hide sensitive Aadhaar or bank numbers permanently, add your signature, and clean hidden file details directly on your device.',
+    workflowTitle: 'Simple Privacy Checklist Before Sharing PDFs',
     workflowSummary:
-      'Follow this local verification order so hidden data or tracking tags never leak when emailing sensitive PDFs:',
+      'Follow these quick steps so private numbers or hidden file info never leak when sharing documents:',
     workflowBullets: [
-      'Permanent visual blackout: Draw Blackout, Whiteout, or Pixel Blur masks in Offline PDF & ID Redactor—flattening destroys underlying copyable text glyphs completely.',
-      'Metadata & object stream cleanup: Use PDF Metadata Editor or PDF Privacy Sanitizer to inspect and strip Author, Title, Creator, and Producer tags cleanly.',
-      'Visual signing transparency: Sign PDF lets you draw in navy ink or upload a PNG/JPG stamp on a chosen page (includes a subtle PottoTools full-page watermark; cryptographic open-password encryption is not yet supported in-browser).',
+      'Hide private details permanently: Use Hide Private Info in PDF & ID to black out or blur Aadhaar, PAN, or bank numbers so nobody can copy or uncover them.',
+      'Lock or unlock passwords: Use Protect PDF to add a real password before emailing, or Unlock PDF to remove a password you already know.',
+      'Remove hidden file info: Use Remove Hidden PDF Info to clear author name, device details, and editing history.',
     ],
     faqs: [
       {
-        q: 'Does Offline PDF & ID Redactor remove underlying copyable text cleanly?',
-        a: 'Yes. Unlike floating annotation boxes, PottoTools rasterizes and flattens masked PDF pages into clean pixels and clears metadata so redacted Aadhaar, PAN, or bank digits cannot be uncovered.',
+        q: 'Does Hide Private Info in PDF & ID permanently remove hidden text?',
+        a: 'Yes. It turns masked areas into flat pixels and clears hidden data, so blacked-out Aadhaar, PAN, or bank digits cannot be selected or uncovered.',
       },
       {
-        q: 'Can PottoTools lock a PDF with a cryptographic open password?',
-        a: 'Currently our client-side pdf-lib tool sanitizes metadata and rebuilds clean object streams without open-password encryption. For password locking, use desktop Adobe Acrobat or your OS Print/Export PDF encryption dialog.',
+        q: 'Can PottoTools lock and unlock PDFs with real passwords?',
+        a: 'Yes. Protect PDF adds real password protection that opens only with your password in Adobe Acrobat, Chrome, Edge, and mobile viewers, and Unlock PDF removes passwords from files you own.',
       },
     ],
   },

@@ -4,6 +4,7 @@ import { CATEGORY_GUIDANCE_MAP } from '../../config/categoryGuidance';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { AdSlot } from '../common/AdSlot';
 import { AdsterraNativeBanner } from '../common/AdsterraNativeBanner';
+import { AdsterraBanner } from '../common/AdsterraBanner';
 import { ToolCard } from '../common/ToolCard';
 import {
   Layers,
@@ -230,7 +231,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
                   {categoryTools.length} {categoryTools.length === 1 ? 'Tool' : 'Tools'} Available
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              <h1 className="text-2xl sm:text-4xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
                 {categoryName}
               </h1>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
@@ -241,7 +242,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
 
           <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2 rounded-xl border border-emerald-200 dark:border-emerald-900 self-start sm:self-auto">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>100% Free · Client-Side Execution</span>
+            <span>100% Free · Files Stay on Your Device</span>
           </div>
         </div>
       </div>
@@ -302,15 +303,15 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
       {/* Grid of Dedicated Tools in this Category */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+          <h2 className="text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
             {isImageCategory && imageSubSection === 'exams'
               ? 'Photo & Signature for Exams'
               : isImageCategory && imageSubSection === 'general'
-              ? 'General Image Tools & Utilities'
-              : `Available ${categoryName.replace(/^\d+\.\s*/, '')} Services`}
+              ? 'General Image Tools'
+              : `Available ${categoryName.replace(/^\d+\.\s*/, '')}`}
           </h2>
           <span className="text-xs text-slate-400">
-            Click any service to open its dedicated page
+            Click any tool to open it
           </span>
         </div>
 
@@ -325,9 +326,14 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
         </div>
       </div>
 
-      {/* Mid-Content AdSlot & Adsterra Native Banner */}
-      <div className="py-2 space-y-4">
+      {/* Mid-Content AdSlot, Adsterra Display Banner & Native Banner */}
+      <div className="py-2 space-y-5">
         <AdSlot placement="category-mid" format="horizontal" minHeight={90} />
+        <AdsterraBanner
+          key={`category-banner-${categoryId}`}
+          variant="responsive-leaderboard"
+          placement="category-mid-banner"
+        />
         <AdsterraNativeBanner key={categoryId} placement="category-mid" />
       </div>
 
