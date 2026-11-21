@@ -16,6 +16,12 @@ import {
   ShadingType,
 } from 'docx';
 import { createWorker } from 'tesseract.js';
+import {
+  krutiDevToUnicode,
+  normalizeOcrHindiUnicode,
+  processOcrTextWithKrutiDev,
+} from '../pdf/krutiDevConverter';
+import { analyzeTextEncodingQuality } from '../pdf/searchablePdfService';
 
 // Ensure PDF.js worker loads locally for 100% offline compatibility
 if (typeof window !== 'undefined') {
@@ -29,7 +35,7 @@ if (typeof window !== 'undefined') {
 export interface PdfToDocxOptions {
   preserveImages?: boolean;
   enableOcr?: boolean;
-  ocrLanguage?: 'eng' | 'hin';
+  ocrLanguage?: 'eng' | 'hin' | 'hin+eng';
   layoutMode?: 'auto' | 'menu-pricing' | 'flow';
   accentColor?: string;
   onProgress?: (progress: number, statusText: string) => void;
@@ -188,15 +194,29 @@ export async function convertPdfToEditableDocx(
       });
     }
 
-    // OCR Fallback if page is scanned (less than 15 digital characters)
+    // Inspect digital text encoding for Kruti Dev 010 / DevLys or broken Hindi CMap glyphs (□□□)
+    const combinedDigitalText = textItems.map((t) => t.str).join(' ');
     const totalChars = textItems.reduce((acc, t) => acc + t.str.trim().length, 0);
-    if (totalChars < 15 && enableOcr && ctx) {
+    const encodingCheck = analyzeTextEncodingQuality(combinedDigitalText, textContent);
+
+    if (totalChars >= 15 && encodingCheck.isKrutiDev) {
+      // Map Kruti Dev 010 / DevLys digital text directly into clean Unicode Devanagari Hindi
+      textItems = textItems.map((ti) => ({
+        ...ti,
+        str: normalizeOcrHindiUnicode(krutiDevToUnicode(ti.str)),
+      }));
+    } else if ((totalChars < 15 || encodingCheck.isBroken) && enableOcr && ctx) {
+      // OCR Fallback for scanned image pages OR pages with broken non-Unicode Hindi font encoding
+      const effectiveOcrLang: 'eng' | 'hin' | 'hin+eng' =
+        encodingCheck.isBroken && ocrLanguage === 'eng' ? 'hin+eng' : ocrLanguage;
       updateProgress(
         Math.min(95, pagePctStart + 5),
-        `Page ${pageNum} is a scanned photo. Running high-precision OCR...`
+        encodingCheck.isBroken
+          ? `Page ${pageNum} has a non-Unicode Hindi font. Running Hindi + English OCR...`
+          : `Page ${pageNum} is a scanned photo. Running high-precision OCR...`
       );
       totalOcrPages++;
-      const ocrItems = await performOcrOnCanvas(canvas, ocrLanguage, (ocrPct) => {
+      const ocrItems = await performOcrOnCanvas(canvas, effectiveOcrLang, (ocrPct) => {
         const subPct = pagePctStart + Math.round((ocrPct / 100) * (pagePctEnd - pagePctStart));
         updateProgress(subPct, `Running OCR on page ${pageNum} (${ocrPct}%)...`);
       });
@@ -711,15 +731,17 @@ function isColorDark(rgb: [number, number, number]): boolean {
 }
 
 /**
- * High-precision in-browser OCR using Tesseract worker
+ * High-precision in-browser OCR using Tesseract worker with Kruti Dev font mapping
+ * and Unicode Devanagari post-processing for clean Hindi rendering in Word (.docx).
  */
 async function performOcrOnCanvas(
   canvas: HTMLCanvasElement,
-  language: 'eng' | 'hin',
+  language: 'eng' | 'hin' | 'hin+eng',
   onProgress?: (pct: number) => void
 ): Promise<TextItemInfo[]> {
   try {
-    const worker = await createWorker(language, 1, {
+    const langs: string | string[] = language === 'hin+eng' ? ['hin', 'eng'] : language;
+    const worker = await createWorker(langs, 1, {
       logger: (m) => {
         if (m.progress !== undefined && onProgress) {
           onProgress(Math.round(m.progress * 100));
@@ -727,26 +749,48 @@ async function performOcrOnCanvas(
       },
     });
 
-    const res = await worker.recognize(canvas);
+    const res = await worker.recognize(canvas, {}, { text: true, blocks: true });
     await worker.terminate();
 
-    const items: TextItemInfo[] = [];
-    const lines = (res.data as any).lines || [];
+    const rawPageText = (res.data.text || '').trim();
+    const pageCheck = processOcrTextWithKrutiDev(rawPageText, { krutiDevMode: 'auto' });
+    const lineOpts = { krutiDevMode: pageCheck.krutiDevMapped ? ('force' as const) : ('auto' as const) };
 
-    for (const l of lines) {
-      if (!l.text || !l.text.trim()) continue;
+    const rawLines: any[] = [];
+    const dataAny = res.data as any;
+    if (Array.isArray(dataAny?.blocks)) {
+      for (const block of dataAny.blocks) {
+        if (!Array.isArray(block?.paragraphs)) continue;
+        for (const para of block.paragraphs) {
+          if (!Array.isArray(para?.lines)) continue;
+          for (const l of para.lines) {
+            rawLines.push(l);
+          }
+        }
+      }
+    }
+    if (rawLines.length === 0 && Array.isArray(dataAny?.lines)) {
+      rawLines.push(...dataAny.lines);
+    }
+
+    const items: TextItemInfo[] = [];
+    for (const l of rawLines) {
+      if (!l?.text || !l.text.trim()) continue;
+      const cleaned = processOcrTextWithKrutiDev(l.text.trim(), lineOpts).text.trim();
+      if (!cleaned) continue;
+
       const bbox = l.bbox || { x0: 0, y0: 0, x1: 100, y1: 20 };
       const width = bbox.x1 - bbox.x0;
       const height = bbox.y1 - bbox.y0;
 
       items.push({
-        str: l.text.trim(),
+        str: cleaned,
         top: bbox.y0,
         left: bbox.x0,
         width,
         height,
         fontSize: Math.max(10, Math.round(height * 0.85)),
-        fontName: 'Arial',
+        fontName: language === 'eng' ? 'Arial' : 'Mangal',
         isBold: height >= 20,
         isItalic: false,
       });

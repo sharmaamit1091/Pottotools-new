@@ -4,11 +4,23 @@
 
 @layer base {
   :root {
-    --bg-page: #f8fafc;
-    --bg-surface: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --border-subtle: #e2e8f0;
+    --bg-page: #FAFAFC;
+    --bg-surface: #FFFFFF;
+    --bg-elevated: #F5F4FA;
+    --text-main: #252536;
+    --text-muted: #777789;
+    --border-subtle: #E8E6F2;
+
+    /* Playful Pastel SaaS Accent Tokens */
+    --pastel-lavender: #E9E4FF;
+    --pastel-mint: #DDF5E9;
+    --pastel-peach: #FFE9DA;
+    --pastel-sky: #DDEEFF;
+    --pastel-butter: #FFF2C9;
+
+    --brand-primary: #5B50E6;
+    --brand-primary-hover: #4A3FD4;
+
     color-scheme: light;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
@@ -17,12 +29,28 @@
   html.dark,
   .dark,
   [data-theme="dark"] {
-    --bg-page: #020617;
-    --bg-surface: #0f172a;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border-subtle: #1e293b;
+    --bg-page: #111322;
+    --bg-surface: #181B2E;
+    --bg-elevated: #20243C;
+    --text-main: #F2F4FC;
+    --text-muted: #A0A5C0;
+    --border-subtle: #2A2F4A;
+
+    --pastel-lavender: rgba(233, 228, 255, 0.12);
+    --pastel-mint: rgba(221, 245, 233, 0.12);
+    --pastel-peach: rgba(255, 233, 218, 0.12);
+    --pastel-sky: rgba(221, 238, 255, 0.12);
+    --pastel-butter: rgba(255, 242, 201, 0.12);
+
+    --brand-primary: #8178F6;
+    --brand-primary-hover: #968FFA;
+
     color-scheme: dark;
+  }
+
+  html {
+    background-color: var(--bg-page);
+    color: var(--text-main);
   }
 
   body {
@@ -31,7 +59,18 @@
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    overflow-x: clip;
+    transition: background-color 240ms cubic-bezier(0.22, 1, 0.36, 1), color 200ms ease;
+  }
+
+  /* Smooth global theme switch transition applied briefly on user toggle */
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+    transition-duration: 240ms !important;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
   }
 
   code, pre, kbd, samp, .font-mono {
@@ -69,19 +108,19 @@
   animation: potooHover 3.5s ease-in-out infinite;
 }
 
-/* Studio Visual Stage subtle architectural dot-grid backdrop */
+/* Studio Visual Stage subtle pastel architectural dot-grid backdrop */
 .tool-visual-stage {
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.07), transparent 68%),
-    radial-gradient(rgba(100, 116, 139, 0.16) 1px, transparent 1px);
+    radial-gradient(circle at 50% 0%, rgba(129, 120, 246, 0.09), transparent 68%),
+    radial-gradient(rgba(119, 119, 137, 0.14) 1px, transparent 1px);
   background-size: 100% 100%, 14px 14px;
   background-position: 0 0, 7px 7px;
 }
 
 .dark .tool-visual-stage {
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.14), transparent 70%),
-    radial-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+    radial-gradient(circle at 50% 0%, rgba(129, 120, 246, 0.14), transparent 70%),
+    radial-gradient(rgba(160, 165, 192, 0.12) 1px, transparent 1px);
   background-size: 100% 100%, 14px 14px;
   background-position: 0 0, 7px 7px;
 }
@@ -632,12 +671,317 @@
   animation: redactMaskBar 2.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
+/* FILL PDF FORM 2.5D / Soft-3D Animated Tool Card */
+@keyframes tvFormDocFloat {
+  0%, 100% {
+    transform: perspective(640px) rotateY(-6deg) rotateX(4deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(640px) rotateY(-3deg) rotateX(2deg) translateY(-3px);
+  }
+}
+
+@keyframes tvFormTypeName {
+  0%, 8% { transform: scaleX(0); opacity: 0; }
+  20%, 86% { transform: scaleX(1); opacity: 1; }
+  94%, 100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes tvFormTypeAddr {
+  0%, 18% { transform: scaleX(0); opacity: 0; }
+  32%, 86% { transform: scaleX(1); opacity: 1; }
+  94%, 100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes tvFormTypeDate {
+  0%, 28% { transform: scaleX(0); opacity: 0; }
+  38%, 86% { transform: scaleX(1); opacity: 1; }
+  94%, 100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes tvFormPhotoSlide {
+  0%, 34% { transform: translate(16px, -10px) scale(0.75); opacity: 0; }
+  46%, 86% { transform: translate(0px, 0px) scale(1); opacity: 1; }
+  94%, 100% { transform: translate(8px, -6px) scale(0.8); opacity: 0; }
+}
+
+@keyframes tvFormSigDraw {
+  0%, 48% { stroke-dashoffset: 68; opacity: 0.15; }
+  64%, 86% { stroke-dashoffset: 0; opacity: 1; }
+  94%, 100% { stroke-dashoffset: 68; opacity: 0; }
+}
+
+@keyframes tvFormCheckPop {
+  0%, 62% { transform: scale(0.3); opacity: 0; }
+  70% { transform: scale(1.18); opacity: 1; }
+  74%, 86% { transform: scale(1); opacity: 1; }
+  94%, 100% { transform: scale(0.5); opacity: 0; }
+}
+
+@keyframes tvFormBadgeReveal {
+  0%, 70% { transform: translateY(4px) scale(0.85); opacity: 0; }
+  77%, 88% { transform: translateY(0) scale(1); opacity: 1; }
+  96%, 100% { transform: translateY(-2px) scale(0.9); opacity: 0; }
+}
+
+.tv-form-doc-3d {
+  animation: tvFormDocFloat 5.6s ease-in-out infinite;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.tv-form-name-fill {
+  transform-origin: left center;
+  animation: tvFormTypeName 7.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.tv-form-addr-fill {
+  transform-origin: left center;
+  animation: tvFormTypeAddr 7.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.tv-form-date-fill {
+  transform-origin: left center;
+  animation: tvFormTypeDate 7.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.tv-form-photo-slide {
+  animation: tvFormPhotoSlide 7.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.tv-form-sig-stroke {
+  stroke-dasharray: 68;
+  animation: tvFormSigDraw 7.2s ease-out infinite;
+}
+
+.tv-form-check-pop {
+  transform-origin: center center;
+  animation: tvFormCheckPop 7.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+.tv-form-done-badge {
+  animation: tvFormBadgeReveal 7.2s ease-out infinite;
+}
+
+/* =====================================================================
+   PottoTools Premium Visual Redesign – GPU-Composited Motion System
+   ===================================================================== */
+
+/* 1. Homepage Welcome Staggered Entrance (short, crisp, non-blocking) */
+@keyframes ptWelcomeFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ptLogoEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pt-enter-logo {
+  animation: ptLogoEntrance 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pt-enter-1 {
+  animation: ptWelcomeFadeUp 400ms cubic-bezier(0.22, 1, 0.36, 1) 40ms both;
+}
+
+.pt-enter-2 {
+  animation: ptWelcomeFadeUp 420ms cubic-bezier(0.22, 1, 0.36, 1) 110ms both;
+}
+
+.pt-enter-3 {
+  animation: ptWelcomeFadeUp 440ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+}
+
+.pt-enter-4 {
+  animation: ptWelcomeFadeUp 440ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+}
+
+/* 2. Smooth Lightweight Page View Transition (non-blocking) */
+@keyframes ptPageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pt-page-enter {
+  animation: ptPageEnter 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 3. Floating Background Document Illustrations (ultra-gentle CSS drift) */
+@keyframes ptFloatSlowA {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
+  50% { transform: translate3d(4px, -12px, 0) rotate(2deg); }
+}
+
+@keyframes ptFloatSlowB {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(4deg); }
+  50% { transform: translate3d(-6px, -10px, 0) rotate(-2deg); }
+}
+
+@keyframes ptFloatSlowC {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-2deg); }
+  50% { transform: translate3d(5px, 10px, 0) rotate(3deg); }
+}
+
+.pt-float-a {
+  animation: ptFloatSlowA 11s ease-in-out infinite;
+  will-change: transform;
+}
+
+.pt-float-b {
+  animation: ptFloatSlowB 13.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.pt-float-c {
+  animation: ptFloatSlowC 15s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* 4. Branded PottoTools Document Loader (scan highlight + bar shimmer) */
+@keyframes ptLoaderScan {
+  0% { transform: translateY(-6px); opacity: 0.25; }
+  20% { opacity: 1; }
+  50% { transform: translateY(24px); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(-6px); opacity: 0.25; }
+}
+
+@keyframes ptLoaderShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(220%); }
+}
+
+.pt-loader-scan {
+  animation: ptLoaderScan 2.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.pt-loader-shimmer {
+  animation: ptLoaderShimmer 1.8s ease-in-out infinite;
+}
+
+/* 5. Tasteful Success Checkmark Draw & Mini Pastel Confetti Burst */
+@keyframes ptCheckCirclePop {
+  0% { transform: scale(0.75); opacity: 0; }
+  65% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ptCheckDraw {
+  0% { stroke-dashoffset: 36; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes ptConfettiBurst {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--cx, 18px), var(--cy, -22px), 0) scale(1) rotate(var(--cr, 90deg));
+    opacity: 0;
+  }
+}
+
+.pt-check-circle {
+  animation: ptCheckCirclePop 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.pt-check-stroke {
+  stroke-dasharray: 36;
+  stroke-dashoffset: 36;
+  animation: ptCheckDraw 420ms cubic-bezier(0.22, 1, 0.36, 1) 140ms forwards;
+}
+
+.pt-confetti-dot {
+  animation: ptConfettiBurst 820ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 6. Premium Pastel Card Hover Elevation */
+.pt-card-hover {
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease,
+    background-color 220ms ease;
+}
+
+.pt-card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 32px -10px rgba(91, 80, 230, 0.14), 0 4px 12px -4px rgba(37, 37, 54, 0.06);
+}
+
+.dark .pt-card-hover:hover {
+  box-shadow: 0 16px 34px -12px rgba(10, 12, 28, 0.65), 0 0 0 1px rgba(129, 120, 246, 0.25);
+}
+
+.pt-card-hover:active {
+  transform: translateY(-1px) scale(0.988);
+}
+
 /* Accessibility: Respect user's reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .pt-enter-logo,
+  .pt-enter-1,
+  .pt-enter-2,
+  .pt-enter-3,
+  .pt-enter-4,
+  .pt-page-enter,
+  .pt-check-circle {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .pt-check-stroke {
+    stroke-dashoffset: 0 !important;
+  }
+  .pt-float-a,
+  .pt-float-b,
+  .pt-float-c,
+  .pt-confetti-dot {
+    animation: none !important;
+  }
+  .tv-form-doc-3d {
+    transform: perspective(640px) rotateY(-4deg) rotateX(2deg) !important;
+  }
+  .tv-form-name-fill,
+  .tv-form-addr-fill,
+  .tv-form-date-fill,
+  .tv-form-photo-slide,
+  .tv-form-check-pop,
+  .tv-form-done-badge {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .tv-form-sig-stroke {
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
   }
 }
 

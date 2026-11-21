@@ -10,6 +10,12 @@ interface RecommendedNextToolsProps {
 
 // Contextual map linking genuinely implemented tools to natural next actions
 const RECOMMENDATION_MAP: Record<string, { slug: string; reason: string }[]> = {
+  'fill-pdf-form': [
+    { slug: 'compress-pdf', reason: 'Shrink your filled PDF to fit email or application portal size limits' },
+    { slug: 'protect-pdf', reason: 'Lock your filled PDF form with a strong AES-256 password' },
+    { slug: 'merge-pdf', reason: 'Combine your completed form with ID proofs or supporting certificates' },
+    { slug: 'pdf-page-organizer', reason: 'Reorder, rotate, or delete pages in your final document' },
+  ],
   'searchable-pdf-text-finder': [
     { slug: 'compress-pdf', reason: 'Compress your newly searchable PDF for easy sharing' },
     { slug: 'pdf-to-editable-word', reason: 'Convert scanned PDF to fully editable Word document' },

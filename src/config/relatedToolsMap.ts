@@ -1,4 +1,5 @@
 export const RELATED_TOOLS_MAP: Record<string, string[]> = {
+  'fill-pdf-form': ['sign-pdf', 'compress-pdf', 'pdf-page-organizer', 'protect-pdf'],
   'compress-pdf': ['merge-pdf', 'pdf-to-word', 'pdf-page-organizer', 'split-pdf'],
   'merge-pdf': ['compress-pdf', 'split-pdf', 'pdf-page-organizer', 'page-numbers-pdf'],
   'split-pdf': ['compress-pdf', 'merge-pdf', 'delete-pdf-pages', 'pdf-to-word'],

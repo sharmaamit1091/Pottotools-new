@@ -98,10 +98,10 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => !disabled && inputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition-all cursor-pointer group ${
+        className={`relative overflow-hidden border-2 border-dashed rounded-3xl p-8 sm:p-11 text-center transition-all duration-250 cursor-pointer group ${
           isDragging
-            ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xl shadow-blue-500/10 scale-[0.995]'
-            : 'border-indigo-200/90 dark:border-indigo-900/60 bg-gradient-to-b from-blue-50/40 via-indigo-50/20 to-purple-50/30 dark:from-slate-900/80 dark:via-indigo-950/20 dark:to-slate-900/80 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-xl hover:shadow-indigo-500/10'
+            ? 'border-[#5B50E6] bg-[#E9E4FF]/55 dark:bg-[#2B244E]/60 shadow-lg shadow-[#5B50E6]/10 scale-[0.995]'
+            : 'border-[#D4CEF4] dark:border-[#363B5E] bg-[#FAFAFC] dark:bg-[#151829] hover:border-[#8178F6] dark:hover:border-[#8178F6] hover:bg-[#F7F5FF] dark:hover:bg-[#1A1E33] hover:shadow-md'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <input
@@ -115,26 +115,28 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
         />
 
         <div className="flex flex-col items-center justify-center space-y-4">
-          {/* Animated Vibrant Icon Badge */}
-          <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-blue-500/25 flex items-center justify-center group-hover:scale-105 group-hover:rotate-1 transition-all duration-300">
+          {/* Subtle Floating Pastel Upload Emblem */}
+          <div className="relative anim-magic-float">
+            <div className="w-16 h-16 rounded-2xl bg-[#E9E4FF] dark:bg-[#2B244E] border border-[#CFC5FA] dark:border-[#4D4287] text-[#5B50E6] dark:text-[#BEB7FF] shadow-xs flex items-center justify-center group-hover:scale-105 transition-transform duration-250">
               <UploadCloud className="w-8 h-8" />
             </div>
-            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white">
-              <Sparkles className="w-2.5 h-2.5" />
+            <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-xl bg-[#DDF5E9] dark:bg-emerald-500/25 border-2 border-white dark:border-[#151829] flex items-center justify-center text-[#196B47] dark:text-emerald-300">
+              <Sparkles className="w-3 h-3" />
             </div>
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-              Drag & Drop your {multiple ? 'documents' : 'document'} here
+            <h3 className="text-lg sm:text-xl font-extrabold text-[#252536] dark:text-[#F2F4FC] tracking-tight">
+              {isDragging
+                ? `Release to add your ${multiple ? 'documents' : 'document'}`
+                : `Drag & Drop your ${multiple ? 'documents' : 'document'} here`}
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              or click below to browse from your device
+            <p className="text-xs sm:text-sm text-[#777789] dark:text-[#A0A5C0]">
+              or click below to select from your device — opens instantly in your browser
             </p>
           </div>
 
-          {/* Prominent Vibrant Gradient CTA Button */}
+          {/* Clean Crisp Primary CTA Button */}
           <div>
             <button
               type="button"
@@ -143,7 +145,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
                 e.stopPropagation();
                 if (!disabled) inputRef.current?.click();
               }}
-              className="inline-flex items-center gap-2 py-3 px-7 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-md hover:shadow-xl hover:shadow-indigo-500/25 transition-all active:scale-[0.98]"
+              className="inline-flex items-center gap-2 py-3 px-7 rounded-xl font-bold text-sm text-white bg-[#5B50E6] hover:bg-[#4A3FD4] shadow-sm shadow-[#5B50E6]/25 hover:shadow-md transition-all active:scale-[0.98] cursor-pointer"
             >
               <UploadCloud className="w-4 h-4" />
               <span>Choose {multiple ? 'Files' : 'File'}</span>
@@ -155,62 +157,68 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
             {formatBadges.map((badge, idx) => (
               <span
                 key={idx}
-                className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-xs"
+                className="text-[10px] font-bold tracking-wider px-2.5 py-0.5 rounded-lg bg-white dark:bg-[#1E2238] border border-[#E8E6F2] dark:border-[#2F3554] text-[#55556B] dark:text-[#C5CAE0]"
               >
                 .{badge}
               </span>
             ))}
-            <span className="text-xs text-slate-400 ml-1">· Max {maxFileSizeMB} MB</span>
+            <span className="text-xs text-[#777789] dark:text-[#A0A5C0] ml-1">· Max {maxFileSizeMB} MB</span>
           </div>
 
-          {/* Privacy Trust Micro-Copy */}
-          <div className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900/60 px-3 py-1 rounded-full">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>100% Client-Side • Files Never Leave Your Device • Zero Cloud Uploads</span>
+          {/* Honest Local Processing Status Copy */}
+          <div className="inline-flex items-center gap-1.5 text-xs text-[#196B47] dark:text-emerald-300 font-semibold bg-[#DDF5E9]/85 dark:bg-emerald-950/45 border border-[#BCEBD4] dark:border-emerald-800/60 px-3.5 py-1.5 rounded-xl">
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+            <span>Processed Locally in Your Browser · Zero Server Uploads</span>
           </div>
         </div>
       </div>
 
       {/* Error message */}
       {errorMsg && (
-        <div className="flex items-center gap-2 p-3 text-xs text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="flex items-center gap-2.5 p-3.5 text-xs font-medium text-[#9A3412] dark:text-rose-200 bg-[#FFE9DA]/80 dark:bg-rose-950/40 border border-[#F5BEA0] dark:border-rose-800/60 rounded-2xl">
+          <AlertCircle className="w-4 h-4 shrink-0 text-[#DC2626] dark:text-rose-400" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Selected File List */}
+      {/* Selected File List with Honest Local Readiness Status */}
       {files.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+        <div className="space-y-2 pt-page-enter">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#777789] dark:text-[#A0A5C0] flex items-center justify-between">
             <span>Selected {files.length === 1 ? 'Document' : `Documents (${files.length})`}</span>
             {multiple && files.length > 1 && (
               <button
                 type="button"
                 onClick={() => onFilesSelected([])}
-                className="text-xs text-red-600 hover:underline font-semibold"
+                className="text-xs text-[#C2410C] dark:text-rose-400 hover:underline font-bold cursor-pointer"
               >
                 Clear all
               </button>
             )}
           </div>
 
-          <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+          <div className="divide-y divide-[#F1EFF8] dark:divide-[#242942] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-2xl bg-white dark:bg-[#181B2E] overflow-hidden shadow-2xs">
             {files.map((file, idx) => (
               <div
                 key={`${file.name}-${idx}`}
-                className="p-3.5 sm:px-4 flex items-center justify-between gap-3 text-sm hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
+                className="p-3.5 sm:px-4 flex items-center justify-between gap-3 text-sm hover:bg-[#FAFAFC] dark:hover:bg-[#1E2238] transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2.5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-indigo-950/50 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-100 dark:border-slate-700 shrink-0">
+                  <div className="p-2.5 bg-[#DDEEFF] dark:bg-[#1B314E] text-[#1A528C] dark:text-[#B9DCFF] rounded-xl border border-[#C0DFFF] dark:border-[#325785] shrink-0">
                     <FileIcon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                    <div className="font-bold text-[#252536] dark:text-[#F2F4FC] truncate">
                       {file.name}
                     </div>
-                    <div className="text-xs text-slate-400 font-mono">
-                      {formatBytes(file.size)}
+                    <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs">
+                      <span className="text-[#777789] dark:text-[#A0A5C0] font-mono">
+                        {formatBytes(file.size)}
+                      </span>
+                      <span className="text-[#D4D2E3] dark:text-[#3A4064]" aria-hidden="true">·</span>
+                      <span className="text-[11px] font-semibold text-[#196B47] dark:text-emerald-300">
+                        Ready for local processing
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -222,8 +230,9 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
                       e.stopPropagation();
                       onRemoveFile(idx);
                     }}
-                    className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="p-2 text-[#777789] hover:text-[#DC2626] dark:hover:text-rose-400 rounded-xl hover:bg-[#FFE9DA]/60 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                     title="Remove file"
+                    aria-label={`Remove ${file.name}`}
                   >
                     <X className="w-4 h-4" />
                   </button>

@@ -391,7 +391,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
       subtitle: 'Permanently blackout or blur IDs offline',
       badge: 'Unique Privacy',
       icon: EyeOff,
-      accent: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-900',
+      accent: 'text-[#156340] dark:text-[#B4EED1] bg-[#DDF5E9] dark:bg-[#17362A] border-[#BCEBD4] dark:border-[#2A634C]',
     },
     {
       slug: 'compress-pdf',
@@ -399,7 +399,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
       subtitle: '100KB, 200KB & 500KB portal presets',
       badge: 'Most Popular',
       icon: Minimize2,
-      accent: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-900',
+      accent: 'text-[#8E3914] dark:text-[#FFD2B5] bg-[#FFE9DA] dark:bg-[#3B261E] border-[#F5BEA0] dark:border-[#6A4132]',
     },
     {
       slug: 'pdf-to-editable-word',
@@ -407,7 +407,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
       subtitle: 'Preserves layout, tables & photos',
       badge: 'DOCX + OCR',
       icon: FileText,
-      accent: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-900',
+      accent: 'text-[#1A528C] dark:text-[#B9DCFF] bg-[#DDEEFF] dark:bg-[#1B314E] border-[#B2D7FB] dark:border-[#325785]',
     },
     {
       slug: 'custom-photo-studio',
@@ -415,7 +415,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
       subtitle: 'Set exact cm, mm, pixels & target KB',
       badge: 'Photo Studio',
       icon: Maximize2,
-      accent: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-900',
+      accent: 'text-[#4B3A9D] dark:text-[#D5CCFF] bg-[#E9E4FF] dark:bg-[#2B244E] border-[#CFC5FA] dark:border-[#4D4287]',
     },
   ];
 
@@ -475,7 +475,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
     <section
       id="magic-tool-box"
       aria-label="Potto Magic Tool Box"
-      className="relative max-w-5xl mx-auto rounded-3xl bg-white dark:bg-slate-900 border border-indigo-200/80 dark:border-indigo-900/60 shadow-xl p-5 sm:p-7 md:p-8 overflow-hidden"
+      className="relative max-w-5xl mx-auto rounded-3xl bg-white dark:bg-[#181B2E] border border-[#E6E3F4] dark:border-[#2A2F4A] shadow-[0_14px_40px_-16px_rgba(37,37,54,0.12)] dark:shadow-[0_18px_42px_-16px_rgba(0,0,0,0.55)] p-5 sm:p-7 md:p-8 overflow-hidden"
     >
       {/* Hidden file input */}
       <input
@@ -486,39 +486,39 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
         accept=".pdf,image/*,.jpg,.jpeg,.png,.webp,.bmp,.docx,.doc,.xlsx,.xls,.csv,.pptx,.ppt,.txt,.md"
       />
 
-      {/* Top Title & Animated 3-Step Visual Demo */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
+      {/* Top Title & Animated 3-Step Visual Strip */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[#F1EFF8] dark:border-[#242942]">
         <div className="text-left space-y-1">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+          <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#5B50E6] dark:text-[#A49CFF]">
             <Wand2 className="w-4 h-4 shrink-0" />
             <span>Magic Tool Box · Auto-Detects Any File</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#252536] dark:text-[#F2F4FC]">
             Not Sure Which Tool to Pick? Drop Your File Here
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-[#777789] dark:text-[#A0A5C0]">
             We instantly detect your PDF, Photo ID, Word, or Excel file and show only the exact tools that work on it.
           </p>
         </div>
 
-        {/* Animated 3-Step Visual Strip */}
-        <div className="flex items-center gap-2 sm:gap-3 bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 shrink-0 self-start lg:self-center">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-            <span className="w-5 h-5 rounded-md bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 font-extrabold flex items-center justify-center anim-magic-float">
+        {/* Pastel 3-Step Visual Strip */}
+        <div className="flex items-center gap-2 sm:gap-3 bg-[#FAFAFC] dark:bg-[#141727] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-2xl px-3.5 py-2.5 shrink-0 self-start lg:self-center">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#252536] dark:text-[#E2E5F6]">
+            <span className="w-5 h-5 rounded-lg bg-[#FFE9DA] dark:bg-[#3B261E] text-[#8E3914] dark:text-[#FFD2B5] font-extrabold flex items-center justify-center anim-magic-float">
               1
             </span>
             <span>Drop File</span>
           </div>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-400 anim-arrow" />
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-            <span className="w-5 h-5 rounded-md bg-indigo-100 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-extrabold flex items-center justify-center">
+          <ArrowRight className="w-3.5 h-3.5 text-[#A9A6BE]" />
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#252536] dark:text-[#E2E5F6]">
+            <span className="w-5 h-5 rounded-lg bg-[#E9E4FF] dark:bg-[#2B244E] text-[#4B3A9D] dark:text-[#D5CCFF] font-extrabold flex items-center justify-center">
               <Sparkles className="w-3 h-3" />
             </span>
             <span>Auto-Match</span>
           </div>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-400 anim-arrow" />
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-            <span className="w-5 h-5 rounded-md bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center justify-center">
+          <ArrowRight className="w-3.5 h-3.5 text-[#A9A6BE]" />
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#156340] dark:text-[#B4EED1]">
+            <span className="w-5 h-5 rounded-lg bg-[#DDF5E9] dark:bg-[#17362A] text-[#156340] dark:text-[#B4EED1] font-extrabold flex items-center justify-center">
               ✓
             </span>
             <span>Done</span>
@@ -528,25 +528,25 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
 
       {/* Validation Error Banner */}
       {errorMessage && (
-        <div className="mt-5 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 flex items-start gap-3 text-sm text-rose-900 dark:text-rose-200">
-          <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+        <div className="mt-5 p-4 rounded-2xl bg-[#FFE9DA]/75 dark:bg-rose-950/40 border border-[#F5BEA0] dark:border-rose-800/60 flex items-start gap-3 text-sm text-[#8E3914] dark:text-rose-200">
+          <AlertCircle className="w-5 h-5 text-[#DC2626] dark:text-rose-400 shrink-0 mt-0.5" />
           <div className="flex-1 text-left">
             <p className="font-semibold">{errorMessage}</p>
-            <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
+            <p className="text-xs opacity-85 mt-1">
               Supported: PDF, JPG/PNG/WebP ID scans, Word DOCX, Excel XLSX/CSV, PowerPoint PPTX, and TXT.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setErrorMessage(null)}
-            className="text-rose-500 hover:text-rose-800 dark:hover:text-rose-100 p-1 cursor-pointer"
+            className="text-[#8E3914] hover:text-[#252536] dark:hover:text-rose-100 p-1 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* State A: Easy Animated Dropzone + Quick 1-Click Goal Selector */}
+      {/* State A: Calm Pastel Dropzone + Quick 1-Click Goal Selector */}
       {!selectedFile ? (
         <div className="mt-5 space-y-6">
           <div
@@ -554,32 +554,32 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`group relative overflow-hidden rounded-2xl border-2 border-dashed p-7 sm:p-10 text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
+            className={`group relative overflow-hidden rounded-2xl border-2 border-dashed p-7 sm:p-10 text-center transition-all duration-250 cursor-pointer flex flex-col items-center justify-center ${
               isDragging
-                ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 scale-[1.01] shadow-inner'
-                : 'border-indigo-300/80 dark:border-indigo-800/70 bg-gradient-to-b from-indigo-50/40 via-white to-blue-50/30 dark:from-slate-950/60 dark:via-slate-900/60 dark:to-indigo-950/20 hover:border-indigo-500 dark:hover:border-indigo-400'
+                ? 'border-[#5B50E6] bg-[#E9E4FF]/55 dark:bg-[#2B244E]/60 scale-[1.005] shadow-inner'
+                : 'border-[#D4CEF4] dark:border-[#363B5E] bg-[#FAFAFC] dark:bg-[#141727] hover:border-[#8178F6] dark:hover:border-[#8178F6] hover:bg-[#F7F5FF] dark:hover:bg-[#1A1E33]'
             }`}
           >
-            {/* Animated subtle scanner light beam across the box */}
+            {/* Subtle scanner light beam across the box */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 w-36 bg-gradient-to-r from-transparent via-indigo-400/10 to-transparent anim-magic-scan"
+              className="pointer-events-none absolute inset-y-0 w-36 bg-gradient-to-r from-transparent via-[#8178F6]/12 to-transparent anim-magic-scan"
             />
 
-            {/* Animated floating magic upload icon */}
+            {/* Animated floating pastel upload emblem */}
             <div className="relative mb-4 anim-magic-float">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
+              <div className="w-16 h-16 rounded-2xl bg-[#E9E4FF] dark:bg-[#2B244E] border border-[#CFC5FA] dark:border-[#4D4287] text-[#5B50E6] dark:text-[#BEB7FF] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
                 <UploadCloud className="w-8 h-8" />
               </div>
-              <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center shadow-xs">
+              <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-lg bg-[#FFF2C9] border border-[#F1D583] text-[#8A5E10] flex items-center justify-center shadow-2xs">
                 <Sparkles className="w-3.5 h-3.5" />
               </div>
             </div>
 
-            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
+            <h3 className="text-lg sm:text-xl font-extrabold text-[#252536] dark:text-[#F2F4FC]">
               Drop Any File Here — Or Click to Choose
             </h3>
-            <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg">
+            <p className="mt-1 text-xs sm:text-sm text-[#777789] dark:text-[#A0A5C0] max-w-lg">
               PDF, Aadhaar/ID Photo, Bank Statement, Word, or Excel. Runs 100% offline inside your browser.
             </p>
 
@@ -589,13 +589,13 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
                 e.stopPropagation();
                 fileInputRef.current?.click();
               }}
-              className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer"
+              className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#5B50E6] hover:bg-[#4A3FD4] text-white font-bold text-xs sm:text-sm shadow-sm shadow-[#5B50E6]/25 transition-all active:scale-[0.98] cursor-pointer"
             >
               <UploadCloud className="w-4 h-4" />
               <span>Select File to Unlock Tools</span>
             </button>
 
-            <div className="mt-4 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+            <div className="mt-4 text-[11px] font-mono text-[#777789] dark:text-[#A0A5C0]">
               PDF · JPG · PNG · WebP · DOCX · XLSX · PPTX · Up to 500 MB
             </div>
           </div>
@@ -603,7 +603,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
           {/* Super Easy Quick Goals for Users Without a File Ready Yet */}
           <div className="space-y-3 text-left">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#777789] dark:text-[#A0A5C0]">
                 Or Pick What You Need Right Now (1 Click):
               </span>
               {onExploreAll && (
@@ -615,7 +615,7 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
                       onExploreAll();
                     }
                   }}
-                  className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-bold text-[#5B50E6] dark:text-[#A49CFF] hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
                   <span>All {TOOLS.length} Tools</span>
                   <ArrowRight className="w-3 h-3" />
@@ -638,21 +638,21 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
                     }}
                     onMouseEnter={() => preloadTool(goal.slug)}
                     onFocus={() => preloadTool(goal.slug)}
-                    className="p-3.5 rounded-2xl bg-slate-50/90 dark:bg-slate-950/70 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition-all text-left group flex flex-col justify-between cursor-pointer no-underline"
+                    className="pt-card-hover p-3.5 rounded-2xl bg-[#FAFAFC] dark:bg-[#141727] hover:bg-white dark:hover:bg-[#1E2238] border border-[#E8E6F2] dark:border-[#2A2F4A] hover:border-[#C5BCFA] dark:hover:border-[#5D509C] text-left group flex flex-col justify-between cursor-pointer no-underline"
                   >
                     <div className="flex items-center justify-between gap-2 mb-2.5">
                       <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform ${goal.accent}`}>
                         <IconComp className="w-4 h-4" />
                       </div>
-                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                      <span className="text-[10px] font-bold text-[#777789] dark:text-[#A0A5C0]">
                         {goal.badge}
                       </span>
                     </div>
                     <div>
-                      <div className="text-xs font-extrabold uppercase tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
+                      <div className="text-xs font-extrabold uppercase tracking-tight text-[#252536] dark:text-[#F2F4FC] group-hover:text-[#5B50E6] dark:group-hover:text-[#A49CFF] transition-colors leading-snug">
                         {goal.title}
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                      <p className="text-[11px] text-[#777789] dark:text-[#A0A5C0] mt-0.5 leading-snug">
                         {goal.subtitle}
                       </p>
                     </div>
@@ -763,14 +763,14 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
       )}
 
       {/* Privacy & Offline Footer Guarantee */}
-      <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+      <div className="mt-6 pt-4 border-t border-[#F1EFF8] dark:border-[#242942] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#777789] dark:text-[#A0A5C0]">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <ShieldCheck className="w-4 h-4 text-[#196B47] dark:text-emerald-400 shrink-0" />
           <span>
-            <strong className="text-slate-700 dark:text-slate-200">Zero Cloud Uploads:</strong> Your files stay on your device memory and work even offline.
+            <strong className="text-[#252536] dark:text-[#F2F4FC]">Zero Cloud Uploads:</strong> Your files stay on your device memory and work even offline.
           </span>
         </div>
-        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#196B47] dark:text-emerald-400 shrink-0">
           <WifiOff className="w-3.5 h-3.5" />
           <span>100% Offline Ready</span>
         </span>

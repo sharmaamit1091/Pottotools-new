@@ -1776,7 +1776,144 @@ export const RemoveScanWatermarkVisual: React.FC = () => (
 );
 
 // =========================================================================
-// 37. Generic Default Fallback Visual
+// 37. FILL PDF FORM: Premium 2.5D / Soft-3D Floating Form Document Animation
+//     Shows NAME, ADDRESS, DATE typing, PHOTO sliding into box, SIGNATURE
+//     drawing in ink, and CHECKBOX ticking smoothly in a lightweight loop.
+// =========================================================================
+export const FillPdfFormVisual: React.FC = () => (
+  <VisualStage>
+    <div className="flex items-center justify-center gap-3">
+      {/* 2.5D Soft-3D Floating PDF Form Sheet */}
+      <div className="relative flex items-center justify-center" style={{ perspective: '680px' }}>
+        {/* Soft elevated 3D floor shadow */}
+        <div className="pointer-events-none absolute -bottom-2 inset-x-2 h-3 rounded-full bg-indigo-950/15 dark:bg-black/45 blur-[5px]" />
+
+        {/* Back stacked depth sheet for subtle 2.5D thickness */}
+        <div className="pointer-events-none absolute inset-0 translate-x-[3px] translate-y-[3px] rounded-[9px] bg-indigo-100/90 dark:bg-indigo-950/70 border border-indigo-200/80 dark:border-indigo-800/60" />
+
+        {/* Main Floating Form Card */}
+        <div
+          className="tv-form-doc-3d relative w-[142px] h-[94px] rounded-[9px] bg-white dark:bg-slate-900 border border-slate-200/95 dark:border-slate-700/90 px-2.5 py-2 flex flex-col justify-between overflow-hidden"
+          style={{
+            boxShadow:
+              '0 10px 22px -6px rgba(30, 41, 59, 0.2), 0 2px 6px -1px rgba(79, 70, 229, 0.14)',
+          }}
+        >
+          {/* Top paper sheen */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-indigo-50/70 to-transparent dark:from-indigo-500/10" />
+
+          {/* Form Header Bar */}
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="px-1 py-[1px] rounded-[3px] bg-indigo-600 text-white text-[6px] font-black tracking-wider leading-none">
+                PDF
+              </span>
+              <span className="text-[6.5px] font-extrabold text-slate-700 dark:text-slate-200 tracking-wide">
+                FORM
+              </span>
+            </div>
+            <span className="tv-form-done-badge px-1.5 py-[1px] rounded-full bg-emerald-600 text-white text-[5.5px] font-extrabold leading-none shadow-2xs">
+              ✓ Filled
+            </span>
+          </div>
+
+          {/* Middle Form Body: Left Fields (NAME / ADDRESS / DATE) + Right PHOTO Box */}
+          <div className="relative z-10 flex items-stretch gap-2 mt-0.5">
+            <div className="flex-1 space-y-[4px] min-w-0">
+              {/* NAME field */}
+              <div>
+                <div className="text-[5px] font-bold text-slate-400 leading-none mb-[1.5px]">
+                  NAME
+                </div>
+                <div className="h-[7px] rounded-[2px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1 flex items-center overflow-hidden">
+                  <div className="tv-form-name-fill h-[3px] w-14 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+                </div>
+              </div>
+
+              {/* ADDRESS field */}
+              <div>
+                <div className="text-[5px] font-bold text-slate-400 leading-none mb-[1.5px]">
+                  ADDRESS
+                </div>
+                <div className="h-[7px] rounded-[2px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1 flex items-center overflow-hidden">
+                  <div className="tv-form-addr-fill h-[2.5px] w-16 rounded-full bg-slate-600 dark:bg-slate-300" />
+                </div>
+              </div>
+
+              {/* DATE field */}
+              <div className="flex items-center gap-1">
+                <span className="text-[5px] font-bold text-slate-400 leading-none">DATE</span>
+                <div className="flex-1 h-[6.5px] rounded-[2px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1 flex items-center overflow-hidden">
+                  <div className="tv-form-date-fill h-[2.5px] w-9 rounded-full bg-blue-600 dark:bg-blue-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* PHOTO Slot Box */}
+            <div className="w-[32px] h-[38px] shrink-0 rounded-[4px] border border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/50 flex flex-col items-center justify-end overflow-hidden relative">
+              <span className="absolute top-[1px] text-[4.5px] font-extrabold text-indigo-400 tracking-wider">
+                PHOTO
+              </span>
+              <div className="tv-form-photo-slide w-full h-full bg-gradient-to-b from-sky-100 to-indigo-100 dark:from-sky-900/70 dark:to-indigo-900/80 flex items-end justify-center pt-1.5">
+                <MiniPortraitSvg className="w-7 h-8" />
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row: CHECKBOX + SIGNATURE Box */}
+          <div className="relative z-10 flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+            {/* Checkbox */}
+            <div className="flex items-center gap-1">
+              <div className="w-3.5 h-3.5 rounded-[3px] border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
+                <svg viewBox="0 0 12 12" className="w-2.5 h-2.5 tv-form-check-pop" fill="none">
+                  <path
+                    d="M2.2 6.3 L4.8 8.8 L9.8 3.2"
+                    stroke="#059669"
+                    strokeWidth="2.1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <span className="text-[5px] font-bold text-slate-500 dark:text-slate-400">AGREE</span>
+            </div>
+
+            {/* Signature Slot */}
+            <div className="flex-1 max-w-[78px] h-[16px] rounded-[3px] bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 px-1 flex items-center justify-between">
+              <span className="text-[4.5px] font-bold text-slate-400 uppercase mr-0.5">SIGN</span>
+              <svg viewBox="0 0 56 14" className="w-12 h-3.5 overflow-visible" fill="none">
+                <path
+                  d="M2 10.5 C7 2.5, 11 11.5, 17 6 C21 2.5, 25 11, 32 6 C37 2.5, 42 10, 52 5"
+                  stroke="#1d4ed8"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="tv-form-sig-stroke"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Side Feature Mini-Badges */}
+      <div className="hidden sm:flex flex-col gap-1">
+        <div className="px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200/80 dark:border-indigo-800/70 text-[6.5px] font-extrabold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+          Aa Text
+        </div>
+        <div className="px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200/80 dark:border-emerald-800/70 text-[6.5px] font-extrabold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+          Photo &amp; Sign
+        </div>
+        <div className="px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-800/70 text-[6.5px] font-extrabold text-blue-700 dark:text-blue-300 whitespace-nowrap">
+          ✓ Marks
+        </div>
+      </div>
+    </div>
+  </VisualStage>
+);
+
+// =========================================================================
+// 38. Generic Default Fallback Visual
 // =========================================================================
 export const GenericToolVisual: React.FC<{ title: string; category?: string }> = () => (
   <VisualStage>

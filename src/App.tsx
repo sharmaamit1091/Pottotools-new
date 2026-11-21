@@ -58,21 +58,21 @@ class AppErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div className="max-w-lg mx-auto py-14 px-4 text-center">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-sm">
-            <span className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded-full mb-4">
+          <div className="bg-white dark:bg-[#181B2E] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-3xl p-8 shadow-[0_12px_32px_-20px_rgba(37,37,54,0.16)]">
+            <span className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider bg-[#FFF2C9] dark:bg-[#362C14] text-[#7E520A] dark:text-[#FFE08A] border border-[#F1D583] dark:border-[#53431D] rounded-full mb-4">
               Offline Cache Syncing
             </span>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2">
+            <h2 className="text-xl font-extrabold text-[#252536] dark:text-[#F2F4FC] mb-2">
               This Tool Needs One Online Visit First
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+            <p className="text-sm text-[#777789] dark:text-[#A0A5C0] mb-6 leading-relaxed">
               Once cached in your installed app, every tool works 100% offline. Please check your connection or retry.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => this.setState({ hasError: false, errorMsg: '' })}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-[#5B50E6] hover:bg-[#4A3FD4] text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
               >
                 Try Again
               </button>
@@ -82,7 +82,7 @@ class AppErrorBoundary extends React.Component<
                   this.setState({ hasError: false, errorMsg: '' });
                   this.props.onResetHome();
                 }}
-                className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-[#F5F4FA] dark:bg-[#20243C] hover:bg-[#E9E4FF] dark:hover:bg-[#2A2F4A] text-[#252536] dark:text-[#E2E6F7] rounded-xl text-sm font-semibold transition-colors cursor-pointer"
               >
                 Back to Home
               </button>
@@ -136,6 +136,9 @@ const PdfToEditableWordTool = lazyWithRetry(() =>
 );
 const RemoveScanWatermarkTool = lazyWithRetry(() =>
   import('./components/tools/RemoveScanWatermarkTool').then((m) => ({ default: m.RemoveScanWatermarkTool }))
+);
+const FillPdfFormTool = lazyWithRetry(() =>
+  import('./components/tools/FillPdfFormTool').then((m) => ({ default: m.FillPdfFormTool }))
 );
 const DocumentConverterTool = lazyWithRetry(() =>
   import('./components/tools/DocumentConverterTool').then((m) => ({ default: m.DocumentConverterTool }))
@@ -240,13 +243,19 @@ export default function App() {
 
   const handleToggleDarkMode = () => {
     const next = !darkMode;
+    const root = document.documentElement;
+    // Enable brief smooth surface/text fade during user-triggered theme toggle
+    root.classList.add('theme-transitioning');
+    window.setTimeout(() => {
+      root.classList.remove('theme-transitioning');
+    }, 280);
     // Apply DOM changes synchronously for instant zero-latency feedback
     if (next) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
+      root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.setAttribute('data-theme', 'light');
+      root.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
     }
     try {
       localStorage.setItem('pottotools_theme', next ? 'dark' : 'light');
@@ -549,6 +558,10 @@ export default function App() {
       return <RemoveScanWatermarkTool tool={tool} onSelectNextTool={handleSelectTool} />;
     }
 
+    if (tool.id === 'fill-pdf-form') {
+      return <FillPdfFormTool tool={tool} onSelectNextTool={handleSelectTool} />;
+    }
+
     if (['protect-pdf', 'unlock-pdf', 'sign-pdf', 'pdf-metadata'].includes(tool.id)) {
       return <PdfSecurityTool tool={tool} onSelectNextTool={handleSelectTool} />;
     }
@@ -566,7 +579,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="min-h-screen flex flex-col bg-[#FAFAFC] dark:bg-[#111322] text-[#252536] dark:text-[#F2F4FC]">
       {/* 3-Zone Header */}
       <Header
         currentView={currentView}
@@ -579,6 +592,7 @@ export default function App() {
       {/* Main Content Viewport */}
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1">
         <AppErrorBoundary viewKey={`${currentView}-${activeTool?.id || ''}`} onResetHome={() => navigateTo('home')}>
+        <div key={`${currentView}-${activeTool?.id || ''}`} className="pt-page-enter">
         {currentView === 'home' ? (
           <div className="space-y-6">
             <HeroSection
@@ -788,14 +802,14 @@ export default function App() {
         ) : (
           /* 404 Custom Fallback */
           <div className="max-w-lg mx-auto py-16 px-4 text-center">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-10 shadow-sm">
-              <span className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 rounded-full mb-4">
+            <div className="bg-white dark:bg-[#181B2E] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-3xl p-8 sm:p-10 shadow-[0_12px_32px_-20px_rgba(37,37,54,0.16)]">
+              <span className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider bg-[#FFE9DA] dark:bg-[#3A2218] text-[#8E3914] dark:text-[#FFB894] border border-[#F5BEA0] dark:border-[#593424] rounded-full mb-4">
                 HTTP 404 Not Found
               </span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-2">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#252536] dark:text-[#F2F4FC] mb-2">
                 Page Not Found
               </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+              <p className="text-sm text-[#777789] dark:text-[#A0A5C0] mb-6 leading-relaxed">
                 The requested document tool or page does not exist or may have been moved.
               </p>
               <a
@@ -806,19 +820,19 @@ export default function App() {
                     navigateTo('home');
                   }
                 }}
-                className="inline-flex items-center justify-center px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm cursor-pointer no-underline"
+                className="inline-flex items-center justify-center px-6 py-2.5 bg-[#5B50E6] hover:bg-[#4A3FD4] text-white rounded-xl text-sm font-semibold transition-colors shadow-xs cursor-pointer no-underline"
               >
                 Return to Homepage
               </a>
 
-              <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
+              <div className="mt-8 pt-6 border-t border-[#F0EEF8] dark:border-[#262B45]">
+                <div className="text-xs font-semibold uppercase tracking-wider text-[#777789] dark:text-[#A0A5C0] mb-3">
                   Popular Free Tools
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
                   {[
                     { name: 'Compress PDF', slug: 'compress-pdf' },
-                    { name: 'Merge PDF', slug: 'merge-pdf' },
+                    { name: 'Fill PDF Form', slug: 'fill-pdf-form' },
                     { name: 'Photo Resizer', slug: 'custom-photo-studio' },
                     { name: 'PDF to Word', slug: 'pdf-to-word' },
                   ].map((item) => (
@@ -831,7 +845,7 @@ export default function App() {
                           handleSelectShortcut(item.slug);
                         }
                       }}
-                      className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors cursor-pointer no-underline"
+                      className="text-xs font-semibold text-[#4B3A9D] dark:text-[#C5BAFF] bg-[#E9E4FF] dark:bg-[#231F44] border border-[#CFC5FA] dark:border-[#373164] px-3 py-1.5 rounded-lg hover:brightness-95 transition-all cursor-pointer no-underline"
                     >
                       {item.name}
                     </a>
@@ -841,6 +855,7 @@ export default function App() {
             </div>
           </div>
         )}
+        </div>
         </AppErrorBoundary>
       </main>
 

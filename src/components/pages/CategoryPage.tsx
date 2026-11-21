@@ -52,94 +52,79 @@ const CATEGORY_THEMES: Record<
   string,
   {
     badgeClass: string;
-    iconGradient: string;
-    cardBorder: string;
-    hoverBg: string;
+    iconTile: string;
+    heroGlow: string;
   }
 > = {
   'organize-pdf': {
-    badgeClass: 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900',
-    iconGradient: 'from-red-500 to-rose-600',
-    cardBorder: 'hover:border-red-400 dark:hover:border-red-500 hover:shadow-red-500/10',
-    hoverBg: 'hover:bg-red-50/50 dark:hover:bg-red-950/20',
+    badgeClass: 'bg-[#FFE9DA] text-[#8E3914] border-[#F5BEA0] dark:bg-[#3A2218] dark:text-[#FFB894] dark:border-[#593424]',
+    iconTile: 'bg-[#FFE9DA] text-[#8E3914] border-[#F5BEA0] dark:bg-[#3A2218] dark:text-[#FFB894] dark:border-[#593424]',
+    heroGlow: 'bg-[#FFE9DA]/70 dark:bg-[#3A2218]/40',
   },
   'compress-pdf': {
-    badgeClass: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900',
-    iconGradient: 'from-rose-500 to-red-600',
-    cardBorder: 'hover:border-rose-400 dark:hover:border-rose-500 hover:shadow-rose-500/10',
-    hoverBg: 'hover:bg-rose-50/50 dark:hover:bg-rose-950/20',
+    badgeClass: 'bg-[#FFE9DA] text-[#8E3914] border-[#F5BEA0] dark:bg-[#3A2218] dark:text-[#FFB894] dark:border-[#593424]',
+    iconTile: 'bg-[#FFE9DA] text-[#8E3914] border-[#F5BEA0] dark:bg-[#3A2218] dark:text-[#FFB894] dark:border-[#593424]',
+    heroGlow: 'bg-[#FFE9DA]/70 dark:bg-[#3A2218]/40',
   },
   'convert-docs': {
-    badgeClass: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900',
-    iconGradient: 'from-blue-600 to-indigo-600',
-    cardBorder: 'hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-blue-500/10',
-    hoverBg: 'hover:bg-blue-50/50 dark:hover:bg-blue-950/20',
+    badgeClass: 'bg-[#DDEEFF] text-[#1A528C] border-[#B2D7FB] dark:bg-[#162742] dark:text-[#A3D2FF] dark:border-[#243E63]',
+    iconTile: 'bg-[#DDEEFF] text-[#1A528C] border-[#B2D7FB] dark:bg-[#162742] dark:text-[#A3D2FF] dark:border-[#243E63]',
+    heroGlow: 'bg-[#DDEEFF]/70 dark:bg-[#162742]/40',
   },
   'convert-images': {
-    badgeClass: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900',
-    iconGradient: 'from-purple-600 to-pink-600',
-    cardBorder: 'hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-purple-500/10',
-    hoverBg: 'hover:bg-purple-50/50 dark:hover:bg-purple-950/20',
+    badgeClass: 'bg-[#E9E4FF] text-[#4B3A9D] border-[#CFC5FA] dark:bg-[#231F44] dark:text-[#C5BAFF] dark:border-[#373164]',
+    iconTile: 'bg-[#E9E4FF] text-[#4B3A9D] border-[#CFC5FA] dark:bg-[#231F44] dark:text-[#C5BAFF] dark:border-[#373164]',
+    heroGlow: 'bg-[#E9E4FF]/70 dark:bg-[#231F44]/40',
   },
   'ocr-scanned': {
-    badgeClass: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-900',
-    iconGradient: 'from-cyan-500 to-teal-600',
-    cardBorder: 'hover:border-cyan-400 dark:hover:border-cyan-500 hover:shadow-cyan-500/10',
-    hoverBg: 'hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20',
+    badgeClass: 'bg-[#DDEEFF] text-[#1A528C] border-[#B2D7FB] dark:bg-[#162742] dark:text-[#A3D2FF] dark:border-[#243E63]',
+    iconTile: 'bg-[#DDEEFF] text-[#1A528C] border-[#B2D7FB] dark:bg-[#162742] dark:text-[#A3D2FF] dark:border-[#243E63]',
+    heroGlow: 'bg-[#DDEEFF]/70 dark:bg-[#162742]/40',
   },
   'pdf-security': {
-    badgeClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900',
-    iconGradient: 'from-indigo-600 to-violet-700',
-    cardBorder: 'hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-indigo-500/10',
-    hoverBg: 'hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20',
+    badgeClass: 'bg-[#E9E4FF] text-[#4B3A9D] border-[#CFC5FA] dark:bg-[#231F44] dark:text-[#C5BAFF] dark:border-[#373164]',
+    iconTile: 'bg-[#E9E4FF] text-[#4B3A9D] border-[#CFC5FA] dark:bg-[#231F44] dark:text-[#C5BAFF] dark:border-[#373164]',
+    heroGlow: 'bg-[#E9E4FF]/70 dark:bg-[#231F44]/40',
   },
   'smart-utilities': {
-    badgeClass: 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-900',
-    iconGradient: 'from-violet-600 to-fuchsia-600',
-    cardBorder: 'hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-violet-500/10',
-    hoverBg: 'hover:bg-violet-50/50 dark:hover:bg-violet-950/20',
+    badgeClass: 'bg-[#FFF2C9] text-[#7E520A] border-[#F1D583] dark:bg-[#362C14] dark:text-[#FFE08A] dark:border-[#53431D]',
+    iconTile: 'bg-[#FFF2C9] text-[#7E520A] border-[#F1D583] dark:bg-[#362C14] dark:text-[#FFE08A] dark:border-[#53431D]',
+    heroGlow: 'bg-[#FFF2C9]/70 dark:bg-[#362C14]/40',
   },
   'spreadsheets': {
-    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-    iconGradient: 'from-emerald-500 to-teal-600',
-    cardBorder: 'hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-emerald-500/10',
-    hoverBg: 'hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20',
+    badgeClass: 'bg-[#DDF5E9] text-[#156340] border-[#BCEBD4] dark:bg-[#152E24] dark:text-[#8EE3BC] dark:border-[#244E3D]',
+    iconTile: 'bg-[#DDF5E9] text-[#156340] border-[#BCEBD4] dark:bg-[#152E24] dark:text-[#8EE3BC] dark:border-[#244E3D]',
+    heroGlow: 'bg-[#DDF5E9]/70 dark:bg-[#152E24]/40',
   },
   'pdf-tools': {
-    badgeClass: 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900',
-    iconGradient: 'from-red-500 to-rose-600',
-    cardBorder: 'hover:border-red-400 dark:hover:border-red-500 hover:shadow-red-500/10',
-    hoverBg: 'hover:bg-red-50/50 dark:hover:bg-red-950/20',
+    badgeClass: 'bg-[#FFE9DA] text-[#8E3914] border-[#F5BEA0] dark:bg-[#3A2218] dark:text-[#FFB894] dark:border-[#593424]',
+    iconTile: 'bg-[#FFE9DA] text-[#8E3914] border-[#F5BEA0] dark:bg-[#3A2218] dark:text-[#FFB894] dark:border-[#593424]',
+    heroGlow: 'bg-[#FFE9DA]/70 dark:bg-[#3A2218]/40',
   },
   'word-tools': {
-    badgeClass: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900',
-    iconGradient: 'from-blue-600 to-indigo-600',
-    cardBorder: 'hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-blue-500/10',
-    hoverBg: 'hover:bg-blue-50/50 dark:hover:bg-blue-950/20',
+    badgeClass: 'bg-[#DDEEFF] text-[#1A528C] border-[#B2D7FB] dark:bg-[#162742] dark:text-[#A3D2FF] dark:border-[#243E63]',
+    iconTile: 'bg-[#DDEEFF] text-[#1A528C] border-[#B2D7FB] dark:bg-[#162742] dark:text-[#A3D2FF] dark:border-[#243E63]',
+    heroGlow: 'bg-[#DDEEFF]/70 dark:bg-[#162742]/40',
   },
   'excel-tools': {
-    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-    iconGradient: 'from-emerald-500 to-teal-600',
-    cardBorder: 'hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-emerald-500/10',
-    hoverBg: 'hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20',
+    badgeClass: 'bg-[#DDF5E9] text-[#156340] border-[#BCEBD4] dark:bg-[#152E24] dark:text-[#8EE3BC] dark:border-[#244E3D]',
+    iconTile: 'bg-[#DDF5E9] text-[#156340] border-[#BCEBD4] dark:bg-[#152E24] dark:text-[#8EE3BC] dark:border-[#244E3D]',
+    heroGlow: 'bg-[#DDF5E9]/70 dark:bg-[#152E24]/40',
   },
   'powerpoint-tools': {
-    badgeClass: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900',
-    iconGradient: 'from-amber-500 to-orange-600',
-    cardBorder: 'hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-amber-500/10',
-    hoverBg: 'hover:bg-amber-50/50 dark:hover:bg-amber-950/20',
+    badgeClass: 'bg-[#FFF2C9] text-[#7E520A] border-[#F1D583] dark:bg-[#362C14] dark:text-[#FFE08A] dark:border-[#53431D]',
+    iconTile: 'bg-[#FFF2C9] text-[#7E520A] border-[#F1D583] dark:bg-[#362C14] dark:text-[#FFE08A] dark:border-[#53431D]',
+    heroGlow: 'bg-[#FFF2C9]/70 dark:bg-[#362C14]/40',
   },
   'image-tools': {
-    badgeClass: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900',
-    iconGradient: 'from-purple-600 to-pink-600',
-    cardBorder: 'hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-purple-500/10',
-    hoverBg: 'hover:bg-purple-50/50 dark:hover:bg-purple-950/20',
+    badgeClass: 'bg-[#E9E4FF] text-[#4B3A9D] border-[#CFC5FA] dark:bg-[#231F44] dark:text-[#C5BAFF] dark:border-[#373164]',
+    iconTile: 'bg-[#E9E4FF] text-[#4B3A9D] border-[#CFC5FA] dark:bg-[#231F44] dark:text-[#C5BAFF] dark:border-[#373164]',
+    heroGlow: 'bg-[#E9E4FF]/70 dark:bg-[#231F44]/40',
   },
   'other-document-tools': {
-    badgeClass: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-900',
-    iconGradient: 'from-cyan-500 to-teal-600',
-    cardBorder: 'hover:border-cyan-400 dark:hover:border-cyan-500 hover:shadow-cyan-500/10',
-    hoverBg: 'hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20',
+    badgeClass: 'bg-[#DDEEFF] text-[#1A528C] border-[#B2D7FB] dark:bg-[#162742] dark:text-[#A3D2FF] dark:border-[#243E63]',
+    iconTile: 'bg-[#DDEEFF] text-[#1A528C] border-[#B2D7FB] dark:bg-[#162742] dark:text-[#A3D2FF] dark:border-[#243E63]',
+    heroGlow: 'bg-[#DDEEFF]/70 dark:bg-[#162742]/40',
   },
 };
 
@@ -207,40 +192,40 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
       <AdSlot placement="category-top-banner" format="horizontal" minHeight={90} />
 
       {/* Category Hero / Header */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-10 shadow-xs relative overflow-hidden">
+      <div className="bg-white dark:bg-[#181B2E] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-3xl p-6 sm:p-10 shadow-[0_10px_28px_-18px_rgba(37,37,54,0.14)] relative overflow-hidden">
         <div
           aria-hidden="true"
-          className="absolute -right-16 -top-16 w-64 h-64 bg-gradient-to-br opacity-10 rounded-full blur-2xl pointer-events-none"
+          className={`absolute -right-14 -top-14 w-56 h-56 rounded-full blur-3xl pointer-events-none ${theme.heroGlow}`}
         />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
           <div className="flex items-start gap-4">
             <div
-              className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${theme.iconGradient} text-white flex items-center justify-center shrink-0 shadow-md`}
+              className={`w-14 h-14 rounded-2xl border flex items-center justify-center shrink-0 ${theme.iconTile}`}
             >
               <IconComp className="w-7 h-7" />
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span
                   className={`text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${theme.badgeClass}`}
                 >
                   Category
                 </span>
-                <span className="text-xs text-slate-500 font-medium">
+                <span className="text-xs text-[#777789] dark:text-[#A0A5C0] font-medium">
                   {categoryTools.length} {categoryTools.length === 1 ? 'Tool' : 'Tools'} Available
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-4xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-2xl sm:text-4xl font-extrabold uppercase tracking-tight text-[#252536] dark:text-[#F2F4FC]">
                 {categoryName}
               </h1>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
+              <p className="text-sm sm:text-base text-[#777789] dark:text-[#A0A5C0] max-w-2xl leading-relaxed">
                 {categoryDesc}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2 rounded-xl border border-emerald-200 dark:border-emerald-900 self-start sm:self-auto">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#156340] dark:text-[#8EE3BC] bg-[#DDF5E9] dark:bg-[#152E24] px-3.5 py-2 rounded-xl border border-[#BCEBD4] dark:border-[#244E3D] self-start sm:self-auto">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>100% Free · Files Stay on Your Device</span>
           </div>
@@ -249,26 +234,26 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
 
       {/* Internal Subsections for Image Tools */}
       {isImageCategory && (
-        <div className="bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-900/60 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-[#E9E4FF]/45 dark:bg-[#231F44]/40 border border-[#CFC5FA] dark:border-[#373164] rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#4B3A9D] dark:text-[#C5BAFF]">
               <Award className="w-4 h-4" />
-              <span>Exam Photo & Signature Presets Included</span>
+              <span>Exam Photo &amp; Signature Presets Included</span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-xl">
+            <p className="text-xs text-[#55556A] dark:text-[#C4C9E0] max-w-xl">
               UPSC, SSC, IBPS, and State PSC photo/signature requirements and passport specifications are built directly inside Image Tools alongside general photo resizing, compression, editing, and conversion.
             </p>
           </div>
 
           {/* Subsection Filters */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setImageSubSection('all')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 imageSubSection === 'all'
-                  ? 'bg-purple-600 text-white shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                  ? 'bg-[#5B50E6] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#181B2E] text-[#252536] dark:text-[#E2E6F7] border border-[#E8E6F2] dark:border-[#2A2F4A] hover:border-[#CFC5FA]'
               }`}
             >
               All Image Tools ({categoryTools.length})
@@ -278,8 +263,8 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
               onClick={() => setImageSubSection('general')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 imageSubSection === 'general'
-                  ? 'bg-purple-600 text-white shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                  ? 'bg-[#5B50E6] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#181B2E] text-[#252536] dark:text-[#E2E6F7] border border-[#E8E6F2] dark:border-[#2A2F4A] hover:border-[#CFC5FA]'
               }`}
             >
               General Image Tools ({generalImageTools.length})
@@ -289,12 +274,12 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
               onClick={() => setImageSubSection('exams')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 imageSubSection === 'exams'
-                  ? 'bg-purple-600 text-white shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                  ? 'bg-[#5B50E6] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#181B2E] text-[#252536] dark:text-[#E2E6F7] border border-[#E8E6F2] dark:border-[#2A2F4A] hover:border-[#CFC5FA]'
               }`}
             >
               <Award className="w-3.5 h-3.5" />
-              <span>Photo & Signature for Exams ({examTools.length})</span>
+              <span>Photo &amp; Signature for Exams ({examTools.length})</span>
             </button>
           </div>
         </div>
@@ -303,14 +288,14 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
       {/* Grid of Dedicated Tools in this Category */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+          <h2 className="text-lg font-extrabold uppercase tracking-tight text-[#252536] dark:text-[#F2F4FC]">
             {isImageCategory && imageSubSection === 'exams'
               ? 'Photo & Signature for Exams'
               : isImageCategory && imageSubSection === 'general'
               ? 'General Image Tools'
               : `Available ${categoryName.replace(/^\d+\.\s*/, '')}`}
           </h2>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-[#777789] dark:text-[#A0A5C0]">
             Click any tool to open it
           </span>
         </div>
@@ -340,34 +325,34 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
       {/* Category Workflow Guidance & FAQs */}
       {guidance && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 space-y-4">
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+          <section className="bg-white dark:bg-[#181B2E] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-2xl p-6 sm:p-8 space-y-4">
+            <h2 className="text-lg font-extrabold text-[#252536] dark:text-[#F2F4FC]">
               {guidance.workflowTitle}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#777789] dark:text-[#A0A5C0] leading-relaxed">
               {guidance.workflowSummary}
             </p>
-            <ul className="space-y-2.5 pl-4 list-disc text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+            <ul className="space-y-2.5 pl-4 list-disc text-xs sm:text-sm text-[#4C4C63] dark:text-[#C4C9E0] leading-relaxed">
               {guidance.workflowBullets.map((item, idx) => (
                 <li key={idx}>{item}</li>
               ))}
             </ul>
           </section>
 
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 space-y-4">
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+          <section className="bg-white dark:bg-[#181B2E] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-2xl p-6 sm:p-8 space-y-4">
+            <h2 className="text-lg font-extrabold text-[#252536] dark:text-[#F2F4FC]">
               Frequently Asked Questions
             </h2>
             <div className="space-y-4">
               {guidance.faqs.map((faq, idx) => (
                 <div
                   key={idx}
-                  className="border-b last:border-b-0 border-slate-100 dark:border-slate-800 pb-3.5 last:pb-0"
+                  className="border-b last:border-b-0 border-[#F0EEF8] dark:border-[#262B45] pb-3.5 last:pb-0"
                 >
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white mb-1">
+                  <h3 className="text-xs sm:text-sm font-bold text-[#252536] dark:text-[#F2F4FC] mb-1">
                     {faq.q}
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <p className="text-xs text-[#777789] dark:text-[#A0A5C0] leading-relaxed">
                     {faq.a}
                   </p>
                 </div>
@@ -378,12 +363,12 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
       )}
 
       {/* Other Categories Switcher */}
-      <div className="bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 space-y-4">
+      <div className="bg-[#F4F3FA]/80 dark:bg-[#141727] border border-[#E8E6F2] dark:border-[#262B45] rounded-2xl p-6 sm:p-8 space-y-4">
         <div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          <h3 className="text-base font-bold text-[#252536] dark:text-[#F2F4FC]">
             Explore Other Service Categories
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-[#777789] dark:text-[#A0A5C0] mt-0.5">
             Switch between document conversion, image processing, security, and spreadsheet categories
           </p>
         </div>
@@ -402,10 +387,10 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
                     onNavigateCategory(targetCatId);
                   }
                 }}
-                className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 text-left transition-all group no-underline"
+                className="pt-card-hover flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-[#181B2E] border border-[#E8E6F2] dark:border-[#2A2F4A] hover:border-[#CFC5FA] dark:hover:border-[#4B4485] text-left group no-underline"
               >
-                <OtherIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
+                <OtherIcon className="w-4 h-4 text-[#777789] dark:text-[#A0A5C0] group-hover:text-[#5B50E6] dark:group-hover:text-[#A99EFF] transition-colors shrink-0" />
+                <span className="text-xs font-semibold text-[#252536] dark:text-[#E2E6F7] group-hover:text-[#5B50E6] dark:group-hover:text-[#A99EFF] truncate transition-colors">
                   {otherCat.name.replace(/^\d+\.\s*/, '')}
                 </span>
               </a>

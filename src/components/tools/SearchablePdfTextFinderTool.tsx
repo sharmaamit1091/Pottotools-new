@@ -11,6 +11,12 @@ import {
   buildSearchRegex,
   generateSearchablePdf,
   renderSinglePage,
+  containsBrokenGlyphs,
+  krutiDevToUnicode,
+  unicodeToKrutiDev,
+  convertPagesFromKrutiDev,
+  revertPagesFromKrutiDev,
+  OcrLanguage,
   PageTextData,
   SearchMatch,
 } from '../../services/pdf/searchablePdfService';
@@ -36,6 +42,8 @@ import {
   FileSearch,
   ArrowRight,
   Highlighter,
+  Keyboard,
+  Languages,
 } from 'lucide-react';
 import { Worker } from 'tesseract.js';
 
@@ -105,18 +113,21 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
   const pagesDataRef = useRef<PageTextData[]>([]);
   const [scannedCount, setScannedCount] = useState(0);
   const [digitalCount, setDigitalCount] = useState(0);
+  const [brokenEncodingCount, setBrokenEncodingCount] = useState(0);
+  const [krutiDevCount, setKrutiDevCount] = useState(0);
 
-  // OCR state
-  const [ocrLanguage, setOcrLanguage] = useState<'eng' | 'hin'>('eng');
+  // OCR state (supports English, Hindi, and Bilingual Hindi + English)
+  const [ocrLanguage, setOcrLanguage] = useState<OcrLanguage>('hin+eng');
   const [isOcrRunning, setIsOcrRunning] = useState(false);
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrStatusText, setOcrStatusText] = useState('');
   const ocrWorkerRef = useRef<Worker | null>(null);
-  const ocrWorkerLangRef = useRef<'eng' | 'hin' | null>(null);
+  const ocrWorkerLangRef = useRef<OcrLanguage | null>(null);
   const cancelOcrRef = useRef(false);
 
-  // Search state
+  // Search state (supports both standard Unicode/English and Kruti Dev 010 keyboard typing)
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInputMode, setSearchInputMode] = useState<'unicode' | 'krutidev'>('unicode');
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [matchCase, setMatchCase] = useState(false);
   const [exactPhrase, setExactPhrase] = useState(false);
@@ -134,7 +145,9 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
   const renderSeqRef = useRef(0);
   const [isPreviewRendering, setIsPreviewRendering] = useState(false);
   const [showExtractedText, setShowExtractedText] = useState(false);
+  const [extractedTextFormat, setExtractedTextFormat] = useState<'unicode' | 'krutidev'>('unicode');
   const [copiedText, setCopiedText] = useState(false);
+  const [copiedKrutiText, setCopiedKrutiText] = useState(false);
 
   // Searchable PDF download state
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -200,6 +213,8 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     pagesDataRef.current = [];
     setScannedCount(0);
     setDigitalCount(0);
+    setBrokenEncodingCount(0);
+    setKrutiDevCount(0);
     setSearchQuery('');
     setActiveSearchQuery('');
     setSearchResults([]);
@@ -209,6 +224,7 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     setRenderedPageNum(0);
     setPreviewRenderError(null);
     setShowExtractedText(false);
+    setExtractedTextFormat('unicode');
     setShowPreDownloadOcrPrompt(false);
   };
 
@@ -238,15 +254,31 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
       setPagesData(inspection.pages);
       setScannedCount(inspection.scannedCount);
       setDigitalCount(inspection.digitalCount);
+      setBrokenEncodingCount(inspection.brokenEncodingCount);
+      setKrutiDevCount(inspection.krutiDevCount);
       setPreviewPageNum(1);
       setIsInspecting(false);
       // Increment docReadyVersion so preview effect ALWAYS renders Page 1 once pdfDoc is ready
       setDocReadyVersion((v) => v + 1);
 
-      triggerToast(
-        'success',
-        `Analyzed ${inspection.pageCount} pages: ${inspection.digitalCount} digital, ${inspection.scannedCount} scanned.`
-      );
+      if (inspection.krutiDevCount > 0 && inspection.brokenEncodingCount === 0) {
+        triggerToast(
+          'success',
+          `Detected Kruti Dev 010 on ${inspection.krutiDevCount} page${inspection.krutiDevCount === 1 ? '' : 's'} — auto-converted to Unicode Hindi for instant search!`
+        );
+      } else if (inspection.brokenEncodingCount > 0) {
+        // Automatically select Bilingual Hindi + English OCR when broken Hindi font encoding is detected
+        setOcrLanguage('hin+eng');
+        triggerToast(
+          'info',
+          `Detected broken Hindi/custom font on ${inspection.brokenEncodingCount} page${inspection.brokenEncodingCount === 1 ? '' : 's'}. Click "Fix Hindi Script with OCR" for clean Hindi search results!`
+        );
+      } else {
+        triggerToast(
+          'success',
+          `Analyzed ${inspection.pageCount} pages: ${inspection.digitalCount} digital, ${inspection.scannedCount} scanned.`
+        );
+      }
     } catch (err: any) {
       setIsInspecting(false);
       const msg =
@@ -453,13 +485,14 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     }
   }, [renderedPageNum, previewPageNum, showExtractedText, matchesOnCurrentPage, activeMatchIndex]);
 
-  // Execute Search (pure parameter-driven to avoid stale React closures)
+  // Execute Search (pure parameter-driven to avoid stale React closures; supports Kruti Dev 010 typing mode)
   const executeSearch = (
     pages: PageTextData[],
     q: string,
     useMatchCase: boolean,
     useExactPhrase: boolean,
-    silentToast = false
+    silentToast = false,
+    inputMode: 'unicode' | 'krutidev' = searchInputMode
   ) => {
     const trimmed = q.trim();
     if (!trimmed) {
@@ -469,13 +502,30 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
       return;
     }
 
-    setHasSearched(true);
-    setActiveSearchQuery(trimmed);
+    const effectiveQuery =
+      inputMode === 'krutidev' ? krutiDevToUnicode(trimmed).trim() : trimmed;
 
-    const matches = searchInPageData(pages, trimmed, {
+    setHasSearched(true);
+
+    let usedQuery = effectiveQuery || trimmed;
+    let matches = searchInPageData(pages, usedQuery, {
       matchCase: useMatchCase,
       exactPhrase: useExactPhrase,
     });
+
+    // Fallback: if user typed Kruti Dev and PDF pages still hold raw unconverted Kruti Dev text, try raw query too
+    if (matches.length === 0 && inputMode === 'krutidev' && usedQuery !== trimmed) {
+      const rawMatches = searchInPageData(pages, trimmed, {
+        matchCase: useMatchCase,
+        exactPhrase: useExactPhrase,
+      });
+      if (rawMatches.length > 0) {
+        matches = rawMatches;
+        usedQuery = trimmed;
+      }
+    }
+
+    setActiveSearchQuery(usedQuery);
     setSearchResults(matches);
     setActiveMatchIndex(0);
 
@@ -495,19 +545,60 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     }
   };
 
-  const handlePerformSearch = (overrideQuery?: string) => {
+  const handlePerformSearch = (overrideQuery?: string, overrideMode?: 'unicode' | 'krutidev') => {
     const q = overrideQuery !== undefined ? overrideQuery : searchQuery;
-    executeSearch(pagesDataRef.current, q, matchCase, exactPhrase);
+    const mode = overrideMode ?? searchInputMode;
+    executeSearch(pagesDataRef.current, q, matchCase, exactPhrase, false, mode);
   };
 
-  // Run OCR on scanned pages — returns the freshly updated PageTextData[] synchronously
-  const handleStartOcr = async (): Promise<PageTextData[]> => {
+  // Manual 1-click Kruti Dev 010 <-> Unicode conversion toggle for all digital pages
+  const handleToggleKrutiDevPages = () => {
+    if (isOcrRunning || pagesDataRef.current.length === 0) return;
+
+    const alreadyConverted = pagesDataRef.current.some((p) => p.krutiDevConverted);
+    const updated = alreadyConverted
+      ? revertPagesFromKrutiDev(pagesDataRef.current)
+      : convertPagesFromKrutiDev(pagesDataRef.current);
+
+    pagesDataRef.current = updated;
+    setPagesData(updated);
+    const newKrutiCount = updated.filter((p) => p.krutiDevConverted).length;
+    setKrutiDevCount(newKrutiCount);
+    setDigitalCount(updated.filter((p) => !p.isScanned).length);
+    setScannedCount(updated.filter((p) => p.isScanned).length);
+    setBrokenEncodingCount(updated.filter((p) => p.hasBrokenEncoding && p.ocrStatus !== 'done').length);
+
+    if (searchQuery.trim()) {
+      executeSearch(updated, searchQuery, matchCase, exactPhrase, true);
+    }
+
+    triggerToast(
+      'success',
+      alreadyConverted
+        ? 'Reverted pages back to original raw extracted text.'
+        : `Converted ${newKrutiCount} page${newKrutiCount === 1 ? '' : 's'} from Kruti Dev 010 to Unicode Hindi!`
+    );
+  };
+
+  // Run OCR on scanned/broken-encoding pages (or force all pages when requested)
+  const handleStartOcr = async (
+    forceAllPages = false,
+    overrideLang?: OcrLanguage
+  ): Promise<PageTextData[]> => {
     if (!pdfDocRef.current || !file) return pagesDataRef.current;
 
+    const targetLang: OcrLanguage = overrideLang || ocrLanguage;
+    if (overrideLang && overrideLang !== ocrLanguage) {
+      setOcrLanguage(overrideLang);
+    }
+
     const currentPages = pagesDataRef.current;
-    const scannedPages = currentPages.filter((p) => p.isScanned && p.ocrStatus !== 'done');
-    if (scannedPages.length === 0) {
-      triggerToast('info', 'All pages already have recognized text. Ready to search!');
+    const pagesToOcr = forceAllPages
+      ? currentPages
+      : currentPages.filter((p) => (p.isScanned || p.hasBrokenEncoding) && p.ocrStatus !== 'done');
+
+    if (pagesToOcr.length === 0) {
+      triggerToast('info', 'All pages already have readable text. Ready to search!');
       return currentPages;
     }
 
@@ -515,12 +606,18 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     setIsOcrRunning(true);
     cancelOcrRef.current = false;
     setOcrProgress(5);
-    setOcrStatusText(`Initializing OCR engine (${ocrLanguage === 'hin' ? 'Hindi' : 'English'})...`);
+    const langLabel =
+      targetLang === 'hin+eng'
+        ? 'Hindi + English'
+        : targetLang === 'hin'
+        ? 'Hindi'
+        : 'English';
+    setOcrStatusText(`Starting ${langLabel} OCR engine...`);
 
     let worker = ocrWorkerRef.current;
 
     // Reinitialize worker if user switched OCR language
-    if (worker && ocrWorkerLangRef.current !== ocrLanguage) {
+    if (worker && ocrWorkerLangRef.current !== targetLang) {
       try {
         await worker.terminate();
       } catch {
@@ -532,30 +629,32 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     }
 
     let workingPages = [...currentPages];
+    // Use crisp 2.0x render scale for Devanagari / Hindi so matras and conjuncts read accurately
+    const renderScale = targetLang === 'eng' ? 1.75 : 2.0;
 
     try {
       if (!worker) {
-        worker = await initOcrWorker(ocrLanguage, (_pct, status) => {
+        worker = await initOcrWorker(targetLang, (_pct, status) => {
           setOcrStatusText(status);
         });
         ocrWorkerRef.current = worker;
-        ocrWorkerLangRef.current = ocrLanguage;
+        ocrWorkerLangRef.current = targetLang;
       }
 
       let processedCount = 0;
-      const totalToProcess = scannedPages.length;
+      const totalToProcess = pagesToOcr.length;
 
-      for (const pageItem of scannedPages) {
+      for (const pageItem of pagesToOcr) {
         if (cancelOcrRef.current) {
           setOcrStatusText('OCR paused by user.');
-          triggerToast('info', 'OCR paused. Scanned pages up to this point have been preserved.');
+          triggerToast('info', 'OCR paused. Pages processed so far have been saved.');
           break;
         }
 
         const currentPct = Math.round(10 + (processedCount / totalToProcess) * 85);
         setOcrProgress(currentPct);
         setOcrStatusText(
-          `Recognizing page ${pageItem.pageNum} of ${pdfDocRef.current.numPages} (${processedCount + 1}/${totalToProcess})...`
+          `Reading ${langLabel} text on Page ${pageItem.pageNum} of ${pdfDocRef.current.numPages} (${processedCount + 1}/${totalToProcess})...`
         );
 
         workingPages = workingPages.map((p) =>
@@ -565,12 +664,20 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
         setPagesData(workingPages);
 
         try {
-          const ocrResult = await processPageOcr(worker, pdfDocRef.current, pageItem.pageNum, 1.75);
+          const ocrResult = await processPageOcr(
+            worker,
+            pdfDocRef.current,
+            pageItem.pageNum,
+            renderScale
+          );
 
           workingPages = workingPages.map((p) =>
             p.pageNum === pageItem.pageNum
               ? {
                   ...p,
+                  isScanned: true,
+                  hasBrokenEncoding: false,
+                  ocrRepaired: Boolean(p.hasBrokenEncoding || forceAllPages),
                   ocrStatus: 'done' as const,
                   text: ocrResult.text,
                   wordCount: ocrResult.text.split(/\s+/).filter(Boolean).length,
@@ -601,16 +708,27 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
         processedCount++;
       }
 
+      const remainingBroken = workingPages.filter((p) => p.hasBrokenEncoding && p.ocrStatus !== 'done').length;
+      setBrokenEncodingCount(remainingBroken);
+
       setOcrProgress(100);
-      setOcrStatusText('OCR scanning complete! All text is now indexed and searchable.');
+      setOcrStatusText(
+        `Done! ${langLabel} text is now clean and searchable across your PDF.`
+      );
       if (processedCount > 0) {
         trackToolCompleted('ocr-index', processedCount, 'searchable-pdf-text-finder');
       }
-      triggerToast('success', 'Completed OCR processing for scanned pages!');
+      triggerToast('success', `${langLabel} OCR complete! You can now search clean Hindi & English words.`);
 
-      // Re-run search immediately with freshly updated workingPages (zero stale closure)
-      if (searchQuery.trim()) {
+      // If search box has clean (non-tofu) text, re-run search immediately on fresh OCR text
+      if (searchQuery.trim() && !containsBrokenGlyphs(searchQuery)) {
         executeSearch(workingPages, searchQuery, matchCase, exactPhrase);
+      } else if (containsBrokenGlyphs(searchQuery)) {
+        // Clear stale tofu query so user sees fresh prompt to type real Hindi
+        setSearchQuery('');
+        setActiveSearchQuery('');
+        setSearchResults([]);
+        setHasSearched(false);
       }
 
       return workingPages;
@@ -657,15 +775,26 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
     handleSelectMatch(prevIdx);
   };
 
-  // Copy extracted text on current preview page
-  const handleCopyCurrentPageText = () => {
+  // Copy extracted text on current preview page (Unicode Hindi OR Kruti Dev 010 for MS Word)
+  const handleCopyCurrentPageText = (format: 'unicode' | 'krutidev' = 'unicode') => {
     const currentPageData = pagesData.find((p) => p.pageNum === previewPageNum);
     if (!currentPageData || !currentPageData.text) return;
 
-    navigator.clipboard.writeText(currentPageData.text).then(() => {
-      setCopiedText(true);
-      triggerToast('success', `Copied text from Page ${previewPageNum} to clipboard!`);
-      setTimeout(() => setCopiedText(false), 2000);
+    const payload =
+      format === 'krutidev'
+        ? currentPageData.rawKrutiDevText || unicodeToKrutiDev(currentPageData.text)
+        : currentPageData.text;
+
+    navigator.clipboard.writeText(payload).then(() => {
+      if (format === 'krutidev') {
+        setCopiedKrutiText(true);
+        triggerToast('success', `Copied Page ${previewPageNum} as Kruti Dev 010 (ready to paste in MS Word)!`);
+        setTimeout(() => setCopiedKrutiText(false), 2000);
+      } else {
+        setCopiedText(true);
+        triggerToast('success', `Copied Unicode text from Page ${previewPageNum} to clipboard!`);
+        setTimeout(() => setCopiedText(false), 2000);
+      }
     });
   };
 
@@ -727,7 +856,21 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
 
   const currentPage = pagesData.find((p) => p.pageNum === previewPageNum);
   const totalPages = pagesData.length;
-  const ocrPendingCount = pagesData.filter((p) => p.isScanned && p.ocrStatus !== 'done').length;
+  const ocrPendingCount = pagesData.filter(
+    (p) => (p.isScanned || p.hasBrokenEncoding) && p.ocrStatus !== 'done'
+  ).length;
+  const brokenPendingCount = pagesData.filter(
+    (p) => p.hasBrokenEncoding && p.ocrStatus !== 'done'
+  ).length;
+  const queryHasBrokenGlyphs = containsBrokenGlyphs(searchQuery);
+  const krutiLiveUnicodePreview = useMemo(
+    () => (searchInputMode === 'krutidev' && searchQuery.trim() ? krutiDevToUnicode(searchQuery) : ''),
+    [searchInputMode, searchQuery]
+  );
+  const currentPageKrutiDevText = useMemo(() => {
+    if (!currentPage?.text) return '';
+    return currentPage.rawKrutiDevText || unicodeToKrutiDev(currentPage.text);
+  }, [currentPage]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
@@ -739,7 +882,7 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
             <ScanText className="w-3.5 h-3.5 text-cyan-300" />
             <span>OCR &amp; Searchable Text Engine</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+          <h2 className="text-2xl sm:text-4xl font-extrabold uppercase tracking-tight">
             Find Anything in Scanned PDFs
           </h2>
           <p className="text-sm sm:text-base text-blue-100 leading-relaxed">
@@ -814,13 +957,29 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                         <span className="text-amber-600 dark:text-amber-400 font-medium">
                           {scannedCount} Scanned
                         </span>
+                        {krutiDevCount > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="text-indigo-600 dark:text-indigo-400 font-bold">
+                              {krutiDevCount} Kruti Dev → Hindi
+                            </span>
+                          </>
+                        )}
+                        {brokenEncodingCount > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="text-rose-600 dark:text-rose-400 font-bold">
+                              {brokenEncodingCount} Broken Hindi Font
+                            </span>
+                          </>
+                        )}
                       </>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={resetSession}
@@ -829,6 +988,36 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                 >
                   Upload Another File
                 </button>
+
+                {!isInspecting && totalPages > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleToggleKrutiDevPages}
+                    disabled={isOcrRunning || isDownloadingPdf}
+                    title="Convert Kruti Dev 010 / DevLys text in this PDF directly to Unicode Hindi (or revert)"
+                    className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer disabled:opacity-50 ${
+                      krutiDevCount > 0
+                        ? 'text-indigo-800 dark:text-indigo-200 bg-indigo-100 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-900/60'
+                        : 'text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:border-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300'
+                    }`}
+                  >
+                    <Languages className="w-3.5 h-3.5" />
+                    <span>{krutiDevCount > 0 ? 'Kruti Dev Converted ✓' : 'Kruti Dev → Hindi'}</span>
+                  </button>
+                )}
+
+                {!isInspecting && totalPages > 0 && scannedCount === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleStartOcr(true, 'hin+eng')}
+                    disabled={isOcrRunning || isDownloadingPdf}
+                    title="Force Hindi + English OCR if this PDF uses an older non-Unicode Hindi font showing boxes (□□□)"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <ScanText className="w-3.5 h-3.5" />
+                    <span>Fix Hindi / Run OCR</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -847,10 +1036,10 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
               <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="text-xs text-blue-900 dark:text-blue-200 space-y-0.5">
                   <p className="font-bold">
-                    {ocrPendingCount} scanned page{ocrPendingCount === 1 ? '' : 's'} have not been OCR-processed yet.
+                    {ocrPendingCount} page{ocrPendingCount === 1 ? '' : 's'} have not been OCR-processed yet.
                   </p>
                   <p className="text-blue-700 dark:text-blue-300">
-                    Run OCR first so Ctrl+F works on every scanned page in your downloaded PDF.
+                    Run OCR first so every scanned or broken-font page is properly indexed.
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -879,40 +1068,57 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
               </div>
             )}
 
-            {/* OCR Notice & Language Controls if document has scanned pages */}
-            {scannedCount > 0 && (
-              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-3">
+            {/* OCR & Broken Hindi Font Repair Notice */}
+            {(scannedCount > 0 || isOcrRunning) && (
+              <div
+                className={`p-4 rounded-2xl border space-y-3 ${
+                  brokenPendingCount > 0
+                    ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/70'
+                    : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60'
+                }`}
+              >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <div className="flex items-start gap-2.5">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                        brokenPendingCount > 0
+                          ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
                       <ScanText className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                        {ocrPendingCount > 0
-                          ? `${ocrPendingCount} Scanned Pages Require OCR for Text Search`
-                          : 'All Scanned Pages Have Been Processed with OCR!'}
+                      <h4 className="text-xs font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+                        {brokenPendingCount > 0
+                          ? `Broken Hindi / Custom Font Detected on ${brokenPendingCount} Page${brokenPendingCount === 1 ? '' : 's'}`
+                          : ocrPendingCount > 0
+                          ? `${ocrPendingCount} Scanned Page${ocrPendingCount === 1 ? '' : 's'} Ready for OCR`
+                          : 'All Pages Processed with Clean Readable Text!'}
                       </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {ocrPendingCount > 0
-                          ? 'Convert image-based pages into searchable text (English & Hindi in-app search & highlight; exported PDF Ctrl+F layer embeds invisible Latin/ASCII text).'
-                          : 'Ready! Search any word below to highlight it directly on the page, or click Download Searchable PDF for Ctrl+F support.'}
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed mt-0.5">
+                        {brokenPendingCount > 0
+                          ? 'This PDF displays Hindi properly on screen, but its hidden text uses an older non-Unicode font (showing □□□ boxes in search results). Run Hindi + English OCR to read real Hindi script (हिन्दी) cleanly!'
+                          : ocrPendingCount > 0
+                          ? 'Read text from scanned pages in English, Hindi, or Hindi + English so every match highlights on the page.'
+                          : 'Ready! Search any Hindi or English word below to see clean snippets and highlights directly on the page.'}
                       </p>
                     </div>
                   </div>
 
-                  {ocrPendingCount > 0 && (
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                  {(ocrPendingCount > 0 || isOcrRunning) && (
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                       <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1">
                         <span className="text-[11px] font-semibold text-slate-500">Lang:</span>
                         <select
                           value={ocrLanguage}
-                          onChange={(e) => setOcrLanguage(e.target.value as 'eng' | 'hin')}
+                          onChange={(e) => setOcrLanguage(e.target.value as OcrLanguage)}
                           disabled={isOcrRunning}
                           className="text-xs font-bold bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
                         >
-                          <option value="eng">English (eng)</option>
-                          <option value="hin">Hindi (hin)</option>
+                          <option value="hin+eng">Hindi + English</option>
+                          <option value="hin">Hindi Only (हिन्दी)</option>
+                          <option value="eng">English Only</option>
                         </select>
                       </div>
 
@@ -929,10 +1135,18 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                         <button
                           type="button"
                           onClick={() => handleStartOcr()}
-                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition-all cursor-pointer"
+                          className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-tight text-white shadow-sm transition-all cursor-pointer ${
+                            brokenPendingCount > 0
+                              ? 'bg-rose-600 hover:bg-rose-700'
+                              : 'bg-amber-600 hover:bg-amber-700'
+                          }`}
                         >
                           <Sparkles className="w-3.5 h-3.5" />
-                          <span>Start OCR on {ocrPendingCount} Pages</span>
+                          <span>
+                            {brokenPendingCount > 0
+                              ? `Fix Hindi Script (${ocrPendingCount} Pages)`
+                              : `Start OCR on ${ocrPendingCount} Pages`}
+                          </span>
                         </button>
                       )}
                     </div>
@@ -947,12 +1161,52 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
               </div>
             )}
 
-            {/* Search Box Bar */}
+            {/* Search Box Bar (Supports Unicode Hindi, English, AND Kruti Dev 010 Typing) */}
             <div className="space-y-3">
+              {/* Typing Mode Switcher */}
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setSearchInputMode('unicode')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      searchInputMode === 'unicode'
+                        ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Search className="w-3 h-3" />
+                    <span>Unicode Hindi / English</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchInputMode('krutidev')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      searchInputMode === 'krutidev'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Keyboard className="w-3 h-3" />
+                    <span>Kruti Dev 010 Typing</span>
+                  </button>
+                </div>
+
+                {searchInputMode === 'krutidev' && (
+                  <span className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium">
+                    Type Kruti Dev keys (e.g. <code className="font-mono font-bold">fo/kku lHkk</code> → विधान सभा)
+                  </span>
+                )}
+              </div>
+
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Search className="w-4 h-4" />
+                    {searchInputMode === 'krutidev' ? (
+                      <Keyboard className="w-4 h-4 text-indigo-500" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
                   </div>
                   <input
                     type="text"
@@ -961,8 +1215,22 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handlePerformSearch();
                     }}
-                    placeholder="Search anything: name, city (e.g. BILASPUR), order #, date, or phrase..."
-                    className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    placeholder={
+                      searchInputMode === 'krutidev'
+                        ? "Type in Kruti Dev 010 (e.g. fo/kku lHkk, fgekpy izns'k, dk;Zlwph)..."
+                        : 'Search Hindi or English word (e.g. विधान सभा, बिलासपुर, BILASPUR, date)...'
+                    }
+                    style={{
+                      fontFamily:
+                        searchInputMode === 'krutidev'
+                          ? "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+                          : "'Noto Sans Devanagari', 'Nirmala UI', 'Mangal', 'Kohinoor Devanagari', system-ui, sans-serif",
+                    }}
+                    className={`w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-800/80 border rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 ${
+                      searchInputMode === 'krutidev'
+                        ? 'border-indigo-400 dark:border-indigo-600 focus:ring-indigo-500/40 focus:border-indigo-500'
+                        : 'border-slate-300 dark:border-slate-700 focus:ring-blue-500/50 focus:border-blue-500'
+                    }`}
                   />
                 </div>
 
@@ -1002,6 +1270,39 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                   )}
                 </div>
               </div>
+
+              {/* Live Kruti Dev 010 -> Unicode Hindi Preview Strip */}
+              {searchInputMode === 'krutidev' && krutiLiveUnicodePreview && (
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/80">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-600 text-white shrink-0">
+                      Hindi Preview
+                    </span>
+                    <span
+                      style={{
+                        fontFamily:
+                          "'Noto Sans Devanagari', 'Nirmala UI', 'Mangal', 'Kohinoor Devanagari', system-ui, sans-serif",
+                      }}
+                      className="text-sm font-bold text-slate-900 dark:text-white truncate"
+                    >
+                      {krutiLiveUnicodePreview}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(krutiLiveUnicodePreview);
+                        triggerToast('success', 'Copied Unicode Hindi text!');
+                      }}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-indigo-700 dark:text-indigo-200 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy Hindi</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Search Modifiers */}
               <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2 px-1">
@@ -1054,6 +1355,25 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                   </span>
                 )}
               </div>
+
+              {queryHasBrokenGlyphs && (
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-200">
+                  <span>
+                    Your search text contains broken font boxes (□□□) copied from an older Hindi PDF. Click{' '}
+                    <strong>Fix Hindi Script</strong> above, then type normal Hindi (or switch to{' '}
+                    <strong>Kruti Dev 010 Typing</strong>).
+                  </span>
+                  {!isOcrRunning && (
+                    <button
+                      type="button"
+                      onClick={() => handleStartOcr(true, 'hin+eng')}
+                      className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] cursor-pointer shrink-0"
+                    >
+                      Fix Hindi Script Now
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Split Screen Workspace: Results Snippets & Interactive Highlighted Page Preview */}
@@ -1135,13 +1455,26 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                             <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
                           </div>
 
-                          <p className="text-slate-600 dark:text-slate-300 leading-relaxed font-sans break-words">
+                          <p
+                            style={{
+                              fontFamily:
+                                "'Noto Sans Devanagari', 'Nirmala UI', 'Mangal', 'Kohinoor Devanagari', system-ui, sans-serif",
+                            }}
+                            className="text-slate-700 dark:text-slate-200 leading-relaxed break-words"
+                          >
                             <span>{match.snippet.before}</span>
-                            <mark className="bg-amber-200 dark:bg-amber-500/30 text-amber-900 dark:text-amber-200 font-bold px-1 rounded">
+                            <mark className="bg-amber-200 dark:bg-amber-500/30 text-amber-950 dark:text-amber-200 font-bold px-1 rounded">
                               {match.snippet.matchedText}
                             </mark>
                             <span>{match.snippet.after}</span>
                           </p>
+                          {(containsBrokenGlyphs(match.snippet.before) ||
+                            containsBrokenGlyphs(match.snippet.matchedText) ||
+                            containsBrokenGlyphs(match.snippet.after)) && (
+                            <p className="mt-1.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                              Older non-Unicode PDF font — click &quot;Fix Hindi Script&quot; above to see real Hindi text.
+                            </p>
+                          )}
                         </div>
                       );
                     })}
@@ -1151,8 +1484,8 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                     <FileSearch className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {hasSearched
-                        ? 'No occurrences found for this search term. Try another word or start OCR.'
-                        : 'Enter any text, number, date or phrase above and click Search.'}
+                        ? 'No occurrences found for this search term. Try another word or run Hindi + English OCR.'
+                        : 'Enter any Hindi or English word, number, date or phrase above and click Search.'}
                     </p>
                   </div>
                 )}
@@ -1169,14 +1502,26 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                     {currentPage && (
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          currentPage.isScanned
+                          currentPage.hasBrokenEncoding && currentPage.ocrStatus !== 'done'
+                            ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
+                            : currentPage.krutiDevConverted
+                            ? 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
+                            : currentPage.ocrRepaired
+                            ? 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
+                            : currentPage.isScanned
                             ? currentPage.ocrStatus === 'done'
                               ? 'bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300'
                               : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
                             : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
                         }`}
                       >
-                        {currentPage.isScanned
+                        {currentPage.hasBrokenEncoding && currentPage.ocrStatus !== 'done'
+                          ? 'Broken Hindi Font (Run OCR)'
+                          : currentPage.krutiDevConverted
+                          ? 'Kruti Dev → Hindi'
+                          : currentPage.ocrRepaired
+                          ? 'Hindi OCR Fixed'
+                          : currentPage.isScanned
                           ? currentPage.ocrStatus === 'done'
                             ? 'OCR Indexed'
                             : 'Needs OCR'
@@ -1310,34 +1655,90 @@ export const SearchablePdfTextFinderTool: React.FC<SearchablePdfTextFinderToolPr
                       />
                     )
                   ) : (
-                    <div className="w-full h-full max-h-[540px] overflow-y-auto p-4 bg-slate-950 text-slate-200 font-mono text-xs rounded-xl space-y-3">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          Extracted Text • Page {previewPageNum} ({currentPage?.wordCount || 0}{' '}
-                          words)
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleCopyCurrentPageText}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold transition-colors cursor-pointer"
-                        >
-                          {copiedText ? (
-                            <>
-                              <Check className="w-3 h-3 text-emerald-400" />
-                              <span>Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3" />
-                              <span>Copy Text</span>
-                            </>
-                          )}
-                        </button>
+                    <div
+                      style={{
+                        fontFamily:
+                          extractedTextFormat === 'krutidev'
+                            ? "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+                            : "'Noto Sans Devanagari', 'Nirmala UI', 'Mangal', 'Kohinoor Devanagari', system-ui, sans-serif",
+                      }}
+                      className="w-full h-full max-h-[540px] overflow-y-auto p-4 bg-slate-950 text-slate-100 text-sm rounded-xl space-y-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-slate-400">
+                            Page {previewPageNum} ({currentPage?.wordCount || 0} words)
+                          </span>
+                          <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-900 border border-slate-700">
+                            <button
+                              type="button"
+                              onClick={() => setExtractedTextFormat('unicode')}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                                extractedTextFormat === 'unicode'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'text-slate-400 hover:text-white'
+                              }`}
+                            >
+                              Unicode Hindi
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setExtractedTextFormat('krutidev')}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                                extractedTextFormat === 'krutidev'
+                                  ? 'bg-indigo-600 text-white'
+                                  : 'text-slate-400 hover:text-white'
+                              }`}
+                            >
+                              Kruti Dev 010
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCurrentPageText('unicode')}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold transition-colors cursor-pointer"
+                          >
+                            {copiedText ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-400" />
+                                <span>Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>Copy Unicode</span>
+                              </>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCurrentPageText('krutidev')}
+                            title="Copy in Kruti Dev 010 format ready to paste directly into MS Word"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-600/80 hover:bg-indigo-600 text-white text-[10px] font-bold transition-colors cursor-pointer"
+                          >
+                            {copiedKrutiText ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-300" />
+                                <span>Copied Kruti Dev!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>Copy Kruti Dev</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="whitespace-pre-wrap leading-relaxed select-text">
                         {currentPage?.text ? (
-                          activeSearchQuery ? (
+                          extractedTextFormat === 'krutidev' ? (
+                            currentPageKrutiDevText
+                          ) : activeSearchQuery ? (
                             renderHighlightedPlainText(
                               currentPage.text,
                               activeSearchQuery,

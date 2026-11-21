@@ -6,6 +6,34 @@ export interface ToolTechnicalProfile {
 }
 
 export const TOOL_TECHNICAL_PROFILES: Record<string, ToolTechnicalProfile> = {
+  'fill-pdf-form': {
+    settingsAndOptions: [
+      'Click-anywhere text, date, checkmark (✓/✗), checkbox, line, rectangle, and circle placement',
+      'Reusable session Photo & Signature Library plus Reusable Text Snippets panel with drag-and-drop',
+      '3-mode Digital Signature creator (Draw, Type, Upload with white-background cleanup) and built-in Photo Crop & Rotate',
+      'Interactive AcroForm field detection (text, checkbox, radio, dropdown) plus optional Auto-Detect Form Fields',
+      'Snap alignment guides, optional rulers & page margins, page rotation (90°/180°), .pottoform Save/Reopen, Before/After & Print-Ready Preview',
+    ],
+    outputExplanation:
+      'Exports a standards-compliant PDF (.pdf) preserving original page sizes and orientations. Latin text is embedded as crisp vector text, while Hindi/Unicode text and cropped photos/signatures are embedded cleanly at high resolution in exact coordinates. Optional flattening locks filled AcroForm values.',
+    limitations: [
+      'Password-protected PDFs must be unlocked before editing.',
+      'Optional Auto-Detect relies on form labels and may not identify every visual layout; manual placement always works anywhere on the page.',
+      'Reusable photos and signatures are kept in browser memory for the current session only unless saved inside a .pottoform project file.',
+    ],
+    troubleshooting: [
+      {
+        issue: 'Existing interactive PDF fields appear slightly locked in some viewers',
+        solution:
+          'Enable the "Flatten form fields" option in the right sidebar before clicking Download PDF so all typed values render identically across every PDF viewer and printer.',
+      },
+      {
+        issue: 'Want to continue editing the same form tomorrow',
+        solution:
+          'Click "Save Progress" in the top bar to download a .pottoform project file, then click "Reopen Saved Project (.pottoform)" whenever you return.',
+      },
+    ],
+  },
   'compress-pdf': {
     settingsAndOptions: [
       'Target file size presets: 100 KB, 200 KB, 500 KB, 1 MB, or 2 MB',

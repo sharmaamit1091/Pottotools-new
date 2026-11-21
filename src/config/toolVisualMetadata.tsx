@@ -36,6 +36,7 @@ import {
   SheetViewerVisual,
   RedactIdVisual,
   RemoveScanWatermarkVisual,
+  FillPdfFormVisual,
   GenericToolVisual,
 } from '../components/visuals/ToolVisualIllustrations';
 
@@ -54,6 +55,18 @@ export interface ToolVisualSpec {
 
 export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
   // =================== PDF TOOLS ===================
+  'fill-pdf-form': {
+    visual: FillPdfFormVisual,
+    actionLabel: 'Fill & edit any PDF',
+    shortExplanation: 'Add text, photos, signatures, dates and checkmarks to any PDF.',
+    actionButtonText: 'Fill PDF Form',
+    categoryTag: 'PDF Tools',
+    accentClass: {
+      borderHover: 'hover:border-indigo-400 dark:hover:border-indigo-500',
+      actionTag: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-900/60',
+      button: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+    },
+  },
   'compress-pdf': {
     visual: CompressPdfVisual,
     actionLabel: 'Reduce file size',

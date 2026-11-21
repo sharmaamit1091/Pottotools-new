@@ -60,6 +60,55 @@ export const CATEGORIES: CategoryInfo[] = [
 ];
 
 export const TOOLS: ToolDefinition[] = [
+  // FILL PDF FORM (All-in-One Browser PDF Form Filler & Editor)
+  {
+    id: 'fill-pdf-form',
+    slug: 'fill-pdf-form',
+    title: 'FILL PDF FORM',
+    shortDesc: 'Add text, photos, signatures, dates and checkmarks to any PDF.',
+    fullDesc: 'Fill out or edit any PDF directly in your browser without converting to Word. Click anywhere to type text (including Hindi & Unicode), insert and crop photos, draw or type digital signatures, reuse photos/signatures and text snippets across pages, add checkmarks, dates, and shapes, fill existing AcroForm fields, rotate pages, save .pottoform progress, and download a print-ready PDF.',
+    category: 'pdf-tools',
+    categoryName: 'PDF Tools',
+    iconName: 'FileSignature',
+    isPopular: true,
+    badge: 'Form Filler',
+    status: 'tested',
+    processingLocation: 'browser',
+    acceptedFormats: ['.pdf', 'application/pdf'],
+    maxFileSizeMB: 100,
+    outputFormat: 'Filled PDF (.pdf)',
+    instructions: [
+      'Upload any PDF document (fillable, static, or scanned) or reopen a saved .pottoform project.',
+      'Click anywhere to type text, insert dates, place tick/cross marks, or draw lines and boxes.',
+      'Upload your photo or create a digital signature once in the Reusable Assets sidebar and place independent copies on any page.',
+      'Optionally run Auto-Detect Fields to highlight likely Name, Date, Address, Photo, and Signature areas for your approval.',
+      'Review with Before/After or Print-Ready Preview, then click Download PDF to save your completed form.',
+    ],
+    faqs: [
+      {
+        question: 'Can I fill a PDF that does not have editable form fields?',
+        answer: 'Yes. FILL PDF FORM works on any PDF—scanned forms, static PDFs, government or school application sheets, and interactive AcroForm PDFs—without needing to convert to Word.',
+      },
+      {
+        question: 'Can I reuse my photo and signature across multiple pages?',
+        answer: 'Yes. Upload your photo or create your signature once in the Reusable Assets panel, then drag or click to place it on any page. Each placed copy can be moved, resized, cropped, or deleted independently.',
+      },
+      {
+        question: 'Can I save my editing progress and continue later?',
+        answer: 'Yes. Click Save Progress to download a portable .pottoform project file containing your PDF, placed elements, reusable assets, and text snippets. Reopen it anytime from this page.',
+      },
+      {
+        question: 'Are my PDFs, photos, or signatures uploaded to any server?',
+        answer: 'No. Everything runs locally inside your web browser. Your reusable photos and signatures stay in your current editing session only unless you explicitly download a .pottoform file.',
+      },
+    ],
+    limitations: [
+      'Password-protected PDFs must be unlocked before filling.',
+      'Optional Auto-Detect suggests likely form fields and may not detect every custom layout; manual click-anywhere placement is always available.',
+      'Browser-local session assets clear when you close the tab unless you save a .pottoform project file.',
+    ],
+  },
+
   // Find Anything in Scanned PDFs (Searchable PDF & In-Browser OCR Text Finder)
   {
     id: 'searchable-pdf-text-finder',
@@ -1708,6 +1757,7 @@ export const DOCUMENT_NAV_CATEGORIES: DocumentNavCategory[] = [
       'delete-pdf-pages',
       'watermark-pdf',
       'remove-scan-watermark',
+      'fill-pdf-form',
       'page-numbers-pdf',
       'pdf-id-redactor',
       'protect-pdf',
@@ -1974,6 +2024,12 @@ const TASK_SYNONYMS: Record<string, string[]> = {
   ],
   'png-to-jpg': [
     'png to jpg', 'png to jpeg', 'convert png', 'compress png',
+  ],
+  'fill-pdf-form': [
+    'fill pdf form', 'fill pdf online', 'add text to pdf', 'add photo to pdf',
+    'add signature to pdf', 'edit pdf forms', 'fill pdf without converting to word',
+    'add image to pdf', 'type on pdf', 'pdf form filler', 'add checkmark to pdf',
+    'add date to pdf', 'passport photo on pdf', 'fill scanned pdf', 'write on pdf',
   ],
   'searchable-pdf-text-finder': [
     'find anything in scanned pdfs', 'search scanned pdf', 'searchable pdf', 'search text in scanned',

@@ -7,6 +7,8 @@ import { trackToolFileSelected } from '../../services/analytics/ga4Tracker';
 import {
   generateOrganizedPdf,
   renderPageThumbnail,
+  detectTabularGridOnPage,
+  TableDetectionResult,
   PageOrganizeItem,
   PageLayoutMode,
   FitAlignment,
@@ -85,6 +87,8 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
   const fileRef = useRef<File | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const dragSourceIndexRef = useRef<number | null>(null);
+  const tableDetectionCacheRef = useRef<Record<number, TableDetectionResult>>({});
+  const [scanningTablePageId, setScanningTablePageId] = useState<string | null>(null);
 
   // Clean up on unmount
   useEffect(() => {
@@ -270,38 +274,110 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
     }
   };
 
-  // Rotation Controls
-  const handleRotatePage = (pageId: string, deltaDegrees: number) => {
+  // Auto-detect dense tabular grid structures on a page (cached per original page index)
+  const ensureTableDetectionForPage = async (
+    originalIndex: number
+  ): Promise<TableDetectionResult | undefined> => {
+    const cached = tableDetectionCacheRef.current[originalIndex];
+    if (cached) return cached;
+    if (!pdfJsDocRef.current) return undefined;
+    const result = await detectTabularGridOnPage(pdfJsDocRef.current, originalIndex + 1);
+    tableDetectionCacheRef.current[originalIndex] = result;
+    return result;
+  };
+
+  // Rotation Controls — automatically scans selected page for dense tabular grids BEFORE rotating
+  const handleRotatePage = async (pageId: string, deltaDegrees: number) => {
+    const targetPage = pages.find((p) => p.id === pageId);
+    if (!targetPage) return;
+
+    const newRot = (targetPage.rotation + deltaDegrees + 360) % 360;
+    let detection: TableDetectionResult | undefined =
+      targetPage.tableDetection || tableDetectionCacheRef.current[targetPage.originalIndex];
+
+    // Auto-scan the selected page for dense grid structures before applying rotation
+    if (!detection && newRot !== 0 && pdfJsDocRef.current) {
+      setScanningTablePageId(pageId);
+      try {
+        detection = await ensureTableDetectionForPage(targetPage.originalIndex);
+      } finally {
+        setScanningTablePageId(null);
+      }
+    }
+
+    const shouldAutoFlatten =
+      newRot !== 0 &&
+      (targetPage.flattenOnRotate !== undefined
+        ? targetPage.flattenOnRotate
+        : Boolean(detection?.hasTable));
+
     setPages((prev) =>
       prev.map((p) => {
-        if (p.id === pageId) {
-          const newRot = (p.rotation + deltaDegrees + 360) % 360;
-          return { ...p, rotation: newRot };
-        }
-        return p;
+        if (p.id !== pageId) return p;
+        return {
+          ...p,
+          rotation: newRot,
+          tableDetection: detection || p.tableDetection,
+          flattenOnRotate: newRot === 0 ? false : shouldAutoFlatten,
+        };
       })
     );
+
+    if (newRot !== 0 && detection?.hasTable && !targetPage.tableDetection) {
+      const displayNum = pages.findIndex((p) => p.id === pageId) + 1;
+      triggerToast(
+        'info',
+        `Table detected on Page #${displayNum} — using Flattened Visual Rotation so tabular data stays crisp and undistorted.`
+      );
+    }
   };
 
-  const handleResetPageRotation = (pageId: string) => {
+  const handleToggleFlattenOnRotate = (pageId: string) => {
     setPages((prev) =>
-      prev.map((p) => (p.id === pageId ? { ...p, rotation: 0 } : p))
+      prev.map((p) => (p.id === pageId ? { ...p, flattenOnRotate: !p.flattenOnRotate } : p))
     );
   };
 
-  // Batch rotation controls
-  const handleRotateAll = (deltaDegrees: number) => {
-    setPages((prev) =>
-      prev.map((p) => ({
-        ...p,
-        rotation: (p.rotation + deltaDegrees + 360) % 360,
-      }))
-    );
-    triggerToast('info', `Rotated all pages by ${deltaDegrees > 0 ? '+' : ''}${deltaDegrees}°`);
+  // Batch rotation controls — scans pages for tabular grids automatically when rotating all
+  const handleRotateAll = async (deltaDegrees: number) => {
+    const nextPages = pages.map((p) => ({
+      ...p,
+      rotation: (p.rotation + deltaDegrees + 360) % 360,
+    }));
+    setPages(nextPages);
+
+    let tableCount = 0;
+    if (pdfJsDocRef.current && nextPages.length <= 60) {
+      const updatedWithDetection = await Promise.all(
+        nextPages.map(async (p) => {
+          if (p.rotation === 0) return { ...p, flattenOnRotate: false };
+          const det = p.tableDetection || (await ensureTableDetectionForPage(p.originalIndex));
+          const shouldFlatten = p.flattenOnRotate !== undefined ? p.flattenOnRotate : Boolean(det?.hasTable);
+          if (det?.hasTable) tableCount++;
+          return {
+            ...p,
+            tableDetection: det || p.tableDetection,
+            flattenOnRotate: shouldFlatten,
+          };
+        })
+      );
+      setPages(updatedWithDetection);
+    }
+
+    if (tableCount > 0) {
+      triggerToast(
+        'info',
+        `Rotated all pages by ${deltaDegrees > 0 ? '+' : ''}${deltaDegrees}°. Auto-enabled Flattened Rotation on ${tableCount} table ${tableCount === 1 ? 'page' : 'pages'}.`
+      );
+    } else {
+      triggerToast('info', `Rotated all pages by ${deltaDegrees > 0 ? '+' : ''}${deltaDegrees}°`);
+    }
   };
 
   const handleResetAllRotations = () => {
-    setPages((prev) => prev.map((p) => ({ ...p, rotation: 0, layoutMode: 'original' })));
+    setPages((prev) =>
+      prev.map((p) => ({ ...p, rotation: 0, layoutMode: 'original', flattenOnRotate: false }))
+    );
     triggerToast('info', 'All rotations and page orientations reset to original.');
   };
 
@@ -560,6 +636,7 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
         originalIndex: p.originalIndex,
         rotation: p.rotation,
         layoutMode: p.layoutMode,
+        flattenOnRotate: Boolean(p.flattenOnRotate),
       }));
 
       // Pass activeFile directly so generateOrganizedPdf generates a fresh, non-detached Uint8Array
@@ -570,7 +647,7 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
           setGenerateProgress(pct);
           setGenerateStatus(status);
         },
-        { alignment: fitAlignment }
+        { alignment: fitAlignment, pdfJsDoc: pdfJsDocRef.current }
       );
 
       const baseName = activeFile.name ? activeFile.name.replace(/\.pdf$/i, '') : 'organized';
@@ -592,6 +669,7 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
       objectUrlRef.current = null;
     }
     fileRef.current = null;
+    tableDetectionCacheRef.current = {};
     setFile(null);
     setFileBuffer(null);
     setPages([]);
@@ -1089,10 +1167,30 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
                           </div>
                         ) : null}
 
-                        {/* Rotation Angle Badge if rotated */}
+                        {/* Rotation Angle & Flattened Table Badge if rotated */}
                         {page.rotation !== 0 && (
-                          <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs">
-                            {page.rotation}°
+                          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                            <div className="bg-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs">
+                              {page.rotation}°
+                            </div>
+                            {page.flattenOnRotate && (
+                              <div
+                                title={
+                                  page.tableDetection?.reason ||
+                                  'Flattened visual rotation enabled for tabular data'
+                                }
+                                className="bg-indigo-600 text-white text-[8px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md shadow-xs"
+                              >
+                                Table • Flattened
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {scanningTablePageId === page.id && (
+                          <div className="absolute inset-0 bg-slate-900/55 backdrop-blur-[1px] flex items-center justify-center text-white text-[10px] font-bold gap-1.5">
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Scanning table...</span>
                           </div>
                         )}
 
@@ -1113,6 +1211,35 @@ export const PdfPageOrganizerTool: React.FC<PdfPageOrganizerToolProps> = ({
                       </div>
                     );
                   })()}
+
+                  {/* Flattened Table Rotation indicator / manual toggle when page is rotated */}
+                  {page.rotation !== 0 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFlattenOnRotate(page.id);
+                      }}
+                      title={
+                        page.flattenOnRotate
+                          ? 'Flattened Rotation ON: entire page is re-rendered cleanly into the new orientation (best for tables). Click to switch to Metadata Rotate.'
+                          : 'Metadata Rotate ON. Click to enable Flattened Visual Rotation for tables.'
+                      }
+                      className={`w-full mb-1.5 py-1 px-2 rounded-lg text-[10px] font-extrabold uppercase tracking-tight flex items-center justify-center gap-1 transition-colors cursor-pointer ${
+                        page.flattenOnRotate
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50'
+                      }`}
+                    >
+                      <span>
+                        {page.flattenOnRotate
+                          ? page.tableDetection?.hasTable
+                            ? 'Table Auto-Flattened ✓'
+                            : 'Flattened Rotate ✓'
+                          : 'Enable Flattened Rotate'}
+                      </span>
+                    </button>
+                  )}
 
                   {/* Individual Page Orientation Conversion Toggle (Upright, Zero Distortion) */}
                   {(() => {

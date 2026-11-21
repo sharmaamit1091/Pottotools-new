@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { AlertCircle, Info, X } from 'lucide-react';
+import { AnimatedCheckBadge } from './SuccessCelebration';
 
 export interface ToastMessage {
   id: string;
@@ -63,28 +64,43 @@ export const ToastContainer: React.FC = () => {
         return (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl shadow-xl border backdrop-blur-md transition-all animate-in slide-in-from-bottom-3 duration-200 ${
+            className={`pointer-events-auto flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl shadow-xl border backdrop-blur-md pt-page-enter ${
               isSuccess
-                ? 'bg-emerald-950/90 text-emerald-100 border-emerald-800/80 dark:bg-emerald-900/90'
+                ? 'bg-white/95 dark:bg-[#172824]/95 text-[#1D3B2F] dark:text-emerald-100 border-[#BBEAD4] dark:border-emerald-700/70'
                 : isError
-                ? 'bg-rose-950/90 text-rose-100 border-rose-800/80 dark:bg-rose-900/90'
-                : 'bg-slate-900/90 text-slate-100 border-slate-700/80 dark:bg-slate-800/90'
+                ? 'bg-white/95 dark:bg-[#2E1B1C]/95 text-[#7F1D1D] dark:text-rose-100 border-[#F5BEA0] dark:border-rose-800/70'
+                : 'bg-white/95 dark:bg-[#1A1E33]/95 text-[#252536] dark:text-[#F2F4FC] border-[#DDD5FD] dark:border-[#343A5E]'
             }`}
           >
-            <div className="shrink-0 mt-0.5">
-              {isSuccess && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-              {isError && <AlertCircle className="w-4 h-4 text-rose-400" />}
-              {!isSuccess && !isError && <Info className="w-4 h-4 text-blue-400" />}
+            <div className="shrink-0">
+              {isSuccess ? (
+                <AnimatedCheckBadge size="sm" showConfetti={true} />
+              ) : isError ? (
+                <div className="w-8 h-8 rounded-xl bg-[#FFE9DA] dark:bg-rose-500/20 flex items-center justify-center">
+                  <AlertCircle className="w-4 h-4 text-[#DC2626] dark:text-rose-300" />
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-xl bg-[#DDEEFF] dark:bg-sky-500/20 flex items-center justify-center">
+                  <Info className="w-4 h-4 text-[#1E5C9A] dark:text-sky-300" />
+                </div>
+              )}
             </div>
 
-            <div className="flex-1 text-xs">
-              {toast.title && <div className="font-bold mb-0.5">{toast.title}</div>}
-              <div className="leading-relaxed opacity-95">{toast.message}</div>
+            <div className="flex-1 text-xs min-w-0">
+              {toast.title && (
+                <div className="font-extrabold text-[#252536] dark:text-white mb-0.5 truncate">
+                  {toast.title}
+                </div>
+              )}
+              <div className="leading-relaxed text-[#55556B] dark:text-slate-200">
+                {toast.message}
+              </div>
             </div>
 
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-white/60 hover:text-white p-0.5 rounded transition-colors"
+              aria-label="Close notification"
+              className="text-[#777789] hover:text-[#252536] dark:hover:text-white p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>

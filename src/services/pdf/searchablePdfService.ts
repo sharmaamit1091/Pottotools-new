@@ -9,6 +9,16 @@ import {
   setTextRenderingMode,
 } from 'pdf-lib';
 import { createWorker, Worker } from 'tesseract.js';
+import {
+  krutiDevToUnicode,
+  unicodeToKrutiDev,
+  isKrutiDevFontName,
+  looksLikeKrutiDevText,
+  processOcrTextWithKrutiDev,
+  KrutiDevOcrPipelineOptions,
+} from './krutiDevConverter';
+
+export { krutiDevToUnicode, unicodeToKrutiDev, processOcrTextWithKrutiDev };
 
 // Setup PDF.js worker locally for 100% offline compatibility
 if (typeof window !== 'undefined') {
@@ -46,9 +56,17 @@ export interface OcrLine {
   words?: OcrWord[];
 }
 
+export type OcrLanguage = 'eng' | 'hin' | 'hin+eng';
+
 export interface PageTextData {
   pageNum: number; // 1-based index
-  isScanned: boolean; // true if page was image-only / scanned
+  isScanned: boolean; // true if page was image-only / scanned OR has broken non-Unicode font encoding
+  hasBrokenEncoding?: boolean; // true if digital PDF text contains tofu/PUA/broken Hindi font glyphs
+  encodingIssueReason?: string;
+  ocrRepaired?: boolean; // true after OCR replaced broken digital encoding with clean Unicode
+  krutiDevConverted?: boolean; // true when Kruti Dev 010 / DevLys digital text was converted to Unicode Hindi
+  rawKrutiDevText?: string; // original raw text preserved before Kruti Dev -> Unicode conversion
+  rawKrutiDevLines?: OcrLine[]; // original raw positioned lines preserved before conversion
   ocrStatus: 'idle' | 'processing' | 'done' | 'failed' | 'skipped';
   text: string;
   wordCount: number;
@@ -66,8 +84,11 @@ export interface PdfInspectionResult {
   pages: PageTextData[];
   scannedCount: number;
   digitalCount: number;
+  brokenEncodingCount: number;
+  krutiDevCount: number;
   hasDigitalText: boolean;
   hasScannedPages: boolean;
+  hasBrokenEncodingPages: boolean;
 }
 
 export interface SearchMatch {
@@ -112,6 +133,235 @@ export function sanitizeForStandardFont(str: string): string {
 }
 
 /**
+ * Normalize Unicode text (NFC) and remove stray zero-width formatting characters
+ * so Devanagari / Hindi words match consistently whether typed or pasted.
+ */
+export function normalizeSearchableUnicode(str: string): string {
+  if (!str) return '';
+  try {
+    return str
+      .normalize('NFC')
+      .replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
+  } catch {
+    return str;
+  }
+}
+
+/**
+ * Checks whether a string contains broken PDF glyph codes (Private Use Area,
+ * replacement characters, non-printable control bytes, or tofu box placeholders)
+ * commonly copied from older non-Unicode Indian/Hindi PDFs.
+ */
+export function containsBrokenGlyphs(str: string): boolean {
+  if (!str) return false;
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (
+      (code >= 0xe000 && code <= 0xf8ff) || // Private Use Area (renders as □□□)
+      code === 0xfffd || // Unicode Replacement Character
+      code === 0xfffe ||
+      code === 0xffff ||
+      code === 0x25a1 || // White square tofu box
+      (code >= 0x0000 && code <= 0x0008) ||
+      code === 0x000b ||
+      code === 0x000c ||
+      (code >= 0x000e && code <= 0x001f) ||
+      (code >= 0x007f && code <= 0x009f)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const LEGACY_NON_UNICODE_HINDI_FONT_RE =
+  /kruti|devlys|chanakya|chankya|walkman|shree|aps-?dv|dv-?tt|dvb-?tt|dvn-?tt|agra|akruti|kiran|surekh|yogesh|shivaji|kundli|bharati|pragati|subhash|manisha|priya|sujata|saral/i;
+
+/**
+ * Analyzes extracted PDF.js digital text + font styles to detect broken ToUnicode CMaps
+ * or legacy non-Unicode Hindi/Indic fonts (which visually display crisp Hindi on canvas
+ * but extract as `□□□□` tofu boxes or scrambled ASCII codes).
+ */
+export function analyzeTextEncodingQuality(
+  text: string,
+  textContent?: any
+): {
+  isBroken: boolean;
+  isKrutiDev: boolean;
+  reason?: string;
+  brokenRatio: number;
+  brokenCharCount: number;
+} {
+  const nonWs = text.replace(/\s+/g, '');
+  const totalChars = nonWs.length;
+  if (totalChars === 0) {
+    return { isBroken: false, isKrutiDev: false, brokenRatio: 0, brokenCharCount: 0 };
+  }
+
+  let brokenChars = 0;
+  let devanagariChars = 0;
+
+  for (let i = 0; i < nonWs.length; i++) {
+    const code = nonWs.charCodeAt(i);
+    if (code >= 0x0900 && code <= 0x097f) {
+      devanagariChars++;
+    } else if (
+      (code >= 0xe000 && code <= 0xf8ff) || // Private Use Area
+      code === 0xfffd ||
+      code === 0xfffe ||
+      code === 0xffff ||
+      code === 0x25a1 ||
+      (code >= 0x0000 && code <= 0x0008) ||
+      code === 0x000b ||
+      code === 0x000c ||
+      (code >= 0x000e && code <= 0x001f) ||
+      (code >= 0x007f && code <= 0x009f) ||
+      (code >= 0x2000 && code <= 0x200a) ||
+      (code >= 0xfb05 && code <= 0xfdff) // Rare presentation forms used as broken CID fallbacks
+    ) {
+      brokenChars++;
+    }
+  }
+
+  const brokenRatio = brokenChars / totalChars;
+
+  // Check if PDF.js font styles reference Kruti Dev / DevLys or other legacy non-Unicode Hindi fonts
+  let hasKrutiDevFont = false;
+  let hasLegacyHindiFont = false;
+  if (textContent?.styles && typeof textContent.styles === 'object') {
+    for (const styleObj of Object.values(textContent.styles) as any[]) {
+      const family = String(styleObj?.fontFamily || '');
+      if (isKrutiDevFontName(family)) {
+        hasKrutiDevFont = true;
+      }
+      if (LEGACY_NON_UNICODE_HINDI_FONT_RE.test(family)) {
+        hasLegacyHindiFont = true;
+      }
+    }
+  }
+
+  // Also inspect individual item fontNames if present
+  if ((!hasKrutiDevFont || !hasLegacyHindiFont) && Array.isArray(textContent?.items)) {
+    for (const it of textContent.items) {
+      if (typeof it?.fontName === 'string') {
+        if (isKrutiDevFontName(it.fontName)) hasKrutiDevFont = true;
+        if (LEGACY_NON_UNICODE_HINDI_FONT_RE.test(it.fontName)) hasLegacyHindiFont = true;
+      }
+    }
+  }
+
+  if (brokenRatio >= 0.06 || brokenChars >= 10) {
+    return {
+      isBroken: true,
+      isKrutiDev: false,
+      reason: 'Broken non-Unicode font mapping detected (extracts as □□□ boxes instead of Hindi/Unicode script)',
+      brokenRatio,
+      brokenCharCount: brokenChars,
+    };
+  }
+
+  // Detect Kruti Dev 010 / DevLys either via embedded font name OR unmistakable Kruti Dev text signatures
+  if ((hasKrutiDevFont && devanagariChars < 5) || (!hasLegacyHindiFont && looksLikeKrutiDevText(text))) {
+    return {
+      isBroken: false,
+      isKrutiDev: true,
+      reason: 'Kruti Dev 010 / DevLys font detected — converted directly to Unicode Hindi',
+      brokenRatio,
+      brokenCharCount: brokenChars,
+    };
+  }
+
+  if (hasLegacyHindiFont && devanagariChars < 5) {
+    return {
+      isBroken: true,
+      isKrutiDev: false,
+      reason: 'Legacy non-Unicode Hindi font detected (e.g. Chanakya / Shree-Lipi)',
+      brokenRatio,
+      brokenCharCount: brokenChars,
+    };
+  }
+
+  return { isBroken: false, isKrutiDev: false, brokenRatio, brokenCharCount: brokenChars };
+}
+
+/**
+ * Convert positioned PDF lines/words from Kruti Dev 010 to Unicode Hindi
+ * while keeping exact bounding box coordinates intact for accurate canvas highlighting.
+ */
+export function convertOcrLinesFromKrutiDev(
+  lines: OcrLine[] | undefined,
+  fallbackText: string
+): { text: string; lines: OcrLine[] | undefined } {
+  if (!lines || lines.length === 0) {
+    return {
+      text: normalizeSearchableUnicode(krutiDevToUnicode(fallbackText)),
+      lines: undefined,
+    };
+  }
+
+  const convertedLines: OcrLine[] = lines.map((line) => ({
+    ...line,
+    text: normalizeSearchableUnicode(krutiDevToUnicode(line.text)),
+    words: line.words
+      ? line.words.map((w) => ({
+          ...w,
+          text: normalizeSearchableUnicode(krutiDevToUnicode(w.text)),
+        }))
+      : undefined,
+  }));
+
+  return {
+    text: convertedLines.map((l) => l.text).join('\n'),
+    lines: convertedLines,
+  };
+}
+
+/**
+ * Manually convert all pages with digital text from Kruti Dev 010 -> Unicode Hindi.
+ * Useful when a PDF uses Kruti Dev text without storing the font name in PDF metadata.
+ */
+export function convertPagesFromKrutiDev(pages: PageTextData[]): PageTextData[] {
+  return pages.map((page) => {
+    if (page.krutiDevConverted || !page.text.trim()) return page;
+    const rawText = page.rawKrutiDevText ?? page.text;
+    const rawLines = page.rawKrutiDevLines ?? page.ocrLines;
+    const converted = convertOcrLinesFromKrutiDev(rawLines, rawText);
+    const words = converted.text.split(/\s+/).filter(Boolean);
+    return {
+      ...page,
+      text: converted.text,
+      wordCount: words.length,
+      ocrLines: converted.lines,
+      krutiDevConverted: true,
+      rawKrutiDevText: rawText,
+      rawKrutiDevLines: rawLines,
+      hasBrokenEncoding: false,
+      isScanned: false,
+      ocrStatus: 'done',
+      confidence: 100,
+    };
+  });
+}
+
+/**
+ * Revert pages that were converted from Kruti Dev back to their original raw extracted text.
+ */
+export function revertPagesFromKrutiDev(pages: PageTextData[]): PageTextData[] {
+  return pages.map((page) => {
+    if (!page.krutiDevConverted || page.rawKrutiDevText === undefined) return page;
+    const rawText = page.rawKrutiDevText;
+    const words = rawText.split(/\s+/).filter(Boolean);
+    return {
+      ...page,
+      text: rawText,
+      wordCount: words.length,
+      ocrLines: page.rawKrutiDevLines ?? page.ocrLines,
+      krutiDevConverted: false,
+    };
+  });
+}
+
+/**
  * Escape regex special characters.
  */
 function escapeRegex(value: string): string {
@@ -123,7 +373,7 @@ function escapeRegex(value: string): string {
  * Multi-word queries allow flexible whitespace (including OCR line breaks) between words.
  */
 export function buildSearchRegex(query: string, options: SearchOptions = {}): RegExp | null {
-  const cleanQuery = query.trim();
+  const cleanQuery = normalizeSearchableUnicode(query).trim();
   if (!cleanQuery) return null;
 
   const { matchCase = false, exactPhrase = false } = options;
@@ -132,7 +382,7 @@ export function buildSearchRegex(query: string, options: SearchOptions = {}): Re
 
   const body = tokens.map(escapeRegex).join('\\s+');
   const pattern = exactPhrase
-    ? `(?<![\\p{L}\\p{N}_])${body}(?![\\p{L}\\p{N}_])`
+    ? `(?<![\\p{L}\\p{N}\\p{M}_])${body}(?![\\p{L}\\p{N}\\p{M}_])`
     : body;
 
   const flags = matchCase ? 'gu' : 'giu';
@@ -258,7 +508,7 @@ function extractDigitalLines(
     let maxY1 = -Infinity;
 
     for (const it of currentLineItems) {
-      const trimmed = it.str.trim();
+      const trimmed = normalizeSearchableUnicode(it.str).trim();
       if (!trimmed) continue;
       textParts.push(trimmed);
       const bbox: BoundingBox = { x0: it.x0, y0: it.y0, x1: it.x1, y1: it.y1 };
@@ -330,6 +580,8 @@ export async function inspectPdfDocument(file: File): Promise<{
   const pages: PageTextData[] = [];
   let digitalCount = 0;
   let scannedCount = 0;
+  let brokenEncodingCount = 0;
+  let krutiDevCount = 0;
 
   for (let i = 1; i <= numPages; i++) {
     const page = await pdfDoc.getPage(i);
@@ -338,13 +590,54 @@ export async function inspectPdfDocument(file: File): Promise<{
     const { text: pageText, lines: digitalLines } = extractDigitalLines(textContent, viewport);
 
     const words = pageText.split(/\s+/).filter(Boolean);
+    const encodingCheck = analyzeTextEncodingQuality(pageText, textContent);
 
-    // If page has >= 8 recognizable text words, treat as native digital text
-    if (words.length >= 8) {
+    if (words.length >= 8 && encodingCheck.isKrutiDev) {
+      // Kruti Dev 010 / DevLys digital PDF page:
+      // Instantly auto-convert to crisp Unicode Hindi while preserving exact word highlight boxes!
+      const converted = convertOcrLinesFromKrutiDev(digitalLines, pageText);
+      const convertedWords = converted.text.split(/\s+/).filter(Boolean);
+      digitalCount++;
+      krutiDevCount++;
+      pages.push({
+        pageNum: i,
+        isScanned: false,
+        hasBrokenEncoding: false,
+        krutiDevConverted: true,
+        rawKrutiDevText: pageText,
+        rawKrutiDevLines: digitalLines,
+        ocrStatus: 'done',
+        text: converted.text,
+        wordCount: convertedWords.length,
+        confidence: 100,
+        ocrLines: converted.lines,
+        canvasWidth: viewport.width,
+        canvasHeight: viewport.height,
+      });
+    } else if (words.length >= 8 && encodingCheck.isBroken) {
+      // Digital PDF page with broken/non-Unicode Hindi or custom font encoding (e.g. □□□ boxes):
+      // Queue for Hindi+English OCR so real readable Unicode Hindi replaces the garbled text!
+      scannedCount++;
+      brokenEncodingCount++;
+      pages.push({
+        pageNum: i,
+        isScanned: true,
+        hasBrokenEncoding: true,
+        encodingIssueReason: encodingCheck.reason,
+        ocrStatus: 'idle',
+        text: pageText,
+        wordCount: words.length,
+        ocrLines: digitalLines.length > 0 ? digitalLines : undefined,
+        canvasWidth: viewport.width,
+        canvasHeight: viewport.height,
+      });
+    } else if (words.length >= 8) {
+      // Clean Unicode digital text
       digitalCount++;
       pages.push({
         pageNum: i,
         isScanned: false,
+        hasBrokenEncoding: false,
         ocrStatus: 'done',
         text: pageText,
         wordCount: words.length,
@@ -354,12 +647,14 @@ export async function inspectPdfDocument(file: File): Promise<{
         canvasHeight: viewport.height,
       });
     } else {
+      // Image-only scanned page
       scannedCount++;
       pages.push({
         pageNum: i,
         isScanned: true,
+        hasBrokenEncoding: false,
         ocrStatus: 'idle',
-        text: pageText, // may have partial/sparse header
+        text: pageText,
         wordCount: words.length,
         ocrLines: digitalLines.length > 0 ? digitalLines : undefined,
         canvasWidth: viewport.width,
@@ -374,8 +669,11 @@ export async function inspectPdfDocument(file: File): Promise<{
       pages,
       digitalCount,
       scannedCount,
+      brokenEncodingCount,
+      krutiDevCount,
       hasDigitalText: digitalCount > 0,
       hasScannedPages: scannedCount > 0,
+      hasBrokenEncodingPages: brokenEncodingCount > 0,
     },
     pdfDoc,
   };
@@ -448,12 +746,14 @@ export async function renderSinglePage(
 
 /**
  * Initialize a Tesseract worker with memory-safe logger.
+ * Supports English ('eng'), Hindi ('hin'), and Bilingual Hindi + English ('hin+eng').
  */
 export async function initOcrWorker(
-  language: 'eng' | 'hin' = 'eng',
+  language: OcrLanguage = 'eng',
   onProgress?: (progress: number, status: string) => void
 ): Promise<Worker> {
-  const worker = await createWorker(language, 1, {
+  const langs: string | string[] = language === 'hin+eng' ? ['hin', 'eng'] : language;
+  const worker = await createWorker(langs, 1, {
     logger: (m) => {
       if (onProgress && m.progress !== undefined) {
         const pct = Math.round(m.progress * 100);
@@ -471,13 +771,22 @@ export async function initOcrWorker(
  * In Tesseract.js v6/v7, lines and words live inside `data.blocks -> paragraphs -> lines -> words`
  * and are only populated when `output: { blocks: true }` is requested.
  */
-function extractOcrLinesFromResult(data: any): OcrLine[] {
+function extractOcrLinesFromResult(
+  data: any,
+  ocrPipelineOptions: KrutiDevOcrPipelineOptions = {}
+): { lines: OcrLine[]; krutiDevMapped: boolean } {
   const lines: OcrLine[] = [];
-  if (!data) return lines;
+  let anyKrutiMapped = false;
+  if (!data) return { lines, krutiDevMapped: false };
 
   const pushRawLine = (l: any) => {
-    const lineText = (l?.text || '').replace(/\s+/g, ' ').trim();
+    const rawLineText = (l?.text || '').replace(/\s+/g, ' ').trim();
+    if (!rawLineText) return;
+
+    const lineProcessed = processOcrTextWithKrutiDev(rawLineText, ocrPipelineOptions);
+    const lineText = normalizeSearchableUnicode(lineProcessed.text).trim();
     if (!lineText) return;
+    if (lineProcessed.krutiDevMapped) anyKrutiMapped = true;
 
     const lineBbox: BoundingBox = {
       x0: Number(l?.bbox?.x0) || 0,
@@ -488,8 +797,14 @@ function extractOcrLinesFromResult(data: any): OcrLine[] {
 
     const words: OcrWord[] = [];
     if (Array.isArray(l?.words)) {
+      const wordMode: KrutiDevOcrPipelineOptions = {
+        krutiDevMode: lineProcessed.krutiDevMapped ? 'force' : ocrPipelineOptions.krutiDevMode,
+      };
       for (const w of l.words) {
-        const wText = (w?.text || '').replace(/\s+/g, ' ').trim();
+        const rawW = (w?.text || '').replace(/\s+/g, ' ').trim();
+        if (!rawW) continue;
+        const wProcessed = processOcrTextWithKrutiDev(rawW, wordMode);
+        const wText = normalizeSearchableUnicode(wProcessed.text).trim();
         if (!wText) continue;
         words.push({
           text: wText,
@@ -536,23 +851,27 @@ function extractOcrLinesFromResult(data: any): OcrLine[] {
     }
   }
 
-  return lines;
+  return { lines, krutiDevMapped: anyKrutiMapped };
 }
 
 /**
  * Recognize text AND exact word/line bounding boxes on a single scanned page using Tesseract.js v7.
+ * Runs Kruti Dev 010 font mapping & Unicode Devanagari normalization inside the OCR pipeline
+ * so extracted Hindi renders and searches cleanly.
  */
 export async function processPageOcr(
   worker: Worker,
   pdfDoc: any,
   pageNum: number,
-  scale: number = 1.75
+  scale: number = 1.75,
+  ocrPipelineOptions: KrutiDevOcrPipelineOptions = { krutiDevMode: 'auto' }
 ): Promise<{
   text: string;
   confidence: number;
   lines: OcrLine[];
   canvasWidth: number;
   canvasHeight: number;
+  krutiDevMapped: boolean;
 }> {
   const rendered = await renderSinglePage(pdfDoc, pageNum, scale);
 
@@ -560,12 +879,22 @@ export async function processPageOcr(
     // CRITICAL for Tesseract.js v7: pass `{ text: true, blocks: true }` so blocks/lines/words bboxes are populated!
     const res = await worker.recognize(rendered.canvas, {}, { text: true, blocks: true });
     const confidence = res.data.confidence || 0;
-    const lines = extractOcrLinesFromResult(res.data);
+
+    // Detect page-level Kruti Dev text so even short lines on a Kruti Dev scanned page are mapped consistently
+    const rawPageText = (res.data.text || '').trim();
+    const pageLevelCheck = processOcrTextWithKrutiDev(rawPageText, ocrPipelineOptions);
+    const effectiveLineOptions: KrutiDevOcrPipelineOptions = pageLevelCheck.krutiDevMapped
+      ? { krutiDevMode: 'force' }
+      : ocrPipelineOptions;
+
+    const { lines, krutiDevMapped: linesMapped } = extractOcrLinesFromResult(
+      res.data,
+      effectiveLineOptions
+    );
 
     // Use line-joined text when available so search indices align 1-to-1 with word highlight boxes
     const lineJoinedText = lines.map((l) => l.text).join('\n').trim();
-    const rawText = (res.data.text || '').trim();
-    const text = lineJoinedText.length > 0 ? lineJoinedText : rawText;
+    const text = lineJoinedText.length > 0 ? lineJoinedText : pageLevelCheck.text;
 
     return {
       text,
@@ -573,6 +902,7 @@ export async function processPageOcr(
       lines,
       canvasWidth: rendered.width,
       canvasHeight: rendered.height,
+      krutiDevMapped: pageLevelCheck.krutiDevMapped || linesMapped,
     };
   } finally {
     rendered.cleanup();
@@ -739,7 +1069,8 @@ export function searchInPageData(
       (page.canvasHeight || 0) > 0;
 
     const indexed = hasPositionedLines ? buildPositionedPageIndex(page) : null;
-    const pageText = indexed && indexed.fullText.length > 0 ? indexed.fullText : page.text || '';
+    const rawPageText = indexed && indexed.fullText.length > 0 ? indexed.fullText : page.text || '';
+    const pageText = normalizeSearchableUnicode(rawPageText);
     if (!pageText) continue;
 
     let match: RegExpExecArray | null;

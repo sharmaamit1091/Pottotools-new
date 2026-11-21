@@ -1,0 +1,760 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --bg-page: #f8fafc;
+    --bg-surface: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-subtle: #e2e8f0;
+    color-scheme: light;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+
+  :root.dark,
+  html.dark,
+  .dark,
+  [data-theme="dark"] {
+    --bg-page: #020617;
+    --bg-surface: #0f172a;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-subtle: #1e293b;
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  code, pre, kbd, samp, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom scrollbars for file lists and preview panels */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+
+@keyframes potooHover {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(1deg);
+  }
+}
+
+.animate-potoo-hover {
+  animation: potooHover 3.5s ease-in-out infinite;
+}
+
+/* Studio Visual Stage subtle architectural dot-grid backdrop */
+.tool-visual-stage {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.07), transparent 68%),
+    radial-gradient(rgba(100, 116, 139, 0.16) 1px, transparent 1px);
+  background-size: 100% 100%, 14px 14px;
+  background-position: 0 0, 7px 7px;
+}
+
+.dark .tool-visual-stage {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.14), transparent 70%),
+    radial-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+  background-size: 100% 100%, 14px 14px;
+  background-position: 0 0, 7px 7px;
+}
+
+/* =====================================================================
+   Realistic Continuous Tool Card Visual Animations (Compositor-Only)
+   Runs smoothly on mobile & desktop; enhanced gently on card hover.
+   ===================================================================== */
+
+/* Directional flow arrow pulse */
+@keyframes tvArrowFlow {
+  0%, 100% { transform: translateX(-2px); opacity: 0.65; }
+  50% { transform: translateX(3px); opacity: 1; }
+}
+
+@keyframes tvSoftFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-2.5px); }
+}
+
+/* Merge PDF: Two real pages glide inward & bind into combined stack */
+@keyframes tvMergeDocLeft {
+  0%, 14% { transform: translateX(-5px) rotate(-5deg); }
+  48%, 74% { transform: translateX(4px) rotate(-1.5deg); }
+  100% { transform: translateX(-5px) rotate(-5deg); }
+}
+
+@keyframes tvMergeDocRight {
+  0%, 14% { transform: translateX(5px) rotate(5deg); }
+  48%, 74% { transform: translateX(-4px) rotate(1.5deg); }
+  100% { transform: translateX(5px) rotate(5deg); }
+}
+
+@keyframes tvMergeResultPulse {
+  0%, 42% { transform: scale(0.95); }
+  58%, 78% { transform: scale(1.04); }
+  100% { transform: scale(0.95); }
+}
+
+/* Split PDF: Scissors cut downward & two extracted packets part smoothly */
+@keyframes tvScissorsCut {
+  0%, 10% { transform: translateY(-16px) rotate(-8deg); opacity: 0.9; }
+  45%, 58% { transform: translateY(18px) rotate(6deg); opacity: 1; }
+  75% { transform: translateY(20px) rotate(6deg); opacity: 0; }
+  85% { transform: translateY(-16px) rotate(-8deg); opacity: 0; }
+  100% { transform: translateY(-16px) rotate(-8deg); opacity: 0.9; }
+}
+
+@keyframes tvSplitLeft {
+  0%, 28% { transform: translateX(3px) rotate(0deg); }
+  55%, 80% { transform: translateX(-4px) rotate(-3deg); }
+  100% { transform: translateX(3px) rotate(0deg); }
+}
+
+@keyframes tvSplitRight {
+  0%, 28% { transform: translateX(-3px) rotate(0deg); }
+  55%, 80% { transform: translateX(4px) rotate(3deg); }
+  100% { transform: translateX(-3px) rotate(0deg); }
+}
+
+/* Compress PDF / Image: Physical press squeeze + crisp slim output */
+@keyframes tvPressInLeft {
+  0%, 15% { transform: translateX(-4px); opacity: 0.55; }
+  48%, 72% { transform: translateX(2px); opacity: 1; }
+  100% { transform: translateX(-4px); opacity: 0.55; }
+}
+
+@keyframes tvPressInRight {
+  0%, 15% { transform: translateX(4px); opacity: 0.55; }
+  48%, 72% { transform: translateX(-2px); opacity: 1; }
+  100% { transform: translateX(4px); opacity: 0.55; }
+}
+
+@keyframes tvCompressTarget {
+  0%, 20% { transform: scale(1.04); }
+  52%, 78% { transform: scale(0.92); }
+  100% { transform: scale(1.04); }
+}
+
+/* Organize Pages: Tilted scrambled pages straighten into neat 1-2-3 order */
+@keyframes tvOrganizeTiltA {
+  0%, 18% { transform: rotate(-11deg) translateY(2px); }
+  48%, 78% { transform: rotate(0deg) translateY(0px); }
+  100% { transform: rotate(-11deg) translateY(2px); }
+}
+
+@keyframes tvOrganizeTiltB {
+  0%, 18% { transform: rotate(8deg) translateY(-3px); }
+  48%, 78% { transform: rotate(0deg) translateY(0px); }
+  100% { transform: rotate(8deg) translateY(-3px); }
+}
+
+@keyframes tvOrganizePop {
+  0%, 35% { transform: translateY(3px); opacity: 0.78; }
+  55%, 82% { transform: translateY(0px); opacity: 1; }
+  100% { transform: translateY(3px); opacity: 0.78; }
+}
+
+/* Delete Pages: Middle page lifts, dims, and fades out while siblings tighten */
+@keyframes tvDeletePageDrop {
+  0%, 22% { transform: translateY(0px) scale(1); opacity: 1; }
+  52%, 76% { transform: translateY(-10px) scale(0.76) rotate(6deg); opacity: 0.2; }
+  100% { transform: translateY(0px) scale(1); opacity: 1; }
+}
+
+/* OCR / Search Laser Scan + Match Highlight */
+@keyframes tvLaserSweep {
+  0% { transform: translateY(-2px); opacity: 0.3; }
+  15% { opacity: 1; }
+  50% { transform: translateY(56px); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(-2px); opacity: 0.3; }
+}
+
+@keyframes tvMagnifierPan {
+  0%, 100% { transform: translate(-5px, -4px) rotate(-6deg); }
+  50% { transform: translate(6px, 5px) rotate(4deg); }
+}
+
+@keyframes tvMatchGlow {
+  0%, 28% { opacity: 0.35; transform: scaleX(0.92); }
+  50%, 78% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0.35; transform: scaleX(0.92); }
+}
+
+/* Watermark Rubber Stamp Landing */
+@keyframes tvStampLand {
+  0%, 16% { transform: scale(1.42) rotate(-18deg) translateY(-6px); opacity: 0; }
+  36% { transform: scale(0.92) rotate(-11deg) translateY(0px); opacity: 1; }
+  46%, 80% { transform: scale(1) rotate(-12deg) translateY(0px); opacity: 0.96; }
+  94%, 100% { transform: scale(1) rotate(-12deg) translateY(0px); opacity: 0; }
+}
+
+/* Sign PDF: Fountain pen draws cursive SVG path */
+@keyframes tvPenDraw {
+  0%, 12% { stroke-dashoffset: 96; opacity: 0.2; }
+  55%, 84% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 96; opacity: 0.2; }
+}
+
+@keyframes tvPenNibGlide {
+  0%, 12% { transform: translate(-18px, 2px) rotate(-12deg); opacity: 0.95; }
+  34% { transform: translate(-2px, -3px) rotate(-6deg); opacity: 1; }
+  56%, 80% { transform: translate(16px, 1px) rotate(-10deg); opacity: 1; }
+  94%, 100% { transform: translate(-18px, 2px) rotate(-12deg); opacity: 0.95; }
+}
+
+/* Protect & Unlock PDF: Metallic Padlock Shackle */
+@keyframes tvShackleLock {
+  0%, 22% { transform: translateY(-4px); }
+  42%, 82% { transform: translateY(0px); }
+  100% { transform: translateY(-4px); }
+}
+
+@keyframes tvShackleUnlock {
+  0%, 22% { transform: translateY(0px) rotate(0deg); }
+  45%, 82% { transform: translateY(-5px) rotate(-14deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes tvShieldRing {
+  0%, 35% { transform: scale(0.88); opacity: 0; }
+  55% { transform: scale(1.08); opacity: 0.7; }
+  80%, 100% { transform: scale(1.24); opacity: 0; }
+}
+
+/* Image Enhancer Split Slider Sweep */
+@keyframes tvSliderSweep {
+  0%, 100% { transform: translateX(-34px); }
+  50% { transform: translateX(34px); }
+}
+
+@keyframes tvEnhancerClip {
+  0%, 100% { clip-path: inset(0 0 0 30%); }
+  50% { clip-path: inset(0 0 0 70%); }
+}
+
+/* Background Wipe / Format Transform */
+@keyframes tvBgWipe {
+  0%, 15% { clip-path: inset(0 100% 0 0); }
+  52%, 82% { clip-path: inset(0 0% 0 0); }
+  100% { clip-path: inset(0 100% 0 0); }
+}
+
+/* Image Crop / Resize Box Breathing */
+@keyframes tvCropFocus {
+  0%, 18% { transform: scale(1.08); opacity: 0.7; }
+  50%, 80% { transform: scale(0.92); opacity: 1; }
+  100% { transform: scale(1.08); opacity: 0.7; }
+}
+
+/* Photo Fan / Bind */
+@keyframes tvFanOut1 {
+  0%, 18% { transform: translateX(-8px) rotate(-2deg); }
+  50%, 80% { transform: translateX(0px) rotate(-7deg); }
+  100% { transform: translateX(-8px) rotate(-2deg); }
+}
+
+@keyframes tvFanOut2 {
+  0%, 18% { transform: translateX(-10px) rotate(0deg); }
+  50%, 80% { transform: translateX(3px) rotate(6deg); }
+  100% { transform: translateX(-10px) rotate(0deg); }
+}
+
+/* Editable Word Cursor Blink */
+@keyframes tvCursorBlink {
+  0%, 45% { opacity: 1; }
+  50%, 95% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Page Numbers Footer Stamp Pop */
+@keyframes tvFooterBadgePop {
+  0%, 24% { transform: translateY(4px) scale(0.85); opacity: 0.4; }
+  46%, 82% { transform: translateY(0px) scale(1); opacity: 1; }
+  100% { transform: translateY(4px) scale(0.85); opacity: 0.4; }
+}
+
+/* Spreadsheet Row Inspection Scan */
+@keyframes tvRowScan {
+  0%, 100% { transform: translateY(0px); }
+  33% { transform: translateY(13px); }
+  66% { transform: translateY(26px); }
+}
+
+/* Utility classes for realistic tool visuals */
+.tv-arrow-flow { animation: tvArrowFlow 2.2s ease-in-out infinite; }
+.tv-soft-float { animation: tvSoftFloat 3.4s ease-in-out infinite; }
+.tv-merge-left { animation: tvMergeDocLeft 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-merge-right { animation: tvMergeDocRight 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-merge-result { animation: tvMergeResultPulse 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-scissors-cut { animation: tvScissorsCut 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-split-left { animation: tvSplitLeft 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-split-right { animation: tvSplitRight 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-press-left { animation: tvPressInLeft 3.2s ease-in-out infinite; }
+.tv-press-right { animation: tvPressInRight 3.2s ease-in-out infinite; }
+.tv-compress-target { animation: tvCompressTarget 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-organize-a { animation: tvOrganizeTiltA 4s cubic-bezier(0.34, 1.4, 0.64, 1) infinite; }
+.tv-organize-b { animation: tvOrganizeTiltB 4s cubic-bezier(0.34, 1.4, 0.64, 1) infinite; }
+.tv-organize-pop { animation: tvOrganizePop 4s ease-in-out infinite; }
+.tv-delete-drop { animation: tvDeletePageDrop 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-laser-sweep { animation: tvLaserSweep 3.2s ease-in-out infinite; }
+.tv-magnifier-pan { animation: tvMagnifierPan 3.6s ease-in-out infinite; }
+.tv-match-glow { animation: tvMatchGlow 3.2s ease-in-out infinite; transform-origin: left center; }
+.tv-stamp-land { animation: tvStampLand 3.6s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+.tv-pen-draw { stroke-dasharray: 96; animation: tvPenDraw 3.8s ease-in-out infinite; }
+.tv-pen-glide { animation: tvPenNibGlide 3.8s ease-in-out infinite; }
+.tv-shackle-lock { animation: tvShackleLock 3.6s cubic-bezier(0.34, 1.5, 0.64, 1) infinite; transform-box: fill-box; transform-origin: center bottom; }
+.tv-shackle-unlock { animation: tvShackleUnlock 3.6s cubic-bezier(0.34, 1.5, 0.64, 1) infinite; transform-box: fill-box; transform-origin: 25% 100%; }
+.tv-shield-ring { animation: tvShieldRing 3.6s ease-out infinite; }
+.tv-slider-sweep { animation: tvSliderSweep 4s ease-in-out infinite; }
+.tv-enhancer-clip { animation: tvEnhancerClip 4s ease-in-out infinite; }
+.tv-bg-wipe { animation: tvBgWipe 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-crop-focus { animation: tvCropFocus 3.4s ease-in-out infinite; }
+.tv-fan-1 { animation: tvFanOut1 3.8s ease-in-out infinite; }
+.tv-fan-2 { animation: tvFanOut2 3.8s ease-in-out infinite; }
+.tv-cursor-blink { animation: tvCursorBlink 1.1s steps(1) infinite; }
+.tv-footer-pop { animation: tvFooterBadgePop 3.4s cubic-bezier(0.34, 1.4, 0.64, 1) infinite; }
+.tv-row-scan { animation: tvRowScan 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+/* Remove Scan Watermark: Smooth 5.2s tasteful before-to-after label dissolve */
+@keyframes tvScanLabelDissolve {
+  0%, 24% { opacity: 1; clip-path: inset(0 0% 0 0); }
+  52%, 86% { opacity: 0; clip-path: inset(0 0% 0 100%); }
+  95%, 100% { opacity: 1; clip-path: inset(0 0% 0 0); }
+}
+
+@keyframes tvScanCleanSweep {
+  0%, 20% { transform: translateX(-18px); opacity: 0; }
+  26% { opacity: 0.95; }
+  52% { transform: translateX(118px); opacity: 0.95; }
+  58%, 100% { transform: translateX(126px); opacity: 0; }
+}
+
+@keyframes tvScanCleanBadge {
+  0%, 48% { opacity: 0; transform: translateY(2px); }
+  58%, 85% { opacity: 1; transform: translateY(0px); }
+  93%, 100% { opacity: 0; transform: translateY(2px); }
+}
+
+@keyframes tvScanBeforePill {
+  0%, 26% { opacity: 1; }
+  46%, 88% { opacity: 0.32; }
+  96%, 100% { opacity: 1; }
+}
+
+@keyframes tvScanAfterPill {
+  0%, 44% { opacity: 0.35; }
+  56%, 86% { opacity: 1; }
+  96%, 100% { opacity: 0.35; }
+}
+
+.tv-scan-label-dissolve { animation: tvScanLabelDissolve 5.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-scan-clean-sweep { animation: tvScanCleanSweep 5.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.tv-scan-clean-badge { animation: tvScanCleanBadge 5.2s ease-out infinite; }
+.tv-scan-before-pill { animation: tvScanBeforePill 5.2s ease-in-out infinite; }
+.tv-scan-after-pill { animation: tvScanAfterPill 5.2s ease-in-out infinite; }
+
+/* Custom Photo Studio Card - 7-Step Mini Animation Loop (7s total) */
+@keyframes studioPhotoStage {
+  0%, 28% { transform: scale(1) rotate(0deg); }
+  31% { transform: scale(0.84) rotate(0deg); }
+  40% { transform: scale(0.88) rotate(0deg); }
+  44% { transform: scale(0.9) rotate(-6deg); }
+  50% { transform: scale(0.92) rotate(0deg); }
+  56% { transform: scale(1) rotate(0deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes studioPhotoEnhance {
+  0%, 56% { filter: brightness(1) saturate(1) contrast(1); }
+  62%, 96% { filter: brightness(1.25) saturate(1.35) contrast(1.1); }
+  100% { filter: brightness(1) saturate(1) contrast(1); }
+}
+
+@keyframes studioStep1 {
+  0%, 12% { opacity: 1; transform: translateY(0); }
+  14%, 100% { opacity: 0; transform: translateY(-3px); }
+}
+
+@keyframes studioStep2Crop {
+  0%, 13% { opacity: 0; transform: scale(1.08); }
+  16%, 26% { opacity: 1; transform: scale(1); }
+  28%, 100% { opacity: 0; transform: scale(0.96); }
+}
+
+@keyframes studioStep2Box {
+  0%, 13% { inset: 0px; }
+  18%, 26% { inset: 6px 12px; }
+  28%, 100% { inset: 0px; }
+}
+
+@keyframes studioStep3Resize {
+  0%, 27% { opacity: 0; transform: scale(0.9); }
+  30%, 40% { opacity: 1; transform: scale(1); }
+  42%, 100% { opacity: 0; transform: scale(1.05); }
+}
+
+@keyframes studioStep4Rotate {
+  0%, 41% { opacity: 0; transform: scale(0.8) rotate(-20deg); }
+  44%, 54% { opacity: 1; transform: scale(1) rotate(0deg); }
+  56%, 100% { opacity: 0; transform: scale(1.1) rotate(20deg); }
+}
+
+@keyframes studioStep5Slider {
+  0%, 55% { opacity: 0; transform: translateY(6px); }
+  58%, 68% { opacity: 1; transform: translateY(0); }
+  70%, 100% { opacity: 0; transform: translateY(-4px); }
+}
+
+@keyframes studioSliderThumb {
+  0%, 56% { left: 20%; }
+  64%, 69% { left: 76%; }
+  70%, 100% { left: 76%; }
+}
+
+@keyframes studioStep6Compress {
+  0%, 69% { opacity: 0; transform: scale(0.85); }
+  72%, 82% { opacity: 1; transform: scale(1); }
+  84%, 100% { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes studioStep7Download {
+  0%, 83% { opacity: 0; transform: scale(0.85) translateY(4px); }
+  86%, 96% { opacity: 1; transform: scale(1) translateY(0); }
+  98%, 100% { opacity: 0; transform: scale(0.95) translateY(-2px); }
+}
+
+@keyframes studioShimmer {
+  0%, 84% { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+  87% { opacity: 0.6; }
+  93% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.studio-photo-transform {
+  animation: studioPhotoStage 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform-origin: center center;
+}
+.studio-photo-filter { animation: studioPhotoEnhance 7s ease-in-out infinite; }
+.studio-step-1 { animation: studioStep1 7s ease-in-out infinite; }
+.studio-step-2-crop { animation: studioStep2Crop 7s ease-in-out infinite; }
+.studio-step-2-box { animation: studioStep2Box 7s cubic-bezier(0.34, 1.3, 0.64, 1) infinite; }
+.studio-step-3-resize { animation: studioStep3Resize 7s ease-in-out infinite; }
+.studio-step-4-rotate { animation: studioStep4Rotate 7s ease-in-out infinite; }
+.studio-step-5-slider { animation: studioStep5Slider 7s ease-in-out infinite; }
+.studio-slider-thumb { animation: studioSliderThumb 7s ease-in-out infinite; }
+.studio-step-6-compress { animation: studioStep6Compress 7s ease-in-out infinite; }
+.studio-step-7-download { animation: studioStep7Download 7s ease-in-out infinite; }
+.studio-shimmer { animation: studioShimmer 7s ease-in-out infinite; }
+
+/* OfflineInstallationGuide 3-Step Animated SVG Workflow Keyframes */
+@keyframes svgDashFlow {
+  from { stroke-dashoffset: 32; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes svgPacketDrop {
+  0% { transform: translateY(-10px); opacity: 0; }
+  30% { opacity: 1; }
+  75% { transform: translateY(18px); opacity: 1; }
+  100% { transform: translateY(22px); opacity: 0; }
+}
+
+@keyframes svgProgressBar {
+  0%, 10% { transform: scaleX(0.06); }
+  68%, 100% { transform: scaleX(1); }
+}
+
+@keyframes svgPointerTap {
+  0%, 15% { transform: translate(18px, 16px) scale(1); opacity: 0; }
+  32% { transform: translate(0px, 0px) scale(1); opacity: 1; }
+  46% { transform: translate(0px, 0px) scale(0.84); opacity: 1; }
+  60% { transform: translate(0px, 0px) scale(1); opacity: 1; }
+  88%, 100% { transform: translate(0px, 0px) scale(1); opacity: 0; }
+}
+
+@keyframes svgIconDockPop {
+  0%, 42% { transform: scale(0.5); opacity: 0; }
+  62% { transform: scale(1.08); opacity: 1; }
+  76%, 100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes svgSlashDraw {
+  0%, 15% { stroke-dashoffset: 48; opacity: 0.35; }
+  45%, 100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+@keyframes svgDocDoneSlide {
+  0%, 22% { transform: translateY(8px); opacity: 0; }
+  48%, 100% { transform: translateY(0); opacity: 1; }
+}
+
+.svg-flow-dash {
+  stroke-dasharray: 6 6;
+  animation: svgDashFlow 1.4s linear infinite;
+}
+
+.svg-packet-drop {
+  animation: svgPacketDrop 2.4s ease-in-out infinite;
+}
+
+.svg-progress-bar {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: svgProgressBar 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.svg-pointer-tap {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: svgPointerTap 3.2s ease-in-out infinite;
+}
+
+.svg-icon-dock-pop {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: svgIconDockPop 3.2s cubic-bezier(0.34, 1.4, 0.64, 1) infinite;
+}
+
+.svg-slash-draw {
+  stroke-dasharray: 48;
+  animation: svgSlashDraw 3.2s ease-out infinite;
+}
+
+.svg-doc-done-slide {
+  animation: svgDocDoneSlide 3.2s ease-out infinite;
+}
+
+.offline-guide-paused .svg-flow-dash,
+.offline-guide-paused .svg-packet-drop,
+.offline-guide-paused .svg-progress-bar,
+.offline-guide-paused .svg-pointer-tap,
+.offline-guide-paused .svg-icon-dock-pop,
+.offline-guide-paused .svg-slash-draw,
+.offline-guide-paused .svg-doc-done-slide {
+  animation-play-state: paused;
+}
+
+/* Interactive 100% Offline Hero Badge click feedback animations */
+@keyframes offlineBadgePop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.08); }
+  70% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+@keyframes offlineBadgeRipple {
+  0% { transform: scale(0.9); opacity: 0.75; }
+  100% { transform: scale(1.45); opacity: 0; }
+}
+
+@keyframes offlineReminderIn {
+  0% { transform: translateY(-6px) scale(0.97); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.anim-offline-badge-pop {
+  animation: offlineBadgePop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.anim-offline-badge-ripple {
+  animation: offlineBadgeRipple 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-offline-reminder-in {
+  animation: offlineReminderIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Homepage Magic Tool Box animations */
+@keyframes magicScanSweep {
+  0% { transform: translateX(-110%); opacity: 0; }
+  20% { opacity: 0.75; }
+  80% { opacity: 0.75; }
+  100% { transform: translateX(220%); opacity: 0; }
+}
+
+@keyframes magicFloatGentle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(-2deg); }
+}
+
+@keyframes magicRevealUp {
+  0% { opacity: 0; transform: translateY(8px) scale(0.985); }
+  100% { opacity: 1; transform: translateY(0px) scale(1); }
+}
+
+@keyframes redactMaskBar {
+  0%, 18% { transform: scaleX(0.15); opacity: 0.55; }
+  45%, 82% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(0.15); opacity: 0.55; }
+}
+
+.anim-magic-scan {
+  animation: magicScanSweep 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.anim-magic-float {
+  animation: magicFloatGentle 3.4s ease-in-out infinite;
+}
+
+.anim-magic-reveal {
+  animation: magicRevealUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-redact-bar {
+  transform-origin: left center;
+  animation: redactMaskBar 2.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+/* FILL PDF FORM 2.5D / Soft-3D Animated Tool Card */
+@keyframes tvFormDocFloat {
+  0%, 100% {
+    transform: perspective(640px) rotateY(-6deg) rotateX(4deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(640px) rotateY(-3deg) rotateX(2deg) translateY(-3px);
+  }
+}
+
+@keyframes tvFormTypeName {
+  0%, 8% { transform: scaleX(0); opacity: 0; }
+  20%, 86% { transform: scaleX(1); opacity: 1; }
+  94%, 100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes tvFormTypeAddr {
+  0%, 18% { transform: scaleX(0); opacity: 0; }
+  32%, 86% { transform: scaleX(1); opacity: 1; }
+  94%, 100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes tvFormTypeDate {
+  0%, 28% { transform: scaleX(0); opacity: 0; }
+  38%, 86% { transform: scaleX(1); opacity: 1; }
+  94%, 100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes tvFormPhotoSlide {
+  0%, 34% { transform: translate(16px, -10px) scale(0.75); opacity: 0; }
+  46%, 86% { transform: translate(0px, 0px) scale(1); opacity: 1; }
+  94%, 100% { transform: translate(8px, -6px) scale(0.8); opacity: 0; }
+}
+
+@keyframes tvFormSigDraw {
+  0%, 48% { stroke-dashoffset: 68; opacity: 0.15; }
+  64%, 86% { stroke-dashoffset: 0; opacity: 1; }
+  94%, 100% { stroke-dashoffset: 68; opacity: 0; }
+}
+
+@keyframes tvFormCheckPop {
+  0%, 62% { transform: scale(0.3); opacity: 0; }
+  70% { transform: scale(1.18); opacity: 1; }
+  74%, 86% { transform: scale(1); opacity: 1; }
+  94%, 100% { transform: scale(0.5); opacity: 0; }
+}
+
+@keyframes tvFormBadgeReveal {
+  0%, 70% { transform: translateY(4px) scale(0.85); opacity: 0; }
+  77%, 88% { transform: translateY(0) scale(1); opacity: 1; }
+  96%, 100% { transform: translateY(-2px) scale(0.9); opacity: 0; }
+}
+
+.tv-form-doc-3d {
+  animation: tvFormDocFloat 5.6s ease-in-out infinite;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.tv-form-name-fill {
+  transform-origin: left center;
+  animation: tvFormTypeName 7.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.tv-form-addr-fill {
+  transform-origin: left center;
+  animation: tvFormTypeAddr 7.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.tv-form-date-fill {
+  transform-origin: left center;
+  animation: tvFormTypeDate 7.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.tv-form-photo-slide {
+  animation: tvFormPhotoSlide 7.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.tv-form-sig-stroke {
+  stroke-dasharray: 68;
+  animation: tvFormSigDraw 7.2s ease-out infinite;
+}
+
+.tv-form-check-pop {
+  transform-origin: center center;
+  animation: tvFormCheckPop 7.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+.tv-form-done-badge {
+  animation: tvFormBadgeReveal 7.2s ease-out infinite;
+}
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .tv-form-doc-3d {
+    transform: perspective(640px) rotateY(-4deg) rotateX(2deg) !important;
+  }
+  .tv-form-name-fill,
+  .tv-form-addr-fill,
+  .tv-form-date-fill,
+  .tv-form-photo-slide,
+  .tv-form-check-pop,
+  .tv-form-done-badge {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .tv-form-sig-stroke {
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+

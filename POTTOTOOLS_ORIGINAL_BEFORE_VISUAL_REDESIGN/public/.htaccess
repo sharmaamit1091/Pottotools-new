@@ -1,0 +1,157 @@
+# ----------------------------------------------------------------------
+# PottoTools - Hostinger / LiteSpeed / Apache Production Configuration
+# ----------------------------------------------------------------------
+
+DirectoryIndex index.html
+DirectorySlash Off
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # ----------------------------------------------------------------------
+  # 1. Canonical 301 Redirect: Force HTTPS & non-WWW (Unified 1-Hop Redirect)
+  # ----------------------------------------------------------------------
+  # Case A: If request arrives at www (HTTP or HTTPS), redirect in 1 hop directly to https://domain
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
+  # Case B: If request is non-www but HTTP, redirect in 1 hop to https://domain
+  RewriteCond %{HTTPS} off [OR]
+  RewriteCond %{HTTP:X-Forwarded-Proto} =http
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # ----------------------------------------------------------------------
+  # 2. Canonical 301 Redirects for Alias Routes & Trailing Slashes
+  # ----------------------------------------------------------------------
+  RewriteRule ^about-us/?$ /about [L,R=301]
+  RewriteRule ^contact-us/?$ /contact [L,R=301]
+  RewriteRule ^all-tools/?$ /directory [L,R=301]
+  RewriteRule ^convert-documents/?$ /convert-docs [L,R=301]
+  RewriteRule ^cookies/?$ /cookie-policy [L,R=301]
+  RewriteRule ^custom-photo-resizer/?$ /custom-photo-studio [L,R=301]
+  RewriteRule ^(gov-tools|category-gov-tools)/?$ /image-tools [L,R=301]
+
+  # Normalize trailing slash on non-root URLs (prevents DirectorySlash 301 mismatch)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^(.+)/$ /$1 [L,R=301]
+
+  # ----------------------------------------------------------------------
+  # 3. Single Page Application (SPA) & Pre-Rendered Static HTML Routing
+  # ----------------------------------------------------------------------
+  # A. If requested path is a real file (assets, sitemap, favicon, ads.txt), serve directly
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # B. Route root homepage to index.html
+  RewriteRule ^$ index.html [L]
+
+  # C. Serve pre-rendered static HTML ({slug}/index.html and {section}/{slug}/index.html) with HTTP 200 OK
+  RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
+  RewriteRule ^([a-zA-Z0-9_-]+)$ $1/index.html [L]
+
+  RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
+  RewriteRule ^([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)$ $1/index.html [L]
+
+  # D. Route any remaining valid SPA tool, category, blog, Hindi, or legal routes to index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^(pdf-page-organizer|searchable-pdf-text-finder|pdf-to-editable-word|pdf-id-redactor|remove-scan-watermark|custom-photo-studio|photo-size-compressor|photo-editor|hd-image-enhancer|image-format-converter|crop-rotate-straighten|photo-background-changer|passport-photo-cropper|combine-app-documents|merge-pdf|split-pdf|delete-pdf-pages|watermark-pdf|page-numbers-pdf|compress-pdf|pdf-to-word|word-to-pdf|docx-to-txt|docx-to-html|txt-to-pdf|markdown-to-pdf|image-converter|image-to-pdf|pdf-to-images|ocr-tool|protect-pdf|unlock-pdf|sign-pdf|pdf-metadata|photo-signature-resizer|pdf-text-extractor|text-diff-comparator|text-cleaner|csv-to-xlsx|xlsx-to-csv|sheet-viewer|powerpoint-to-pdf|excel-to-pdf|pdf-to-excel|jpg-to-png|png-to-jpg|pdf-tools|word-tools|excel-tools|powerpoint-tools|image-tools|other-document-tools|organize-pdf|convert-docs|convert-images|ocr-scanned|pdf-security|smart-utilities|spreadsheets|about|contact|privacy|terms|disclaimer|cookie-policy|directory|blog|blog/[a-zA-Z0-9-]+|hi|hi/[a-zA-Z0-9-]+|category-[a-zA-Z0-9-]+)$ index.html [L]
+
+  # E. Unknown asset files or paths trigger HTTP 404
+  RewriteRule ^ - [R=404,L]
+</IfModule>
+
+# Custom 404 Error Document
+ErrorDocument 404 /404.html
+
+# ----------------------------------------------------------------------
+# 4. Correct MIME Types for Modern Web Formats & WebAssembly
+# ----------------------------------------------------------------------
+<IfModule mod_mime.c>
+  AddType application/javascript js mjs
+  AddType text/css css
+  AddType application/wasm wasm
+  AddType image/svg+xml svg svgz
+  AddType application/json json
+  AddType application/manifest+json webmanifest
+  AddType font/woff woff
+  AddType font/woff2 woff2
+  AddType text/xsl xsl
+  AddType application/xml xml
+</IfModule>
+
+# ----------------------------------------------------------------------
+# 5. Gzip / Deflate Compression for Blazing Fast Loading Speed
+# ----------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json application/wasm
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ----------------------------------------------------------------------
+# 6. Long-Term Browser Caching for Production Assets
+# ----------------------------------------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 month"
+  
+  # HTML pages (instant revalidation so updates reflect immediately)
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/plain "access plus 1 hour"
+  
+  # CSS and JavaScript (Vite hashes filenames, safe to cache 1 year)
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  
+  # Images & Icons
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+  
+  # Web Fonts
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+# ----------------------------------------------------------------------
+# 7. Security Headers & HTTP Strict Transport Security (HSTS)
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+  # HTTP Strict Transport Security (HSTS) - Enforce HTTPS for 1 year + subdomains + preload
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header set Link "</llms.txt>; rel=\"describedby\", </llms-full.txt>; rel=\"alternate\"; type=\"text/markdown\", </.well-known/mcp/server-card.json>; rel=\"service-desc\""
+
+  # 1-Year Immutable Caching ONLY for Vite Hashed Static Assets under /assets/
+  <FilesMatch "\.(js|css|woff2|woff|ttf|png|jpe?g|webp|svg|ico|wasm|mjs)$">
+    Header set Cache-Control "public, max-age=86400, must-revalidate"
+  </FilesMatch>
+
+  # Service Worker & Web App Manifest MUST never be cached so offline assets & logos update immediately
+  <FilesMatch "^(sw\.js|registerSW\.js|workbox-.*\.js|manifest\.webmanifest|manifest\.json)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # HTML pages revalidation
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+
+  # ads.txt & robots.txt - Must be fresh and quickly revalidated by Google AdSense (prevents 30-day CDN cache traps)
+  <FilesMatch "^(ads|robots)\.txt$">
+    Header set Cache-Control "public, max-age=3600, must-revalidate"
+    Header set Content-Type "text/plain; charset=utf-8"
+  </FilesMatch>
+</IfModule>
+
+# Prevent directory indexing
+Options -Indexes

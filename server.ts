@@ -65,6 +65,7 @@ const VALID_TOOL_SLUGS = new Set([
   'unlock-pdf',
   'pdf-id-redactor',
   'remove-scan-watermark',
+  'fill-pdf-form',
   'sign-pdf',
   'pdf-metadata',
   'custom-photo-studio',

@@ -10,6 +10,7 @@ import { logSearchQuery } from '../../services/analytics/searchQueryLogger';
 import { PWAInstallButton } from '../common/PWAInstallButton';
 import { OfflineStatusBadge } from '../common/OfflineStatusBadge';
 import { PottoMagicDesk } from './PottoMagicDesk';
+import { FloatingDocumentBackdrop } from './FloatingDocumentBackdrop';
 
 interface HeroSectionProps {
   searchQuery: string;
@@ -20,17 +21,6 @@ interface HeroSectionProps {
 }
 
 export type DetectedCategory = 'pdf' | 'image' | 'word' | 'excel' | 'powerpoint' | 'text';
-
-interface DetectedFileInfo {
-  file: File;
-  category: DetectedCategory;
-  categoryLabel: string;
-  badgeColor: string;
-  previewUrl?: string;
-  extension: string;
-}
-
-const MAX_FILE_SIZE_BYTES = 524288000; // 500 MB
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   searchQuery,
@@ -53,60 +43,95 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   }, [searchQuery]);
 
   const popularShortcuts = [
-    { label: 'Redact ID / Aadhaar', slug: 'pdf-id-redactor', color: 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800' },
-    { label: 'Compress PDF', slug: 'compress-pdf', color: 'border-rose-200 bg-rose-50/80 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900' },
-    { label: 'PDF to Word', slug: 'pdf-to-word', color: 'border-blue-200 bg-blue-50/80 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900' },
-    { label: 'Merge PDF', slug: 'merge-pdf', color: 'border-red-200 bg-red-50/80 text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900' },
-    { label: 'Split PDF', slug: 'split-pdf', color: 'border-orange-200 bg-orange-50/80 text-orange-700 hover:bg-orange-100 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900' },
-    { label: 'Photo Resizer', slug: 'custom-photo-studio', color: 'border-indigo-200 bg-indigo-50/80 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900' },
-    { label: 'Word to PDF', slug: 'word-to-pdf', color: 'border-cyan-200 bg-cyan-50/80 text-cyan-700 hover:bg-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-900' },
-    { label: 'OCR Scanner', slug: 'ocr-tool', color: 'border-teal-200 bg-teal-50/80 text-teal-700 hover:bg-teal-100 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-900' },
+    {
+      label: 'Fill PDF Form',
+      slug: 'fill-pdf-form',
+      color: 'bg-[#E9E4FF]/80 text-[#4B3A9D] border-[#D4CAFA] hover:bg-[#E9E4FF] dark:bg-[#2B244E]/80 dark:text-[#D5CCFF] dark:border-[#4D4287]',
+    },
+    {
+      label: 'Redact ID / Aadhaar',
+      slug: 'pdf-id-redactor',
+      color: 'bg-[#DDF5E9]/85 text-[#156340] border-[#BCEBD4] hover:bg-[#DDF5E9] dark:bg-[#17362A]/80 dark:text-[#B4EED1] dark:border-[#2A634C]',
+    },
+    {
+      label: 'Compress PDF',
+      slug: 'compress-pdf',
+      color: 'bg-[#FFE9DA]/85 text-[#8E3914] border-[#F5BEA0] hover:bg-[#FFE9DA] dark:bg-[#3B261E]/80 dark:text-[#FFD2B5] dark:border-[#6A4132]',
+    },
+    {
+      label: 'PDF to Word',
+      slug: 'pdf-to-word',
+      color: 'bg-[#DDEEFF]/85 text-[#1A528C] border-[#B2D7FB] hover:bg-[#DDEEFF] dark:bg-[#1B314E]/80 dark:text-[#B9DCFF] dark:border-[#325785]',
+    },
+    {
+      label: 'Merge PDF',
+      slug: 'merge-pdf',
+      color: 'bg-[#FFF2C9]/85 text-[#7E520A] border-[#F1D583] hover:bg-[#FFF2C9] dark:bg-[#3A2E14]/80 dark:text-[#FFE49B] dark:border-[#6E5623]',
+    },
+    {
+      label: 'Photo Resizer',
+      slug: 'custom-photo-studio',
+      color: 'bg-[#E9E4FF]/70 text-[#4B3A9D] border-[#D4CAFA] hover:bg-[#E9E4FF] dark:bg-[#2B244E]/75 dark:text-[#D5CCFF] dark:border-[#4D4287]',
+    },
+    {
+      label: 'Word to PDF',
+      slug: 'word-to-pdf',
+      color: 'bg-[#DDEEFF]/75 text-[#1A528C] border-[#B2D7FB] hover:bg-[#DDEEFF] dark:bg-[#1B314E]/75 dark:text-[#B9DCFF] dark:border-[#325785]',
+    },
+    {
+      label: 'OCR Scanner',
+      slug: 'ocr-tool',
+      color: 'bg-[#DDF5E9]/75 text-[#156340] border-[#BCEBD4] hover:bg-[#DDF5E9] dark:bg-[#17362A]/75 dark:text-[#B4EED1] dark:border-[#2A634C]',
+    },
   ];
 
   return (
-    <section aria-label="Hero Section" className="relative pt-6 pb-6 sm:pt-8 sm:pb-8 text-center overflow-hidden">
-      {/* Subtle Ambient Background */}
+    <section aria-label="Hero Section" className="relative pt-7 pb-6 sm:pt-10 sm:pb-8 text-center overflow-hidden">
+      {/* Subtle Low-Opacity Floating Document Illustrations */}
+      <FloatingDocumentBackdrop />
+
+      {/* Gentle Soft Pastel Ambient Halo (very subtle, preserves clean light canvas) */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none"
+        className="absolute inset-x-0 top-0 -z-20 flex items-center justify-center pointer-events-none"
       >
-        <div className="w-[500px] sm:w-[700px] h-[250px] sm:h-[320px] bg-gradient-to-tr from-blue-400/15 via-indigo-400/10 to-purple-400/15 blur-3xl rounded-full transform -translate-y-8" />
+        <div className="w-[520px] sm:w-[760px] h-[220px] sm:h-[290px] bg-gradient-to-tr from-[#E9E4FF]/55 via-[#DDEEFF]/35 to-[#DDF5E9]/45 dark:from-[#5B50E6]/12 dark:via-[#3A82DC]/10 dark:to-[#249A67]/10 blur-3xl rounded-full transform -translate-y-8" />
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-4 relative">
-        {/* Hero Metadata & Clickable Vibrant 100% Offline Badge */}
-        <div className="flex flex-col items-center justify-center gap-2">
-          <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-            <span>Free Online Tools</span>
-            <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
-            <span>No File Uploads</span>
-            <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+        {/* Hero Metadata & Clickable 100% Offline Badge */}
+        <div className="flex flex-col items-center justify-center gap-2 pt-enter-1">
+          <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs font-semibold text-[#777789] dark:text-[#A0A5C0]">
+            <span>100% Free Online Tools</span>
+            <span className="text-[#D4D2E3] dark:text-[#3A4064]" aria-hidden="true">·</span>
+            <span>Zero Server Uploads</span>
+            <span className="text-[#D4D2E3] dark:text-[#3A4064]" aria-hidden="true">·</span>
             <OfflineStatusBadge align="center" />
           </div>
         </div>
 
-        {/* Required H1 Heading */}
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white leading-[1.15]">
+        {/* Main H1 Heading with Smooth Welcome Fade */}
+        <h1 className="pt-enter-1 text-3xl sm:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-[#252536] dark:text-[#F2F4FC] leading-[1.14]">
           Free Online PDF, Photo &amp; Document Tools
         </h1>
 
-        {/* Required Subheading */}
-        <p className="max-w-2xl mx-auto text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-          Shrink PDFs to 100KB, convert PDF to Word, resize exam photos (20KB–50KB), and hide private info on your documents — safely on your own device.
+        {/* Subtitle Appearing Shortly After */}
+        <p className="pt-enter-2 max-w-2xl mx-auto text-sm sm:text-base text-[#777789] dark:text-[#A0A5C0] leading-relaxed font-normal">
+          Shrink PDFs to 100KB, fill PDF forms, convert PDF to Word, resize exam photos (20KB–50KB), and hide private info — safely inside your own browser.
         </p>
 
-        {/* Signature Offline Highlights Strip */}
-        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left">
-          <div className="p-2.5 rounded-xl bg-sky-50/80 dark:bg-sky-950/40 border border-sky-200/80 dark:border-sky-800/60 flex items-center justify-between gap-2.5">
+        {/* Subtle Pastel Feature Highlights Strip */}
+        <div className="pt-enter-2 max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+          <div className="p-3 rounded-2xl bg-[#EEF6FF] dark:bg-[#192338] border border-[#C9E1FB] dark:border-[#2C3E5F] flex items-center justify-between gap-2.5 transition-all hover:border-[#9EC9F7]">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <WifiOff className="w-3.5 h-3.5" />
+              <div className="w-8 h-8 rounded-xl bg-[#DDEEFF] dark:bg-[#223C60] text-[#1A528C] dark:text-[#B9DCFF] border border-[#B2D7FB] dark:border-[#325785] flex items-center justify-center shrink-0">
+                <WifiOff className="w-4 h-4" />
               </div>
               <div className="min-w-0">
-                <span className="text-xs font-extrabold uppercase text-slate-900 dark:text-white block">
+                <span className="text-xs font-extrabold uppercase text-[#252536] dark:text-[#F2F4FC] block">
                   Works Without Internet
                 </span>
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                <p className="text-[11px] text-[#55556B] dark:text-[#A8ADC7] truncate">
                   Install once &amp; use even in Airplane Mode.
                 </p>
               </div>
@@ -123,48 +148,48 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               }
             }}
             onMouseEnter={() => preloadTool('pdf-id-redactor')}
-            className="p-2.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 hover:border-emerald-400 dark:hover:border-emerald-500 flex items-center justify-between gap-2.5 text-left transition-colors cursor-pointer group no-underline"
+            className="p-3 rounded-2xl bg-[#EEFBF4] dark:bg-[#172826] border border-[#C3EBD6] dark:border-[#28473D] hover:border-[#8FD8B3] dark:hover:border-[#3E7661] flex items-center justify-between gap-2.5 text-left transition-all hover:-translate-y-0.5 cursor-pointer group no-underline"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <EyeOff className="w-3.5 h-3.5" />
+              <div className="w-8 h-8 rounded-xl bg-[#DDF5E9] dark:bg-[#1D4032] text-[#156340] dark:text-[#B4EED1] border border-[#AEE3C8] dark:border-[#2A634C] flex items-center justify-center shrink-0">
+                <EyeOff className="w-4 h-4" />
               </div>
               <div className="min-w-0">
-                <span className="text-xs font-extrabold uppercase text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 block truncate">
+                <span className="text-xs font-extrabold uppercase text-[#252536] dark:text-[#F2F4FC] group-hover:text-[#156340] dark:group-hover:text-emerald-300 block truncate transition-colors">
                   Hide Private Info in PDFs &amp; IDs
                 </span>
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                <p className="text-[11px] text-[#55556B] dark:text-[#A8ADC7] truncate">
                   Blackout Aadhaar, bank &amp; salary details safely.
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 shrink-0">
+            <span className="text-[11px] font-bold text-[#156340] dark:text-emerald-300 shrink-0 group-hover:translate-x-0.5 transition-transform">
               Try →
             </span>
           </a>
         </div>
 
         {/* Unified Animated Magic Tool Box */}
-        <div className="pt-2">
+        <div className="pt-2 pt-enter-3">
           <PottoMagicDesk onSelectTool={onSelectTool} onExploreAll={onExploreAll} />
         </div>
 
         {/* Quick Search Bar */}
-        <div className="max-w-2xl mx-auto pt-3">
-          <div className="relative flex items-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 shrink-0" />
+        <div className="max-w-2xl mx-auto pt-3 pt-enter-4">
+          <div className="relative flex items-center rounded-2xl bg-white dark:bg-[#181B2E] border border-[#E4E1F0] dark:border-[#2A2F4A] shadow-[0_4px_20px_-8px_rgba(37,37,54,0.08)] focus-within:border-[#5B50E6] focus-within:ring-3 focus-within:ring-[#E9E4FF] dark:focus-within:ring-[#5B50E6]/25 transition-all">
+            <Search className="w-4 h-4 text-[#777789] absolute left-4 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search for a tool (e.g. compress pdf, resize photo, word to pdf)..."
-              className="w-full pl-11 pr-16 py-3 text-xs sm:text-sm bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none rounded-2xl"
+              placeholder="Search for a tool (e.g. fill pdf form, compress pdf, resize photo, word to pdf)..."
+              className="w-full pl-11 pr-16 py-3.5 text-xs sm:text-sm bg-transparent text-[#252536] dark:text-[#F2F4FC] placeholder-[#777789] focus:outline-none rounded-2xl"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => onSearchChange('')}
-                className="absolute right-3 text-[11px] font-semibold text-slate-400 hover:text-slate-600 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded"
+                className="absolute right-3 text-[11px] font-bold text-[#55556B] hover:text-[#252536] dark:text-[#A8ADC7] dark:hover:text-white px-2.5 py-1 bg-[#F5F4FA] dark:bg-[#222742] rounded-lg cursor-pointer"
               >
                 Clear
               </button>
@@ -172,10 +197,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
         </div>
 
-        {/* Popular Tool Shortcuts */}
-        <div className="pt-2">
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-            <span className="text-xs font-semibold text-slate-400 mr-1 hidden sm:inline">
+        {/* Popular Pastel Tool Shortcuts */}
+        <div className="pt-2 pt-enter-4">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="text-xs font-semibold text-[#777789] mr-1 hidden sm:inline">
               Popular:
             </span>
             {popularShortcuts.map((item) => (
@@ -191,7 +216,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onMouseEnter={() => preloadTool(item.slug)}
                 onTouchStart={() => preloadTool(item.slug)}
                 onFocus={() => preloadTool(item.slug)}
-                className={`px-2.5 py-1 text-xs font-medium rounded-lg border shadow-2xs transition-all hover:scale-105 active:scale-95 cursor-pointer no-underline ${item.color}`}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 cursor-pointer no-underline ${item.color}`}
               >
                 {item.label}
               </a>

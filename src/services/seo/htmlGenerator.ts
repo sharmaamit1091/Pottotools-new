@@ -24,6 +24,10 @@ interface SeoConfig {
 }
 
 const TOOL_SEO_MAP: Record<string, SeoConfig> = {
+  'fill-pdf-form': {
+    title: 'FILL PDF FORM Online Free – Add Text, Photo & Signature to Any PDF | PottoTools',
+    metaDesc: 'Fill PDF online without converting to Word. Type on any PDF (including Hindi/Unicode), add photos, digital signatures, dates & checkmarks with reusable assets, snap guides, and instant download.',
+  },
   'searchable-pdf-text-finder': {
     title: 'Find Anything in Scanned PDFs – Search & Make PDF Searchable Online | PottoTools',
     metaDesc: 'Search for names, amounts, reference numbers & phrases inside scanned PDFs. Extract text with in-browser OCR (English & Hindi) and download a searchable PDF with invisible text layer.',

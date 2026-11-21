@@ -43,7 +43,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
   };
 
   return (
-    <footer className="w-full bg-slate-950 text-slate-300 border-t border-indigo-950/80 mt-12 sm:mt-16 pt-10 sm:pt-12 pb-10">
+    <footer className="w-full bg-[#F4F3FA] dark:bg-[#141727] text-[#55556B] dark:text-[#A8ADC7] border-t border-[#E8E6F2] dark:border-[#262B45] mt-14 sm:mt-16 pt-12 pb-10 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Dedicated Above-Footer Advertising Region (only rendered when manual slots are enabled) */}
         {!MONETIZATION_CONFIG.autoAdsOnly && MONETIZATION_CONFIG.enabled && (
@@ -55,39 +55,39 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
         )}
 
         {/* 4-Column Footer Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-slate-900 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-[#E4E1F0] dark:border-[#242942] text-sm">
           {/* Col 1: Brand & Security Promise */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
               <PottoLogo size="md" showWordmark={false} />
               <div className="flex flex-col">
-                <span className="text-xl font-extrabold tracking-tight text-white">
-                  Potto<span className="text-blue-500">Tools</span>
+                <span className="text-xl font-extrabold tracking-tight text-[#252536] dark:text-[#F2F4FC]">
+                  Potto<span className="text-[#5B50E6] dark:text-[#9D95FF]">Tools</span>
                 </span>
-                <span className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase">
+                <span className="text-[10px] text-[#777789] dark:text-[#A0A5C0] font-semibold tracking-wider uppercase">
                   Free Productivity Toolkit
                 </span>
               </div>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-[#777789] dark:text-[#A0A5C0] leading-relaxed">
               {SITE_CONFIG.tagline}
             </p>
 
             <div className="space-y-2.5 pt-2 text-xs">
-              <div className="flex items-center gap-2 text-emerald-400 font-medium">
+              <div className="flex items-center gap-2 text-[#196B47] dark:text-emerald-300 font-semibold">
                 <Lock className="w-3.5 h-3.5 shrink-0" />
                 <span>100% Client-Side Local Processing</span>
               </div>
-              <div className="flex items-center gap-2 text-blue-400 font-medium">
+              <div className="flex items-center gap-2 text-[#1E5C9A] dark:text-sky-300 font-semibold">
                 <Zap className="w-3.5 h-3.5 shrink-0" />
                 <span>Zero File Uploads to Cloud Servers</span>
               </div>
-              <div className="flex items-center gap-2 text-purple-400 font-medium">
+              <div className="flex items-center gap-2 text-[#4C3C9E] dark:text-indigo-300 font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                 <span>No Accounts, No Subscriptions, No Limits</span>
               </div>
-              <div className="flex items-center gap-2 text-sky-400 font-medium">
+              <div className="flex items-center gap-2 text-[#1D6A7B] dark:text-cyan-300 font-semibold">
                 <WifiOff className="w-3.5 h-3.5 shrink-0" />
                 <span>Works 100% Offline (Installable PWA App)</span>
               </div>
@@ -99,19 +99,28 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
             <a
               href="/pdf-tools"
               onClick={(e) => handleNavClick('category-pdf-tools', e)}
-              className="text-xs font-bold uppercase tracking-wider text-white mb-4 flex items-center gap-1.5 hover:text-rose-400 transition-colors text-left group cursor-pointer"
+              className="text-xs font-extrabold uppercase tracking-wider text-[#252536] dark:text-[#F2F4FC] mb-4 flex items-center gap-2 hover:text-[#9A4319] dark:hover:text-[#FFD2B5] transition-colors text-left group cursor-pointer"
               title="View all PDF tools"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 group-hover:scale-125 transition-transform" />
+              <span className="w-2 h-2 rounded-full bg-[#E86D42] group-hover:scale-125 transition-transform" />
               <span>Top PDF Tools</span>
-              <ArrowUpRight className="w-3 h-3 text-slate-500 group-hover:text-rose-400 transition-colors" />
+              <ArrowUpRight className="w-3 h-3 text-[#777789] group-hover:text-[#E86D42] transition-colors" />
             </a>
             <ul className="space-y-2 text-xs">
               <li>
                 <a
+                  href="/fill-pdf-form"
+                  onClick={(e) => handleNavClick('fill-pdf-form', e)}
+                  className="text-[#5B50E6] dark:text-[#A49CFF] hover:underline font-semibold transition-colors text-left cursor-pointer block"
+                >
+                  Fill PDF Form (Text, Photo &amp; Sign)
+                </a>
+              </li>
+              <li>
+                <a
                   href="/compress-pdf"
                   onClick={(e) => handleNavClick('compress-pdf', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Compress PDF (100KB, 200KB, 500KB)
                 </a>
@@ -120,7 +129,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/merge-pdf"
                   onClick={(e) => handleNavClick('merge-pdf', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Merge PDF Documents
                 </a>
@@ -129,16 +138,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/split-pdf"
                   onClick={(e) => handleNavClick('split-pdf', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Split & Extract PDF Pages
+                  Split &amp; Extract PDF Pages
                 </a>
               </li>
               <li>
                 <a
                   href="/pdf-page-organizer"
                   onClick={(e) => handleNavClick('pdf-page-organizer', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   PDF Page Organizer (500 MB)
                 </a>
@@ -147,16 +156,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/searchable-pdf-text-finder"
                   onClick={(e) => handleNavClick('searchable-pdf-text-finder', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Searchable PDF & In-Browser OCR
+                  Searchable PDF &amp; In-Browser OCR
                 </a>
               </li>
               <li>
                 <a
                   href="/pdf-to-word"
                   onClick={(e) => handleNavClick('pdf-to-word', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left font-medium text-blue-400 hover:text-blue-300 cursor-pointer hover:underline block"
+                  className="text-[#1E5C9A] dark:text-sky-300 hover:underline font-medium transition-colors text-left cursor-pointer block"
                 >
                   PDF to Word (.docx)
                 </a>
@@ -165,7 +174,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/pdf-to-editable-word"
                   onClick={(e) => handleNavClick('pdf-to-editable-word', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   PDF to Editable Word (OCR)
                 </a>
@@ -174,7 +183,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/word-to-pdf"
                   onClick={(e) => handleNavClick('word-to-pdf', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Word (.docx) to PDF
                 </a>
@@ -183,16 +192,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/sign-pdf"
                   onClick={(e) => handleNavClick('sign-pdf', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Sign PDF & Draw Signatures
+                  Sign PDF &amp; Draw Signatures
                 </a>
               </li>
               <li>
                 <a
                   href="/pdf-id-redactor"
                   onClick={(e) => handleNavClick('pdf-id-redactor', e)}
-                  className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#196B47] dark:text-emerald-300 font-semibold transition-colors text-left cursor-pointer hover:underline block"
                 >
                   PDF &amp; ID Redactor (Offline)
                 </a>
@@ -201,7 +210,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/protect-pdf"
                   onClick={(e) => handleNavClick('protect-pdf', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Protect PDF (Add Password)
                 </a>
@@ -210,7 +219,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/unlock-pdf"
                   onClick={(e) => handleNavClick('unlock-pdf', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Unlock PDF (Remove Password)
                 </a>
@@ -219,7 +228,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/delete-pdf-pages"
                   onClick={(e) => handleNavClick('delete-pdf-pages', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Delete PDF Pages
                 </a>
@@ -232,19 +241,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
             <a
               href="/image-tools"
               onClick={(e) => handleNavClick('category-image-tools', e)}
-              className="text-xs font-bold uppercase tracking-wider text-white mb-4 flex items-center gap-1.5 hover:text-purple-400 transition-colors text-left group cursor-pointer"
+              className="text-xs font-extrabold uppercase tracking-wider text-[#252536] dark:text-[#F2F4FC] mb-4 flex items-center gap-2 hover:text-[#5B50E6] dark:hover:text-[#A49CFF] transition-colors text-left group cursor-pointer"
               title="View all Image tools"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 group-hover:scale-125 transition-transform" />
-              <span>Image Tools & Presets</span>
-              <ArrowUpRight className="w-3 h-3 text-slate-500 group-hover:text-purple-400 transition-colors" />
+              <span className="w-2 h-2 rounded-full bg-[#6E5CE6] group-hover:scale-125 transition-transform" />
+              <span>Image Tools &amp; Presets</span>
+              <ArrowUpRight className="w-3 h-3 text-[#777789] group-hover:text-[#6E5CE6] transition-colors" />
             </a>
             <ul className="space-y-2 text-xs">
               <li>
                 <a
                   href="/custom-photo-studio"
                   onClick={(e) => handleNavClick('custom-photo-studio', e)}
-                  className="text-purple-400 hover:text-purple-300 transition-colors text-left font-medium cursor-pointer hover:underline block"
+                  className="text-[#5B50E6] dark:text-[#A49CFF] transition-colors text-left font-semibold cursor-pointer hover:underline block"
                 >
                   ★ Custom Photo Studio (All-in-One)
                 </a>
@@ -253,16 +262,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/photo-signature-resizer"
                   onClick={(e) => handleNavClick('photo-signature-resizer', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Exam Photo & Signature Presets
+                  Exam Photo &amp; Signature Presets
                 </a>
               </li>
               <li>
                 <a
                   href="/photo-size-compressor"
                   onClick={(e) => handleNavClick('photo-size-compressor', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Photo Size Compressor (Target KB)
                 </a>
@@ -271,7 +280,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/image-format-converter"
                   onClick={(e) => handleNavClick('image-format-converter', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Image Format Converter (JPG, PNG, WebP)
                 </a>
@@ -280,7 +289,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/image-to-pdf"
                   onClick={(e) => handleNavClick('image-to-pdf', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Photos (JPG/PNG) to PDF
                 </a>
@@ -289,7 +298,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/passport-photo-cropper"
                   onClick={(e) => handleNavClick('passport-photo-cropper', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   Passport Photo Cropper (35×45mm)
                 </a>
@@ -298,16 +307,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/photo-editor"
                   onClick={(e) => handleNavClick('photo-editor', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Photo Editor & Color Adjustments
+                  Photo Editor &amp; Color Adjustments
                 </a>
               </li>
               <li>
                 <a
                   href="/hd-image-enhancer"
                   onClick={(e) => handleNavClick('hd-image-enhancer', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   HD Image Enhancer
                 </a>
@@ -316,7 +325,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/jpg-to-png"
                   onClick={(e) => handleNavClick('jpg-to-png', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   JPG to PNG Converter
                 </a>
@@ -325,7 +334,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/png-to-jpg"
                   onClick={(e) => handleNavClick('png-to-jpg', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
                   PNG to JPG Converter
                 </a>
@@ -335,29 +344,28 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
 
           {/* Col 4: Trust, Legal & Contact Us */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-              Contact & Legal
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#252536] dark:text-[#F2F4FC] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#249A67]" />
+              Contact &amp; Legal
             </h3>
 
-            {/* Prominent Official Contact Us Box with Desktop Webmail & 1-Click Copy */}
-            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
-              <div className="text-xs font-semibold text-slate-200 flex items-center justify-between">
+            {/* Clean Contact Developer Card */}
+            <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1B1F35] border border-[#E8E6F2] dark:border-[#2A2F4A] shadow-2xs space-y-2.5">
+              <div className="text-xs font-bold text-[#252536] dark:text-[#F2F4FC] flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <Mail className="w-3.5 h-3.5 text-[#5B50E6] dark:text-[#A49CFF] shrink-0" />
                   <span>Email Developer</span>
                 </div>
                 {copiedEmail && (
-                  <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <span className="text-[10px] text-[#196B47] dark:text-emerald-300 font-bold flex items-center gap-1">
                     <Check className="w-3 h-3" /> Copied!
                   </span>
                 )}
               </div>
 
-              {/* Email address with 1-click Copy button */}
-              <div className="flex items-center justify-between gap-1 bg-slate-950/70 border border-slate-800 rounded-lg px-2.5 py-1.5">
+              <div className="flex items-center justify-between gap-1 bg-[#FAFAFC] dark:bg-[#141727] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-xl px-2.5 py-1.5">
                 <span
-                  className="text-xs font-mono text-blue-400 truncate select-all"
+                  className="text-xs font-mono text-[#5B50E6] dark:text-[#B4AEFF] truncate select-all"
                   title={officialEmail}
                 >
                   {officialEmail}
@@ -365,25 +373,24 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <button
                   type="button"
                   onClick={handleCopyEmail}
-                  className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                  className="text-[#777789] hover:text-[#252536] dark:hover:text-white p-1 rounded-lg hover:bg-[#E9E4FF]/60 dark:hover:bg-[#252A44] transition-colors shrink-0 cursor-pointer"
                   title="Copy email address"
                   aria-label="Copy email address"
                 >
                   {copiedEmail ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 text-[#196B47] dark:text-emerald-400" />
                   ) : (
                     <Copy className="w-3.5 h-3.5" />
                   )}
                 </button>
               </div>
 
-              {/* Direct Desktop Action Buttons */}
               <div className="grid grid-cols-2 gap-1.5 pt-0.5">
                 <a
                   href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(officialEmail)}&su=${encodeURIComponent('[PottoTools] Inquiry & Feedback')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-[11px] font-medium transition-all text-center cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl bg-[#E9E4FF] hover:bg-[#5B50E6] text-[#4C3C9E] hover:text-white dark:bg-[#2B244E] dark:text-[#D5CCFF] dark:hover:bg-[#5B50E6] dark:hover:text-white text-[11px] font-semibold transition-all text-center cursor-pointer"
                   title="Open in Gmail Web compose in new tab"
                 >
                   <ExternalLink className="w-3 h-3 shrink-0" />
@@ -392,7 +399,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
 
                 <a
                   href={`mailto:${officialEmail}?subject=${encodeURIComponent('[PottoTools] Inquiry')}`}
-                  className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-medium transition-all text-center cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl bg-[#F5F4FA] hover:bg-[#E8E6F2] text-[#252536] dark:bg-[#222742] dark:text-[#E2E5F6] dark:hover:bg-[#2E3456] border border-[#E8E6F2] dark:border-[#323858] text-[11px] font-semibold transition-all text-center cursor-pointer"
                   title="Open default email application"
                 >
                   <Mail className="w-3 h-3 shrink-0" />
@@ -403,7 +410,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
               <a
                 href="/contact"
                 onClick={(e) => handleNavClick('contact', e)}
-                className="w-full inline-flex items-center justify-center gap-1 text-[11px] text-slate-400 hover:text-white pt-1 transition-colors cursor-pointer"
+                className="w-full inline-flex items-center justify-center gap-1 text-[11px] text-[#777789] hover:text-[#5B50E6] dark:hover:text-[#A49CFF] pt-1 transition-colors cursor-pointer"
               >
                 <span>Open Full Contact Page</span>
                 <ArrowUpRight className="w-3 h-3" />
@@ -415,7 +422,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/about"
                   onClick={(e) => handleNavClick('about', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left block"
                 >
                   About Us
                 </a>
@@ -424,7 +431,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/contact"
                   onClick={(e) => handleNavClick('contact', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left block"
                 >
                   Contact Us
                 </a>
@@ -433,7 +440,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/privacy"
                   onClick={(e) => handleNavClick('privacy', e)}
-                  className="hover:text-white transition-colors text-left font-semibold text-emerald-400 block"
+                  className="hover:underline transition-colors text-left font-semibold text-[#196B47] dark:text-emerald-300 block"
                 >
                   Privacy Policy
                 </a>
@@ -442,7 +449,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/terms"
                   onClick={(e) => handleNavClick('terms', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left block"
                 >
                   Terms and Conditions
                 </a>
@@ -451,7 +458,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/disclaimer"
                   onClick={(e) => handleNavClick('disclaimer', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left block"
                 >
                   Disclaimer
                 </a>
@@ -460,7 +467,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/cookie-policy"
                   onClick={(e) => handleNavClick('cookie-policy', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left block"
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left block"
                 >
                   Cookie Policy
                 </a>
@@ -469,7 +476,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/blog"
                   onClick={(e) => handleNavClick('blog', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left font-medium text-sky-400 hover:text-sky-300 block"
+                  className="hover:underline transition-colors text-left font-medium text-[#1E5C9A] dark:text-sky-300 block"
                 >
                   Practical Guides &amp; Blog
                 </a>
@@ -478,7 +485,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/hi"
                   onClick={(e) => handleNavClick('hi', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left font-medium text-emerald-400 hover:text-emerald-300 block"
+                  className="hover:underline transition-colors text-left font-medium text-[#196B47] dark:text-emerald-300 block"
                 >
                   PottoTools हिंदी (Hindi)
                 </a>
@@ -487,7 +494,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                 <a
                   href="/directory"
                   onClick={(e) => handleNavClick('directory', e)}
-                  className="text-slate-400 hover:text-white transition-colors text-left font-medium text-indigo-400 hover:text-indigo-300 block"
+                  className="hover:underline transition-colors text-left font-medium text-[#5B50E6] dark:text-[#A49CFF] block"
                 >
                   All Tools ({TOOLS.length})
                 </a>
@@ -497,16 +504,18 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <span>© {new Date().getFullYear()} {SITE_CONFIG.name}. All rights reserved.</span>
-            <span>·</span>
-            <span className="text-slate-400">100% Private — Files Stay on Your Device</span>
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#777789] dark:text-[#8E93B2]">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            <span className="font-medium text-[#252536] dark:text-[#D5D8EC]">
+              © {new Date().getFullYear()} {SITE_CONFIG.name}. All rights reserved.
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>100% Private — Files Stay on Your Device</span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center gap-1.5">
             <span>Free forever for users worldwide</span>
-            <Heart className="w-3.5 h-3.5 text-rose-500 inline fill-rose-500" />
+            <Heart className="w-3.5 h-3.5 text-[#E86D42] inline fill-[#E86D42]" />
           </div>
         </div>
       </div>

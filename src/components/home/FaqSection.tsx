@@ -60,20 +60,20 @@ export const FaqSection: React.FC = () => {
 
   return (
     <section aria-label="Frequently Asked Questions" className="py-8 sm:py-12 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-3.5 py-1 rounded-full border border-blue-200/60 dark:border-blue-900/40">
+      <div className="text-center space-y-2.5">
+        <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1A528C] dark:text-[#A3D2FF] bg-[#DDEEFF] dark:bg-[#162742] px-3.5 py-1 rounded-full border border-[#B2D7FB] dark:border-[#243E63]">
           <HelpCircle className="w-3.5 h-3.5" />
           <span>Helpful Answers</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-[#252536] dark:text-[#F2F4FC]">
           Frequently Asked Questions
         </h2>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+        <p className="text-xs sm:text-sm text-[#777789] dark:text-[#A0A5C0] max-w-xl mx-auto">
           Quick, simple answers to common questions about using PottoTools.
         </p>
       </div>
 
-      <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+      <div className="divide-y divide-[#EFEFF6] dark:divide-[#262B45] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-3xl bg-white dark:bg-[#181B2E] overflow-hidden shadow-[0_8px_24px_-16px_rgba(37,37,54,0.12)]">
         {FAQS.map((faq, i) => {
           const isOpen = openIdx === i;
           return (
@@ -81,14 +81,14 @@ export const FaqSection: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setOpenIdx(isOpen ? null : i)}
-                className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+                className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-[#252536] dark:text-[#F2F4FC] hover:text-[#5B50E6] dark:hover:text-[#A99EFF] transition-colors cursor-pointer"
               >
                 <span>{faq.question}</span>
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 ${
                     isOpen
-                      ? 'bg-blue-100 dark:bg-blue-950 text-blue-600 rotate-180'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                      ? 'bg-[#E9E4FF] dark:bg-[#231F44] text-[#4B3A9D] dark:text-[#C5BAFF] rotate-180'
+                      : 'bg-[#F5F4FA] dark:bg-[#20243C] text-[#777789] dark:text-[#A0A5C0]'
                   }`}
                 >
                   <ChevronDown className="w-4 h-4" />
@@ -96,7 +96,7 @@ export const FaqSection: React.FC = () => {
               </button>
 
               {isOpen && (
-                <div className="px-5 pb-6 sm:px-6 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-50 dark:border-slate-800/40 pt-4 bg-slate-50/50 dark:bg-slate-950/30">
+                <div className="px-5 pb-6 sm:px-6 text-xs sm:text-sm text-[#55556A] dark:text-[#C4C9E0] leading-relaxed border-t border-[#F0EEF8] dark:border-[#262B45] pt-4 bg-[#FAFAFC] dark:bg-[#141727]">
                   {faq.answer}
                 </div>
               )}

@@ -1,9 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ToolDefinition } from '../../types/tools';
 import { FileUploadZone } from '../common/FileUploadZone';
 import { ProgressBar } from '../common/ProgressBar';
 import { AdPlaceholder } from '../common/AdPlaceholder';
-import { runOcrOnFile, OcrResult } from '../../services/ocr/tesseractService';
+import {
+  runOcrOnFile,
+  buildOcrDocxBlob,
+  OcrResult,
+  TesseractOcrLanguage,
+} from '../../services/ocr/tesseractService';
+import {
+  krutiDevToUnicode,
+  unicodeToKrutiDev,
+  normalizeOcrHindiUnicode,
+} from '../../services/pdf/krutiDevConverter';
 import { triggerDownload } from '../../services/utils/downloadUtils';
 import { trackToolCompleted } from '../../services/analytics/ga4Tracker';
 import {
@@ -16,6 +26,7 @@ import {
   Languages,
   ArrowRight,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import { getStagedFileForTool, clearStagedFileForTool } from '../../services/utils/stagedFileService';
 
@@ -39,7 +50,9 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
       setFiles([staged]);
     }
   }, [tool.id]);
-  const [language, setLanguage] = useState<'eng' | 'hin'>('eng');
+
+  const [language, setLanguage] = useState<TesseractOcrLanguage>('hin+eng');
+  const [krutiDevMode, setKrutiDevMode] = useState<'auto' | 'force' | 'off'>('auto');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
@@ -47,7 +60,16 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
 
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
   const [editableText, setEditableText] = useState('');
+  const [outputScript, setOutputScript] = useState<'unicode' | 'krutidev'>('unicode');
   const [copied, setCopied] = useState(false);
+  const [copiedKruti, setCopiedKruti] = useState(false);
+
+  const krutiDevOutputText = useMemo(
+    () => (editableText ? unicodeToKrutiDev(editableText) : ''),
+    [editableText]
+  );
+
+  const displayedText = outputScript === 'krutidev' ? krutiDevOutputText : editableText;
 
   const handleRunOcr = async () => {
     if (files.length === 0) return;
@@ -58,13 +80,19 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
     setOcrResult(null);
 
     try {
-      const res = await runOcrOnFile(files[0], language, (update) => {
-        setProgress(update.progress);
-        setStatusText(update.statusText);
-      });
+      const res = await runOcrOnFile(
+        files[0],
+        language,
+        (update) => {
+          setProgress(update.progress);
+          setStatusText(update.statusText);
+        },
+        { krutiDevMode }
+      );
 
       setOcrResult(res);
       setEditableText(res.text);
+      setOutputScript('unicode');
       trackToolCompleted('ocr-text', new Blob([res.text]).size, 'ocr-tool');
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred during OCR recognition.');
@@ -73,29 +101,46 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(editableText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleConvertEditableKrutiToUnicode = () => {
+    if (!editableText.trim()) return;
+    setEditableText(normalizeOcrHindiUnicode(krutiDevToUnicode(editableText)));
+    setOutputScript('unicode');
+  };
+
+  const handleCopy = (format: 'unicode' | 'krutidev' = 'unicode') => {
+    const payload = format === 'krutidev' ? krutiDevOutputText : editableText;
+    if (!payload) return;
+    navigator.clipboard.writeText(payload);
+    if (format === 'krutidev') {
+      setCopiedKruti(true);
+      setTimeout(() => setCopiedKruti(false), 2000);
+    } else {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleDownloadTxt = () => {
-    if (!editableText) return;
-    const blob = new Blob([editableText], { type: 'text/plain;charset=utf-8' });
+    if (!displayedText) return;
+    const blob = new Blob([displayedText], { type: 'text/plain;charset=utf-8' });
     const baseName = files[0]?.name.replace(/\.[^/.]+$/, '') || 'ocr-result';
-    triggerDownload(blob, `${baseName}-ocr.txt`);
+    const suffix = outputScript === 'krutidev' ? 'krutidev' : 'ocr';
+    triggerDownload(blob, `${baseName}-${suffix}.txt`);
   };
 
-  const handleDownloadDocx = () => {
-    if (!ocrResult?.docxBlob) return;
+  const handleDownloadDocx = async () => {
+    if (!displayedText) return;
+    const blob = await buildOcrDocxBlob(displayedText, outputScript);
     const baseName = files[0]?.name.replace(/\.[^/.]+$/, '') || 'ocr-result';
-    triggerDownload(ocrResult.docxBlob, `${baseName}-ocr.docx`);
+    const suffix = outputScript === 'krutidev' ? 'krutidev' : 'ocr';
+    triggerDownload(blob, `${baseName}-${suffix}.docx`);
   };
 
   const handleReset = () => {
     setFiles([]);
     setOcrResult(null);
     setEditableText('');
+    setOutputScript('unicode');
     setProgress(0);
     setErrorMsg(null);
   };
@@ -104,7 +149,7 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
     <div className="space-y-8">
       {/* Title */}
       <div>
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
           {tool.title}
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
@@ -134,36 +179,90 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
                     <span>OCR Recognition Language</span>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => setLanguage('eng')}
-                      className={`py-2 px-4 text-xs font-medium rounded-lg border transition-all ${
-                        language === 'eng'
+                      onClick={() => setLanguage('hin+eng')}
+                      className={`py-2 px-4 text-xs font-medium rounded-lg border transition-all cursor-pointer ${
+                        language === 'hin+eng'
                           ? 'bg-blue-600 text-white border-blue-600 font-semibold'
                           : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                       }`}
                     >
-                      English (Latin Alphabet)
+                      Hindi + English (हिन्दी + Eng)
                     </button>
                     <button
                       type="button"
                       onClick={() => setLanguage('hin')}
-                      className={`py-2 px-4 text-xs font-medium rounded-lg border transition-all ${
+                      className={`py-2 px-4 text-xs font-medium rounded-lg border transition-all cursor-pointer ${
                         language === 'hin'
                           ? 'bg-blue-600 text-white border-blue-600 font-semibold'
                           : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                       }`}
                     >
-                      Hindi (Devanagari / हिन्दी)
+                      Hindi Only (हिन्दी)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLanguage('eng')}
+                      className={`py-2 px-4 text-xs font-medium rounded-lg border transition-all cursor-pointer ${
+                        language === 'eng'
+                          ? 'bg-blue-600 text-white border-blue-600 font-semibold'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      English Only
+                    </button>
+                  </div>
+                </div>
+
+                {/* Kruti Dev 010 Font Mapping Pipeline Control */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Kruti Dev 010 &amp; Hindi Unicode Mapping</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setKrutiDevMode('auto')}
+                      className={`py-1.5 px-3 text-xs rounded-lg border transition-all cursor-pointer ${
+                        krutiDevMode === 'auto'
+                          ? 'bg-indigo-600 text-white border-indigo-600 font-semibold'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      Auto-Detect Kruti Dev → Unicode (Recommended)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setKrutiDevMode('force')}
+                      className={`py-1.5 px-3 text-xs rounded-lg border transition-all cursor-pointer ${
+                        krutiDevMode === 'force'
+                          ? 'bg-indigo-600 text-white border-indigo-600 font-semibold'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      Always Map Kruti Dev → Unicode
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setKrutiDevMode('off')}
+                      className={`py-1.5 px-3 text-xs rounded-lg border transition-all cursor-pointer ${
+                        krutiDevMode === 'off'
+                          ? 'bg-slate-700 text-white border-slate-700 font-semibold'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      Off
                     </button>
                   </div>
                 </div>
 
                 <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 rounded-xl text-xs text-blue-900 dark:text-blue-300">
-                  <div className="font-semibold mb-0.5">Hardware In-Browser Engine</div>
+                  <div className="font-semibold mb-0.5">Private Browser OCR with Hindi &amp; Kruti Dev Pipeline</div>
                   <div>
-                    Tesseract.js runs inside Web Workers on your local device. The language model weights are cached directly in your browser storage.
+                    Runs directly in your browser. Automatically repairs Hindi matras, maps Kruti Dev 010 text to clean Unicode Devanagari, and lets you export to Word (.docx) in Unicode Hindi or Kruti Dev 010.
                   </div>
                 </div>
 
@@ -182,7 +281,7 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
                   type="button"
                   onClick={handleRunOcr}
                   disabled={isProcessing}
-                  className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 text-sm"
+                  className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
                 >
                   {isProcessing ? (
                     <>
@@ -211,53 +310,123 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                     Text Recognized Successfully
                   </h2>
-                  <div className="text-xs text-slate-500 font-mono">
-                    Confidence: {ocrResult.confidence}% · {ocrResult.pageCount} {ocrResult.pageCount === 1 ? 'page' : 'pages'} scanned
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span>
+                      Confidence: {ocrResult.confidence}% · {ocrResult.pageCount}{' '}
+                      {ocrResult.pageCount === 1 ? 'page' : 'pages'} scanned
+                    </span>
+                    {ocrResult.krutiDevMapped && (
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold text-[10px]">
+                        Kruti Dev → Unicode Mapped
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={handleCopy}
-                  className="py-1.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
+                  onClick={() => handleCopy('unicode')}
+                  className="py-1.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? 'Copied!' : 'Copy to Clipboard'}</span>
+                  <span>{copied ? 'Copied!' : 'Copy Unicode'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCopy('krutidev')}
+                  title="Copy as Kruti Dev 010 ready to paste into MS Word"
+                  className="py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {copiedKruti ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedKruti ? 'Copied Kruti Dev!' : 'Copy Kruti Dev 010'}</span>
                 </button>
               </div>
             </div>
 
-            {/* Editable Text Area */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
-                Extracted Text (Editable)
-              </label>
+            {/* Editable Text Area with Unicode Hindi / Kruti Dev 010 Switcher */}
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                    Extracted Text
+                  </label>
+                  <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => setOutputScript('unicode')}
+                      className={`px-2.5 py-1 rounded text-[11px] font-bold cursor-pointer transition-colors ${
+                        outputScript === 'unicode'
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Unicode Hindi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOutputScript('krutidev')}
+                      className={`px-2.5 py-1 rounded text-[11px] font-bold cursor-pointer transition-colors ${
+                        outputScript === 'krutidev'
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Kruti Dev 010
+                    </button>
+                  </div>
+                </div>
+
+                {outputScript === 'unicode' && (
+                  <button
+                    type="button"
+                    onClick={handleConvertEditableKrutiToUnicode}
+                    className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                  >
+                    Convert Raw Kruti Dev → Hindi
+                  </button>
+                )}
+              </div>
+
               <textarea
-                value={editableText}
-                onChange={(e) => setEditableText(e.target.value)}
+                value={displayedText}
+                onChange={(e) => {
+                  if (outputScript === 'unicode') {
+                    setEditableText(e.target.value);
+                  } else {
+                    setEditableText(normalizeOcrHindiUnicode(krutiDevToUnicode(e.target.value)));
+                  }
+                }}
                 rows={12}
-                className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-600"
+                style={{
+                  fontFamily:
+                    outputScript === 'krutidev'
+                      ? 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
+                      : "'Noto Sans Devanagari', 'Nirmala UI', 'Mangal', 'Kohinoor Devanagari', system-ui, sans-serif",
+                }}
+                className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm leading-relaxed text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
               />
             </div>
 
             {/* Download and Reset buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={handleDownloadDocx}
-                  className="w-full sm:w-auto py-2.5 px-5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs shadow-sm flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto py-2.5 px-5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span>Download as Word (.docx)</span>
+                  <span>
+                    Download Word (.docx) — {outputScript === 'krutidev' ? 'Kruti Dev 010' : 'Unicode'}
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleDownloadTxt}
-                  className="w-full sm:w-auto py-2.5 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto py-2.5 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download Plain Text (.txt)</span>
@@ -267,7 +436,7 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
               <button
                 type="button"
                 onClick={handleReset}
-                className="w-full sm:w-auto py-2.5 px-4 text-slate-500 hover:text-slate-800 text-xs font-medium"
+                className="w-full sm:w-auto py-2.5 px-4 text-slate-500 hover:text-slate-800 text-xs font-medium cursor-pointer"
               >
                 Scan Another Document
               </button>
@@ -281,18 +450,18 @@ export const OcrTool: React.FC<OcrToolProps> = ({ tool }) => {
       {/* Instructions & FAQs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+          <h2 className="text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
             OCR Scanning Tips
           </h2>
           <ul className="list-disc list-inside space-y-2 text-xs text-slate-600 dark:text-slate-400">
-            <li>Ensure the scan has high contrast (dark text on white/light background).</li>
-            <li>Skewed or rotated photos can be straightened beforehand using our Rotate tool.</li>
-            <li>For multilingual documents containing Hindi, select the Hindi model for Devanagari script support.</li>
+            <li>Ensure the scan has high contrast (dark text on a clean white background).</li>
+            <li>For bilingual government PDFs or notices, choose Hindi + English for best accuracy.</li>
+            <li>Keep Kruti Dev Auto-Mapping enabled so legacy Hindi encodings convert directly to clean Unicode Hindi.</li>
           </ul>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+          <h2 className="text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
             Frequently Asked Questions
           </h2>
           <div className="space-y-3 text-xs">

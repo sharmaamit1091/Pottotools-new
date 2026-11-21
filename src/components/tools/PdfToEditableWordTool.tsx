@@ -56,7 +56,7 @@ export const PdfToEditableWordTool: React.FC<PdfToEditableWordToolProps> = ({
   // Conversion options
   const [preserveImages, setPreserveImages] = useState(true);
   const [enableOcr, setEnableOcr] = useState(true);
-  const [ocrLanguage, setOcrLanguage] = useState<'eng' | 'hin'>('eng');
+  const [ocrLanguage, setOcrLanguage] = useState<'eng' | 'hin' | 'hin+eng'>('hin+eng');
 
   // Conversion result
   const [result, setResult] = useState<{
@@ -264,11 +264,12 @@ export const PdfToEditableWordTool: React.FC<PdfToEditableWordToolProps> = ({
                     </span>
                     <select
                       value={ocrLanguage}
-                      onChange={(e) => setOcrLanguage(e.target.value as 'eng' | 'hin')}
+                      onChange={(e) => setOcrLanguage(e.target.value as 'eng' | 'hin' | 'hin+eng')}
                       className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium text-xs focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="hin+eng">Hindi + English (with Kruti Dev Auto-Mapping)</option>
                       <option value="eng">English (Latin)</option>
-                      <option value="hin">Hindi (Devanagari)</option>
+                      <option value="hin">Hindi Only (Devanagari)</option>
                     </select>
                   </div>
                 )}

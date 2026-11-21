@@ -41,9 +41,9 @@ const COMMON_TASKS: CommonTaskItem[] = [
     tagline: 'Private & Safe',
     title: 'Hide Aadhaar, Bank Account or Salary Info',
     description: 'Blackout or blur private numbers on PDFs and ID photos right on your device.',
-    accentBg: 'hover:border-emerald-300 dark:hover:border-emerald-700 bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/30 dark:from-slate-900 dark:to-emerald-950/20',
-    iconBg: 'bg-emerald-600 text-white',
-    textColor: 'text-emerald-700 dark:text-emerald-400',
+    accentBg: 'hover:border-[#93D9B6] dark:hover:border-[#3E7661]',
+    iconBg: 'bg-[#DDF5E9] text-[#156340] dark:bg-[#17362A] dark:text-[#B4EED1] border border-[#BCEBD4] dark:border-[#2A634C]',
+    textColor: 'text-[#156340] dark:text-[#9BE6C2]',
     badge: '100% Offline',
   },
   {
@@ -53,9 +53,9 @@ const COMMON_TASKS: CommonTaskItem[] = [
     tagline: 'Smaller File Size',
     title: 'Shrink a Large PDF for Email or Forms',
     description: 'Reduce any PDF size to 100KB, 200KB, or 500KB while keeping text clear to read.',
-    accentBg: 'hover:border-rose-300 dark:hover:border-rose-700 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/30 dark:from-slate-900 dark:to-rose-950/20',
-    iconBg: 'bg-rose-500 text-white',
-    textColor: 'text-rose-600 dark:text-rose-400',
+    accentBg: 'hover:border-[#EAB89B] dark:hover:border-[#7B5244]',
+    iconBg: 'bg-[#FFE9DA] text-[#8E3914] dark:bg-[#3B261E] dark:text-[#FFD2B5] border border-[#F5BEA0] dark:border-[#6A4132]',
+    textColor: 'text-[#9A4319] dark:text-[#FFD2B5]',
     badge: '100KB / 200KB',
   },
   {
@@ -65,9 +65,9 @@ const COMMON_TASKS: CommonTaskItem[] = [
     tagline: 'Easy Photo Resizing',
     title: 'Resize Photos in Pixels, cm, mm, or Inches',
     description: 'Change photo size, crop, adjust brightness, or reduce KB size with live preview.',
-    accentBg: 'hover:border-emerald-300 dark:hover:border-emerald-700 bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 dark:from-slate-900 dark:to-emerald-950/20',
-    iconBg: 'bg-emerald-500 text-white',
-    textColor: 'text-emerald-600 dark:text-emerald-400',
+    accentBg: 'hover:border-[#B9ACFA] dark:hover:border-[#5D509C]',
+    iconBg: 'bg-[#E9E4FF] text-[#4B3A9D] dark:bg-[#2B244E] dark:text-[#D5CCFF] border border-[#CFC5FA] dark:border-[#4D4287]',
+    textColor: 'text-[#4B3A9D] dark:text-[#C5BAFF]',
     badge: 'Exact Size',
   },
   {
@@ -77,9 +77,9 @@ const COMMON_TASKS: CommonTaskItem[] = [
     tagline: 'Edit Your PDF',
     title: 'Turn a PDF into an Editable Word File',
     description: 'Convert PDF pages into a Microsoft Word (.docx) file so you can edit text easily.',
-    accentBg: 'hover:border-blue-300 dark:hover:border-blue-700 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30 dark:from-slate-900 dark:to-blue-950/20',
-    iconBg: 'bg-blue-600 text-white',
-    textColor: 'text-blue-600 dark:text-blue-400',
+    accentBg: 'hover:border-[#9EC9F7] dark:hover:border-[#45689E]',
+    iconBg: 'bg-[#DDEEFF] text-[#1A528C] dark:bg-[#1B314E] dark:text-[#B9DCFF] border border-[#B2D7FB] dark:border-[#325785]',
+    textColor: 'text-[#1A528C] dark:text-[#A5D1FF]',
     badge: 'Editable Word',
   },
   {
@@ -89,9 +89,9 @@ const COMMON_TASKS: CommonTaskItem[] = [
     tagline: 'Photo to Text',
     title: 'Copy Text from Photos or Scanned Papers',
     description: 'Read English and Hindi text from photos and scanned PDFs in seconds.',
-    accentBg: 'hover:border-teal-300 dark:hover:border-teal-700 bg-gradient-to-br from-teal-50/50 via-white to-cyan-50/30 dark:from-slate-900 dark:to-teal-950/20',
-    iconBg: 'bg-teal-500 text-white',
-    textColor: 'text-teal-600 dark:text-teal-400',
+    accentBg: 'hover:border-[#E8CB7B] dark:hover:border-[#73623B]',
+    iconBg: 'bg-[#FFF2C9] text-[#7E520A] dark:bg-[#3A2E14] dark:text-[#FFE49B] border border-[#F1D583] dark:border-[#6E5623]',
+    textColor: 'text-[#8A5E10] dark:text-[#FFE49B]',
     badge: 'English + Hindi',
   },
   {
@@ -101,9 +101,9 @@ const COMMON_TASKS: CommonTaskItem[] = [
     tagline: 'Join Files Together',
     title: 'Combine Bills or Certificates into One PDF',
     description: 'Join multiple PDF files together in the exact order you want.',
-    accentBg: 'hover:border-purple-300 dark:hover:border-purple-700 bg-gradient-to-br from-purple-50/50 via-white to-pink-50/30 dark:from-slate-900 dark:to-purple-950/20',
-    iconBg: 'bg-purple-600 text-white',
-    textColor: 'text-purple-600 dark:text-purple-400',
+    accentBg: 'hover:border-[#B9ACFA] dark:hover:border-[#5D509C]',
+    iconBg: 'bg-[#E9E4FF] text-[#4B3A9D] dark:bg-[#2B244E] dark:text-[#D5CCFF] border border-[#CFC5FA] dark:border-[#4D4287]',
+    textColor: 'text-[#4B3A9D] dark:text-[#C5BAFF]',
     badge: 'Easy Reorder',
   },
   {
@@ -113,38 +113,38 @@ const COMMON_TASKS: CommonTaskItem[] = [
     tagline: 'Photos to PDF',
     title: 'Turn Phone Photos into One Clean PDF',
     description: 'Combine JPG or PNG photos into a single neat PDF ready to share or upload.',
-    accentBg: 'hover:border-cyan-300 dark:hover:border-cyan-700 bg-gradient-to-br from-cyan-50/50 via-white to-sky-50/30 dark:from-slate-900 dark:to-cyan-950/20',
-    iconBg: 'bg-cyan-600 text-white',
-    textColor: 'text-cyan-600 dark:text-cyan-400',
+    accentBg: 'hover:border-[#9EC9F7] dark:hover:border-[#45689E]',
+    iconBg: 'bg-[#DDEEFF] text-[#1A528C] dark:bg-[#1B314E] dark:text-[#B9DCFF] border border-[#B2D7FB] dark:border-[#325785]',
+    textColor: 'text-[#1A528C] dark:text-[#A5D1FF]',
     badge: 'JPG, PNG, WebP',
   },
 ];
 
 export const CommonTasksSection: React.FC<CommonTasksSectionProps> = ({ onSelectTool }) => {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-3 py-1 rounded-full border border-purple-200/60 dark:border-purple-900/40 mb-2">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4B3A9D] dark:text-[#D5CCFF] bg-[#E9E4FF] dark:bg-[#2B244E] px-3 py-1 rounded-xl border border-[#CFC5FA] dark:border-[#4D4287] mb-2">
             <Zap className="w-3.5 h-3.5" />
             <span>Quick Shortcuts</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white">
+          <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-[#252536] dark:text-[#F2F4FC]">
             What Do You Want To Do Today?
           </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-xl">
+          <p className="text-sm text-[#777789] dark:text-[#A0A5C0] mt-1 max-w-xl">
             Pick a common task below to open the right tool right away.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-emerald-500" />
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#55556B] dark:text-[#A8ADC7]">
+          <ShieldCheck className="w-4 h-4 text-[#1E8E5E] dark:text-emerald-400" />
           <span>100% Private · Files stay on your device</span>
         </div>
       </div>
 
-      {/* 6-Card Interactive Task Grid */}
+      {/* Interactive Task Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {COMMON_TASKS.map((task) => {
           const tool = getToolBySlug(task.toolSlug);
@@ -163,36 +163,36 @@ export const CommonTasksSection: React.FC<CommonTasksSectionProps> = ({ onSelect
               }}
               onMouseEnter={() => preloadTool(task.toolSlug)}
               onFocus={() => preloadTool(task.toolSlug)}
-              className={`p-6 border border-slate-200/80 dark:border-slate-800 rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col justify-between group shadow-2xs no-underline ${task.accentBg}`}
+              className={`pt-card-hover p-6 bg-white dark:bg-[#181B2E] border border-[#E8E6F2] dark:border-[#2A2F4A] rounded-3xl cursor-pointer flex flex-col justify-between group no-underline ${task.accentBg}`}
             >
               <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <div className={`w-11 h-11 rounded-2xl ${task.iconBg} flex items-center justify-center shadow-md group-hover:scale-105 transition-transform`}>
+                  <div className={`w-11 h-11 rounded-2xl ${task.iconBg} flex items-center justify-center group-hover:scale-105 transition-transform`}>
                     <IconComp className="w-5 h-5" />
                   </div>
-                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-white/80 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
+                  <span className="text-[11px] font-bold text-[#777789] dark:text-[#A0A5C0] bg-[#FAFAFC] dark:bg-[#141727] px-2.5 py-1 rounded-lg border border-[#ECEAF5] dark:border-[#252A44]">
                     {task.badge}
                   </span>
                 </div>
 
                 <div>
-                  <div className={`text-[11px] font-bold uppercase tracking-wider ${task.textColor}`}>
+                  <div className={`text-[11px] font-extrabold uppercase tracking-wider ${task.textColor}`}>
                     {task.tagline}
                   </div>
-                  <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-white mt-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
+                  <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-tight text-[#252536] dark:text-[#F2F4FC] mt-1 group-hover:text-[#5B50E6] dark:group-hover:text-[#A49CFF] transition-colors leading-snug">
                     {task.title}
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed">
+                  <p className="text-xs text-[#777789] dark:text-[#A0A5C0] mt-1.5 leading-relaxed">
                     {task.description}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold">
-                <span className="font-bold uppercase text-slate-500 dark:text-slate-400">
+              <div className="mt-5 pt-4 border-t border-[#F1EFF8] dark:border-[#242942] flex items-center justify-between text-xs font-bold">
+                <span className="uppercase text-[#777789] dark:text-[#8E93B2]">
                   {tool.title}
                 </span>
-                <span className="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                <span className="text-[#5B50E6] dark:text-[#A49CFF] group-hover:translate-x-1 transition-transform flex items-center gap-1">
                   <span>Start now</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </span>
