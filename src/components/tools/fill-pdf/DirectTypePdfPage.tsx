@@ -48,6 +48,7 @@ interface DirectTypePdfPageProps {
   registerTextareaRef: (id: string, node: HTMLTextAreaElement | null) => void;
   registerInteractiveRef: (id: string, node: HTMLElement | null) => void;
   registerPageRef: (pageNum: number, node: HTMLDivElement | null) => void;
+  registerPageCanvasRef: (pageNum: number, node: HTMLCanvasElement | null) => void;
   onPageLayoutAnalyzed: (pageNum: number, layout: AnalyzedPageLayout) => void;
   onClickBlankPage: (pageNum: number, normX: number, normY: number) => void;
   onClickSlot: (slot: DetectedFormSlot) => void;
@@ -70,6 +71,13 @@ interface DirectTypePdfPageProps {
     patch: Partial<Pick<TextFormElement, 'fontSize' | 'color'>>
   ) => void;
   onMoveEntry: (id: string, normX: number, normY: number, isStart?: boolean) => void;
+  onResizeEntry: (
+    id: string,
+    nextRect: { x: number; y: number; width: number; height: number },
+    flags: { manualWidth?: boolean; manualHeight?: boolean },
+    isStart?: boolean
+  ) => void;
+  onToggleEntryCover: (id: string) => void;
   onDeleteEntry: (id: string) => void;
   onNavigateField: (currentTargetId: string, direction: 1 | -1) => void;
   onNavigateTableDown: (entry: TextFormElement) => void;
@@ -82,16 +90,108 @@ interface DirectTypePdfPageProps {
 
 const FONT_STACK = "Helvetica, Arial, 'Noto Sans Devanagari', 'Nirmala UI', 'Mangal', sans-serif";
 
+// Shared lightweight 2D canvas context for instant, exact text width & wrapped-line measurement
+let sharedMeasureCtx: CanvasRenderingContext2D | null = null;
+function getMeasureCtx(): CanvasRenderingContext2D | null {
+  if (typeof document === 'undefined') return null;
+  if (!sharedMeasureCtx) {
+    const c = document.createElement('canvas');
+    sharedMeasureCtx = c.getContext('2d');
+  }
+  return sharedMeasureCtx;
+}
+
+function measureStringPx(str: string, fontPx: number): number {
+  const ctx = getMeasureCtx();
+  if (!ctx) return str.length * fontPx * 0.56;
+  ctx.font = `400 ${fontPx}px ${FONT_STACK}`;
+  return ctx.measureText(str).width;
+}
+
 /**
- * Deterministic visual font-size auto-fit matching exportFilledPdf's bounded-box logic
- * so long values in table cells or tight inline fields wrap cleanly and never overflow neighbors.
+ * Measure the exact longest single-line width (in CSS px) AND the total wrapped line count
+ * for a given box width so horizontal expansion and Enter/multiline height growth are exact & lag-free.
  */
-function computeFittedFontSizePt(
+function measureFlexibleTextMetrics(
+  text: string,
+  fontPx: number,
+  lineHeightMultiplier: number,
+  padPx: number,
+  targetBoxWidthPx: number
+): {
+  longestLineBoxWidthPx: number;
+  wrappedHeightPx: number;
+} {
+  const paragraphs = (text || '').split(/\r?\n/);
+  let longestPx = 0;
+  for (const para of paragraphs) {
+    const w = measureStringPx(para, fontPx);
+    if (w > longestPx) longestPx = w;
+  }
+
+  // Add comfortable horizontal padding + caret breathing space so text never wraps prematurely while typing
+  const caretBufferPx = Math.max(14, fontPx * 0.9);
+  const longestLineBoxWidthPx = Math.ceil(longestPx + padPx * 2 + caretBufferPx);
+
+  // Count exact wrapped lines inside targetBoxWidthPx
+  const availW = Math.max(12, targetBoxWidthPx - padPx * 2 - 2);
+  let totalLines = 0;
+  for (const para of paragraphs) {
+    if (!para) {
+      totalLines += 1;
+      continue;
+    }
+    if (measureStringPx(para, fontPx) <= availW) {
+      totalLines += 1;
+      continue;
+    }
+    const words = para.split(' ');
+    let cur = '';
+    let linesInPara = 0;
+    for (const word of words) {
+      const candidate = cur ? `${cur} ${word}` : word;
+      if (measureStringPx(candidate, fontPx) <= availW) {
+        cur = candidate;
+      } else {
+        if (cur) {
+          linesInPara += 1;
+          cur = '';
+        }
+        // Handle single very long word exceeding availW (break-words)
+        if (measureStringPx(word, fontPx) > availW) {
+          let chunk = '';
+          for (const ch of word) {
+            if (chunk && measureStringPx(chunk + ch, fontPx) > availW) {
+              linesInPara += 1;
+              chunk = ch;
+            } else {
+              chunk += ch;
+            }
+          }
+          cur = chunk;
+        } else {
+          cur = word;
+        }
+      }
+    }
+    if (cur || linesInPara === 0) linesInPara += 1;
+    totalLines += linesInPara;
+  }
+
+  const lineHeightPx = fontPx * lineHeightMultiplier;
+  const wrappedHeightPx = Math.ceil(Math.max(1, totalLines) * lineHeightPx + padPx * 2 + 2);
+  return { longestLineBoxWidthPx, wrappedHeightPx };
+}
+
+/**
+ * Deterministic visual font-size auto-fit strictly for fixed table cells (readable floor 7.5pt).
+ * Normal form fields are NEVER auto-shrunk — they expand horizontally/vertically instead!
+ */
+function computeTableCellFittedFontSizePt(
   text: string,
   baseFontSize: number,
   boxWidthPt: number,
-  boxHeightPt: number,
-  isTableCell: boolean
+  boxHeightPt: number
 ): number {
   if (!text || text.length <= 2) return baseFontSize;
   const availW = Math.max(10, boxWidthPt - 4);
@@ -133,23 +233,12 @@ function computeFittedFontSizePt(
     return totalLines;
   };
 
-  if (isTableCell) {
-    while (fs > 6.5) {
-      const lines = countWrappedLines(fs);
-      if (lines * (fs * 1.24) <= availH) break;
-      fs = Number((fs - 0.5).toFixed(1));
-    }
-    return Math.max(6.5, fs);
-  }
-
-  // Inline bounded slot (e.g. Years / Months / Days / Date / Month / Year):
-  // shrink gently so single-line entries stay on their line without overflowing into sibling labels
-  while (fs > 7) {
+  while (fs > 7.5) {
     const lines = countWrappedLines(fs);
-    if (lines <= 1 || lines * (fs * 1.24) <= availH * 1.15) break;
+    if (lines * (fs * 1.22) <= availH) break;
     fs = Number((fs - 0.5).toFixed(1));
   }
-  return Math.max(7, fs);
+  return Math.max(7.5, fs);
 }
 
 /**
@@ -258,9 +347,10 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
   registerTextareaRef,
   registerInteractiveRef,
   registerPageRef,
+  registerPageCanvasRef,
   onPageLayoutAnalyzed,
   onClickBlankPage,
-  onClickSlot,
+  onClickSlot: _onClickSlot,
   onSelectPdfRegion,
   onEraseSelectedRegion,
   onFocusEntry,
@@ -268,6 +358,8 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
   onChangeEntryText,
   onUpdateEntryStyle,
   onMoveEntry,
+  onResizeEntry,
+  onToggleEntryCover,
   onDeleteEntry,
   onNavigateField,
   onNavigateTableDown,
@@ -321,6 +413,25 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
     origY: number;
     stageW: number;
     stageH: number;
+    moved: boolean;
+  } | null>(null);
+
+  // Drag state for manual resizing via subtle left / right / bottom / corner handles on the active box
+  const entryResizeRef = useRef<{
+    id: string;
+    edge: 'left' | 'right' | 'bottom' | 'bottom-right';
+    startClientX: number;
+    startClientY: number;
+    origX: number;
+    origY: number;
+    origW: number;
+    origH: number;
+    stageW: number;
+    stageH: number;
+    entryText: string;
+    fontPx: number;
+    padPx: number;
+    lineHeightMult: number;
     moved: boolean;
   } | null>(null);
 
@@ -444,41 +555,58 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
     []
   );
 
-  // Measure fluid textarea bounds (bounded boxes keep their exact detected slot width)
+  // Measure flexible horizontal width (longest line) and wrapped multiline vertical height cleanly
   const syncTextareaSize = useCallback(
-    (textarea: HTMLTextAreaElement, entry: TextFormElement, nextText: string) => {
-      if (entry.boundedBox) {
-        if (entry.tableId) {
-          // Table cells lock strictly inside their grid borders
-          onChangeEntryText(entry.id, nextText, entry.width, entry.height);
-          return;
-        }
-        // Inline blank slots keep their horizontal boundary so they NEVER overlap sibling labels/fields
-        const minLineHeightPx = Math.ceil(entry.fontSize * 1.24 * zoom + 4 * zoom);
-        const measuredH = Math.max(minLineHeightPx, textarea.scrollHeight);
-        const normH = Math.max(
-          entry.height,
-          Math.min(1 - entry.y - 0.004, measuredH / Math.max(1, cssHeight))
-        );
-        onChangeEntryText(entry.id, nextText, entry.width, normH);
+    (_textarea: HTMLTextAreaElement, entry: TextFormElement, nextText: string) => {
+      const isStrictTableCell = Boolean(entry.tableId) && !entry.manualWidth && !entry.manualHeight;
+      if (isStrictTableCell) {
+        onChangeEntryText(entry.id, nextText, entry.width, entry.height);
         return;
       }
 
-      const container = textarea.parentElement;
-      const availableWidthPx = Math.max(48, (1 - entry.x - 0.005) * cssWidth);
-      const measuredW = Math.min(
-        availableWidthPx,
-        Math.max(container?.offsetWidth || textarea.offsetWidth, 24)
-      );
-      const minLineHeightPx = Math.ceil(entry.fontSize * 1.28 * zoom + 4 * zoom);
-      const measuredH = Math.max(
-        minLineHeightPx,
-        container?.offsetHeight || textarea.scrollHeight
-      );
-      const normW = Math.min(1 - entry.x - 0.004, Math.max(0.05, measuredW / Math.max(1, cssWidth)));
-      const normH = Math.min(1 - entry.y - 0.004, Math.max(0.02, measuredH / Math.max(1, cssHeight)));
+      const fontPx = entry.fontSize * zoom;
+      const padPx = 2 * zoom;
+      const lineHeightMult = 1.28;
 
-      onChangeEntryText(entry.id, nextText, normW, normH);
+      const availPageW = Math.max(0.04, 1 - entry.x - 0.006);
+      const maxAutoW = Math.min(availPageW, entry.maxAutoWidth ?? availPageW);
+
+      // Determine what horizontal box width will be used after this keystroke
+      const initialProbe = measureFlexibleTextMetrics(
+        nextText,
+        fontPx,
+        lineHeightMult,
+        padPx,
+        Math.max(24, entry.width * cssWidth)
+      );
+      const measuredWidthNorm = Math.min(
+        availPageW,
+        Math.max(0.045, initialProbe.longestLineBoxWidthPx / Math.max(1, cssWidth))
+      );
+
+      let effectiveBoxW = entry.width;
+      if (!entry.manualWidth && !entry.boundedBox) {
+        const minBaseW = entry.dotCovers?.[0]?.width
+          ? Math.min(maxAutoW, Math.max(0.14, entry.dotCovers[0].width))
+          : Math.min(maxAutoW, Math.max(0.14, entry.width));
+        effectiveBoxW = Math.min(maxAutoW, Math.max(minBaseW, measuredWidthNorm));
+      }
+
+      // Compute exact wrapped vertical height at that effective horizontal width
+      const finalMetrics = measureFlexibleTextMetrics(
+        nextText,
+        fontPx,
+        lineHeightMult,
+        padPx,
+        Math.max(24, effectiveBoxW * cssWidth)
+      );
+
+      const normH = Math.min(
+        1 - entry.y - 0.004,
+        Math.max(0.018, finalMetrics.wrappedHeightPx / Math.max(1, cssHeight))
+      );
+
+      onChangeEntryText(entry.id, nextText, measuredWidthNorm, normH);
     },
     [cssWidth, cssHeight, zoom, onChangeEntryText]
   );
@@ -794,6 +922,114 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
     entryDragRef.current = null;
   };
 
+  // Manual smooth edge / corner resize handlers for active text boxes
+  const handleResizePointerDown = (
+    e: React.PointerEvent<HTMLDivElement>,
+    entry: TextFormElement,
+    edge: 'left' | 'right' | 'bottom' | 'bottom-right'
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
+    const isStrictTable = Boolean(entry.tableId) && !entry.manualWidth && !entry.manualHeight;
+    entryResizeRef.current = {
+      id: entry.id,
+      edge,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      origX: entry.x,
+      origY: entry.y,
+      origW: entry.width,
+      origH: entry.height,
+      stageW: rect.width,
+      stageH: rect.height,
+      entryText: entry.text,
+      fontPx: entry.fontSize * zoom,
+      padPx: (isStrictTable ? 1.5 : 2) * zoom,
+      lineHeightMult: 1.28,
+      moved: false,
+    };
+  };
+
+  const handleResizePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const sess = entryResizeRef.current;
+    if (!sess) return;
+    e.stopPropagation();
+
+    const dxPx = e.clientX - sess.startClientX;
+    const dyPx = e.clientY - sess.startClientY;
+    if (!sess.moved && Math.hypot(dxPx, dyPx) < 2) return;
+
+    const isFirstMove = !sess.moved;
+    sess.moved = true;
+
+    const dxNorm = dxPx / Math.max(1, sess.stageW);
+    const dyNorm = dyPx / Math.max(1, sess.stageH);
+
+    let nextX = sess.origX;
+    const nextY = sess.origY;
+    let nextW = sess.origW;
+    let nextH = sess.origH;
+    const minW = 0.04;
+
+    if (sess.edge === 'right' || sess.edge === 'bottom-right') {
+      nextW = Math.max(minW, Math.min(1 - sess.origX - 0.004, sess.origW + dxNorm));
+    } else if (sess.edge === 'left') {
+      const rightEdge = sess.origX + sess.origW;
+      const candidateX = Math.max(0.004, Math.min(rightEdge - minW, sess.origX + dxNorm));
+      nextX = candidateX;
+      nextW = rightEdge - candidateX;
+    }
+
+    // Always ensure height can fit the wrapped text at the new width so text NEVER gets cut off!
+    const metricsAtNewW = measureFlexibleTextMetrics(
+      sess.entryText,
+      sess.fontPx,
+      sess.lineHeightMult,
+      sess.padPx,
+      Math.max(20, nextW * sess.stageW)
+    );
+    const minNeededH = Math.max(0.018, metricsAtNewW.wrappedHeightPx / Math.max(1, sess.stageH));
+
+    if (sess.edge === 'bottom' || sess.edge === 'bottom-right') {
+      nextH = Math.max(minNeededH, Math.min(1 - sess.origY - 0.004, sess.origH + dyNorm));
+    } else {
+      // Horizontal resize: automatically expand height vertically if narrowing caused text to wrap!
+      nextH = Math.max(sess.origH, Math.min(1 - sess.origY - 0.004, minNeededH));
+    }
+
+    onResizeEntry(
+      sess.id,
+      { x: nextX, y: nextY, width: nextW, height: nextH },
+      {
+        manualWidth: sess.edge === 'left' || sess.edge === 'right' || sess.edge === 'bottom-right',
+        manualHeight: sess.edge === 'bottom' || sess.edge === 'bottom-right',
+      },
+      isFirstMove
+    );
+  };
+
+  const handleResizePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!entryResizeRef.current) return;
+    e.stopPropagation();
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+    entryResizeRef.current = null;
+  };
+
   // Keyboard listener for active selection on this page (Backspace/Delete -> erase, printable key -> replace!)
   const pageSelection =
     activeSelection && activeSelection.pageNum === pageNum ? activeSelection : null;
@@ -868,7 +1104,10 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
       >
         {/* Layer 0: Rendered PDF Page Canvas */}
         <canvas
-          ref={canvasRef}
+          ref={(node) => {
+            canvasRef.current = node;
+            registerPageCanvasRef(pageNum, node);
+          }}
           style={{ width: `${cssWidth}px`, height: `${cssHeight}px` }}
           className="block pointer-events-none"
         />
@@ -879,7 +1118,7 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
           </div>
         )}
 
-        {/* Layer 0.5: Background-Matched Whiteout Patches (drawn cleanly underneath typed replacement text) */}
+        {/* Layer 0.5: Background-Matched Whiteout Patches (erased preprinted text) */}
         {whiteoutPatches.map((patch) => (
           <div
             key={patch.id}
@@ -893,6 +1132,26 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
             className="absolute z-[5] pointer-events-none"
           />
         ))}
+
+        {/* Layer 0.6: Automatic Dotted-Leader Covers (activated cleanly as soon as user starts typing) */}
+        {textEntries.map((entry) => {
+          if (entry.coverDotsEnabled === false || entry.text.length === 0 || !entry.dotCovers?.length) {
+            return null;
+          }
+          return entry.dotCovers.map((dc) => (
+            <div
+              key={`${entry.id}_${dc.id}`}
+              style={{
+                left: `${dc.x * 100}%`,
+                top: `${dc.y * 100}%`,
+                width: `${dc.width * 100}%`,
+                height: `${dc.height * 100}%`,
+                backgroundColor: dc.fillColor || '#ffffff',
+              }}
+              className="absolute z-[6] pointer-events-none"
+            />
+          ));
+        })}
 
         {/* Layer 0.75: Whisper-Quiet Hover Targets for Detected Table Cells & Inline Blanks */}
         {layout &&
@@ -909,7 +1168,17 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
                     return;
                   }
                   e.stopPropagation();
-                  onClickSlot(slot);
+                  const stage = stageRef.current;
+                  if (stage) {
+                    const rect = stage.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                      const normX = Math.max(0.004, Math.min(0.95, (e.clientX - rect.left) / rect.width));
+                      const normY = Math.max(0.004, Math.min(0.97, (e.clientY - rect.top) / rect.height));
+                      onClickBlankPage(pageNum, normX, normY);
+                      return;
+                    }
+                  }
+                  onClickBlankPage(pageNum, slot.x + 0.004, slot.y + slot.height * 0.5);
                 }}
                 style={{
                   left: `${slot.x * 100}%`,
@@ -1163,31 +1432,29 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
           </>
         )}
 
-        {/* Layer 2: Direct Click-to-Type Transparent Text Entries (bounded cells, inline blanks, and free clicks) */}
+        {/* Layer 2: Direct Click-to-Type Flexible & Resizable Text Entries */}
         {textEntries.map((entry) => {
           const isActive = activeEntryId === entry.id;
           const isTableCell = Boolean(entry.tableId);
-          const isBounded = Boolean(entry.boundedBox);
+          const isStrictTableCell = isTableCell && !entry.manualWidth && !entry.manualHeight;
 
           const boxWPoints = entry.width * baseWidth;
           const boxHPoints = entry.height * baseHeight;
-          const effectiveFontPt = isBounded
-            ? computeFittedFontSizePt(
-                entry.text,
-                entry.fontSize,
-                boxWPoints,
-                boxHPoints,
-                isTableCell
-              )
+          const effectiveFontPt = isStrictTableCell
+            ? computeTableCellFittedFontSizePt(entry.text, entry.fontSize, boxWPoints, boxHPoints)
             : entry.fontSize;
 
           const fontPx = effectiveFontPt * zoom;
-          const padPx = (isTableCell ? 1.5 : 2) * zoom;
-          const maxAvailPx = isBounded
-            ? Math.max(20, Math.round(entry.width * cssWidth))
-            : Math.max(60, (1 - entry.x - 0.005) * cssWidth);
+          const padPx = (isStrictTableCell ? 1.5 : 2) * zoom;
           const placeToolbarBelow = entry.y < 0.09;
           const alignToolbarRight = entry.x > 0.62;
+          const isCoverActive =
+            Boolean(entry.coverDotsEnabled !== false && entry.dotCovers && entry.dotCovers.length > 0) ||
+            Boolean(entry.backgroundColor && entry.backgroundColor !== 'transparent');
+          const manualBgColor =
+            entry.backgroundColor && entry.backgroundColor !== 'transparent'
+              ? entry.backgroundColor
+              : undefined;
 
           const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
             if (e.key === 'Escape') {
@@ -1210,6 +1477,40 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
             }
           };
 
+          const handleAdjustFontSize = (nextSize: number) => {
+            onUpdateEntryStyle(entry.id, { fontSize: nextSize });
+            // Re-measure box width/height at the new font size so text never clips when enlarging font
+            if (!isStrictTableCell && entry.text.length > 0) {
+              const nextFontPx = nextSize * zoom;
+              const availPageW = Math.max(0.04, 1 - entry.x - 0.006);
+              const maxAutoW = Math.min(availPageW, entry.maxAutoWidth ?? availPageW);
+              const probe = measureFlexibleTextMetrics(
+                entry.text,
+                nextFontPx,
+                1.28,
+                padPx,
+                Math.max(24, entry.width * cssWidth)
+              );
+              const nextW = Math.min(availPageW, Math.max(0.045, probe.longestLineBoxWidthPx / Math.max(1, cssWidth)));
+              const targetBoxW =
+                !entry.manualWidth && !entry.boundedBox
+                  ? Math.min(maxAutoW, Math.max(entry.width, nextW))
+                  : entry.width;
+              const finalM = measureFlexibleTextMetrics(
+                entry.text,
+                nextFontPx,
+                1.28,
+                padPx,
+                Math.max(24, targetBoxW * cssWidth)
+              );
+              const nextH = Math.min(
+                1 - entry.y - 0.004,
+                Math.max(0.018, finalM.wrappedHeightPx / Math.max(1, cssHeight))
+              );
+              onChangeEntryText(entry.id, entry.text, nextW, nextH);
+            }
+          };
+
           return (
             <div
               key={entry.id}
@@ -1218,14 +1519,9 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
               style={{
                 left: `${entry.x * 100}%`,
                 top: `${entry.y * 100}%`,
-                ...(isBounded
-                  ? {
-                      width: `${entry.width * 100}%`,
-                      ...(isTableCell
-                        ? { height: `${entry.height * 100}%` }
-                        : { minHeight: `${entry.height * 100}%` }),
-                    }
-                  : { maxWidth: `${maxAvailPx}px` }),
+                width: `${entry.width * 100}%`,
+                height: `${entry.height * 100}%`,
+                backgroundColor: manualBgColor,
               }}
               className={`absolute ${isActive ? 'z-30' : 'z-20'}`}
             >
@@ -1235,7 +1531,7 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={(e) => e.stopPropagation()}
                   className={`absolute ${
-                    placeToolbarBelow ? 'top-full mt-1.5' : 'bottom-full mb-1.5'
+                    placeToolbarBelow ? 'top-full mt-2' : 'bottom-full mb-2'
                   } ${
                     alignToolbarRight ? 'right-0' : 'left-0'
                   } flex items-center gap-1.5 px-2 py-1 rounded-xl bg-white dark:bg-[#181B2E] border border-[#DDD9EE] dark:border-[#2E3454] shadow-[0_10px_24px_-8px_rgba(37,37,54,0.28)] whitespace-nowrap z-40`}
@@ -1262,11 +1558,7 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
                       type="button"
                       title="Decrease font size"
                       aria-label="Decrease font size"
-                      onClick={() =>
-                        onUpdateEntryStyle(entry.id, {
-                          fontSize: Math.max(8, entry.fontSize - 1),
-                        })
-                      }
+                      onClick={() => handleAdjustFontSize(Math.max(8, entry.fontSize - 1))}
                       className="w-6 h-6 rounded-lg flex items-center justify-center text-[#252536] dark:text-[#E2E6F7] hover:bg-[#F5F4FA] dark:hover:bg-[#232842] transition-colors cursor-pointer"
                     >
                       <Minus className="w-3 h-3" />
@@ -1278,11 +1570,7 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
                       type="button"
                       title="Increase font size"
                       aria-label="Increase font size"
-                      onClick={() =>
-                        onUpdateEntryStyle(entry.id, {
-                          fontSize: Math.min(36, entry.fontSize + 1),
-                        })
-                      }
+                      onClick={() => handleAdjustFontSize(Math.min(36, entry.fontSize + 1))}
                       className="w-6 h-6 rounded-lg flex items-center justify-center text-[#252536] dark:text-[#E2E6F7] hover:bg-[#F5F4FA] dark:hover:bg-[#232842] transition-colors cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
@@ -1315,6 +1603,26 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
 
                   <span className="w-px h-4 bg-[#E8E6F2] dark:bg-[#2A2F4A]" aria-hidden="true" />
 
+                  {/* Subtle Cover Dots / Background Mask Toggle (lets user adjust or toggle dot masking on any scan) */}
+                  <button
+                    type="button"
+                    title={
+                      isCoverActive
+                        ? 'Hiding dots/background behind text (click to turn off)'
+                        : 'Hide dots or background behind this text box'
+                    }
+                    aria-label="Toggle background cover behind text"
+                    aria-pressed={isCoverActive}
+                    onClick={() => onToggleEntryCover(entry.id)}
+                    className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                      isCoverActive
+                        ? 'bg-[#E9E4FF] dark:bg-[#2E295A] text-[#5B50E6] dark:text-[#A99EFF]'
+                        : 'text-[#777789] hover:text-[#252536] dark:hover:text-[#F2F4FC] hover:bg-[#F5F4FA] dark:hover:bg-[#232842]'
+                    }`}
+                  >
+                    <Eraser className="w-3.5 h-3.5" />
+                  </button>
+
                   {/* Delete this text entry */}
                   <button
                     type="button"
@@ -1328,76 +1636,98 @@ export const DirectTypePdfPage: React.FC<DirectTypePdfPageProps> = ({
                 </div>
               )}
 
-              {/* Bounded Table Cell / Tight Inline Slot Input vs. Fluid Freehand Input */}
-              {isBounded ? (
-                <textarea
-                  ref={(node) => registerTextareaRef(entry.id, node)}
-                  rows={1}
-                  value={entry.text}
-                  spellCheck={false}
-                  autoComplete="off"
-                  aria-label="Typed PDF form field"
-                  onFocus={() => onFocusEntry(entry.id)}
-                  onBlur={() => onBlurEntry(entry.id)}
-                  onChange={(e) => syncTextareaSize(e.currentTarget, entry, e.target.value)}
-                  onKeyDown={handleTextareaKeyDown}
-                  style={{
-                    fontSize: `${fontPx}px`,
-                    lineHeight: isTableCell ? 1.2 : 1.24,
-                    color: entry.color,
-                    fontFamily: FONT_STACK,
-                    padding: `${padPx}px`,
-                    caretColor: entry.color,
-                  }}
-                  className={`block w-full h-full overflow-hidden resize-none bg-transparent border-0 outline-none select-text rounded-[2px] break-words transition-shadow ${
-                    isActive
-                      ? 'ring-1 ring-[#5B50E6]/60 bg-white/45'
-                      : 'hover:ring-1 hover:ring-dashed hover:ring-[#5B50E6]/40 cursor-text'
-                  }`}
-                />
-              ) : (
-                <div className="inline-grid align-top" style={{ maxWidth: `${maxAvailPx}px` }}>
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      fontSize: `${fontPx}px`,
-                      lineHeight: 1.28,
-                      fontFamily: FONT_STACK,
-                      padding: `${padPx}px`,
-                      minWidth: `${Math.max(20, Math.round(16 * zoom))}px`,
-                      maxWidth: `${maxAvailPx}px`,
-                    }}
-                    className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words pointer-events-none select-none"
-                  >
-                    {(entry.text || ' ') + (entry.text.endsWith('\n') ? ' ' : '')}
-                  </span>
+              {/* Direct Click-to-Type Textarea — grows horizontally as you type and vertically on Enter */}
+              <textarea
+                ref={(node) => registerTextareaRef(entry.id, node)}
+                rows={1}
+                value={entry.text}
+                spellCheck={false}
+                autoComplete="off"
+                aria-label={isTableCell ? 'Typed PDF table cell' : 'Typed PDF form field'}
+                onFocus={() => onFocusEntry(entry.id)}
+                onBlur={() => onBlurEntry(entry.id)}
+                onChange={(e) => syncTextareaSize(e.currentTarget, entry, e.target.value)}
+                onKeyDown={handleTextareaKeyDown}
+                style={{
+                  fontSize: `${fontPx}px`,
+                  lineHeight: isStrictTableCell ? 1.22 : 1.28,
+                  color: entry.color,
+                  fontFamily: FONT_STACK,
+                  padding: `${padPx}px`,
+                  caretColor: entry.color,
+                }}
+                className={`block w-full h-full overflow-hidden resize-none bg-transparent border-0 outline-none select-text rounded-[2px] break-words transition-shadow ${
+                  isActive
+                    ? 'ring-1 ring-[#5B50E6]/70 bg-white/25'
+                    : 'hover:ring-1 hover:ring-dashed hover:ring-[#5B50E6]/40 cursor-text'
+                }`}
+              />
 
-                  <textarea
-                    ref={(node) => registerTextareaRef(entry.id, node)}
-                    rows={1}
-                    value={entry.text}
-                    spellCheck={false}
-                    autoComplete="off"
-                    aria-label="Typed PDF text"
-                    onFocus={() => onFocusEntry(entry.id)}
-                    onBlur={() => onBlurEntry(entry.id)}
-                    onChange={(e) => syncTextareaSize(e.currentTarget, entry, e.target.value)}
-                    onKeyDown={handleTextareaKeyDown}
-                    style={{
-                      fontSize: `${fontPx}px`,
-                      lineHeight: 1.28,
-                      color: entry.color,
-                      fontFamily: FONT_STACK,
-                      padding: `${padPx}px`,
-                      caretColor: entry.color,
-                    }}
-                    className={`col-start-1 row-start-1 w-full h-full overflow-hidden resize-none bg-transparent border-0 outline-none select-text rounded-[2px] transition-shadow ${
-                      isActive
-                        ? 'ring-1 ring-[#5B50E6]/50 bg-white/35'
-                        : 'hover:ring-1 hover:ring-dashed hover:ring-[#5B50E6]/40 cursor-text'
-                    }`}
+              {/* Subtle Manual Resize Handles — visible ONLY while this text box is active */}
+              {isActive && (
+                <>
+                  {/* Left Edge Width Handle */}
+                  <div
+                    role="separator"
+                    aria-label="Resize left edge"
+                    title="Drag to resize width"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => handleResizePointerDown(e, entry, 'left')}
+                    onPointerMove={handleResizePointerMove}
+                    onPointerUp={handleResizePointerUp}
+                    onPointerCancel={handleResizePointerUp}
+                    className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-2.5 h-5 max-h-[85%] flex items-center justify-center cursor-ew-resize touch-none z-30 group"
+                  >
+                    <span className="w-1 h-3.5 rounded-full bg-[#5B50E6]/75 group-hover:bg-[#5B50E6] shadow-2xs" />
+                  </div>
+
+                  {/* Right Edge Width Handle */}
+                  <div
+                    role="separator"
+                    aria-label="Resize right edge"
+                    title="Drag to resize width"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => handleResizePointerDown(e, entry, 'right')}
+                    onPointerMove={handleResizePointerMove}
+                    onPointerUp={handleResizePointerUp}
+                    onPointerCancel={handleResizePointerUp}
+                    className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-5 max-h-[85%] flex items-center justify-center cursor-ew-resize touch-none z-30 group"
+                  >
+                    <span className="w-1 h-3.5 rounded-full bg-[#5B50E6]/75 group-hover:bg-[#5B50E6] shadow-2xs" />
+                  </div>
+
+                  {/* Bottom Edge Height Handle */}
+                  <div
+                    role="separator"
+                    aria-label="Resize height"
+                    title="Drag to resize height"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => handleResizePointerDown(e, entry, 'bottom')}
+                    onPointerMove={handleResizePointerMove}
+                    onPointerUp={handleResizePointerUp}
+                    onPointerCancel={handleResizePointerUp}
+                    className="absolute left-1/2 -translate-x-1/2 -bottom-1.5 h-2.5 w-6 max-w-[70%] flex items-center justify-center cursor-ns-resize touch-none z-30 group"
+                  >
+                    <span className="h-1 w-4 rounded-full bg-[#5B50E6]/75 group-hover:bg-[#5B50E6] shadow-2xs" />
+                  </div>
+
+                  {/* Bottom-Right Corner Resize Handle (Width + Height) */}
+                  <div
+                    role="separator"
+                    aria-label="Resize width and height"
+                    title="Drag corner to resize width & height"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => handleResizePointerDown(e, entry, 'bottom-right')}
+                    onPointerMove={handleResizePointerMove}
+                    onPointerUp={handleResizePointerUp}
+                    onPointerCancel={handleResizePointerUp}
+                    className="absolute -right-1.5 -bottom-1.5 w-3 h-3 rounded-full bg-white border-2 border-[#5B50E6] shadow-xs cursor-nwse-resize touch-none z-30 hover:scale-110 transition-transform"
                   />
-                </div>
+                </>
               )}
             </div>
           );

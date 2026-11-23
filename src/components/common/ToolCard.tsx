@@ -227,4 +227,10 @@ export const TOOL_VISUAL_THEMES: Record<string, ToolThemeConfig> = {
     iconColor: 'text-teal-600 dark:text-teal-400',
     iconBorder: 'border-teal-200 dark:border-teal-900',
   },
+  'office-note-digitizer': {
+    icon: ArrowRight,
+    iconBg: 'bg-indigo-100 dark:bg-indigo-950/70',
+    iconColor: 'text-indigo-600 dark:text-indigo-400',
+    iconBorder: 'border-indigo-200 dark:border-indigo-900',
+  },
 };

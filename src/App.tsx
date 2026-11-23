@@ -27,7 +27,6 @@ import { updatePageSeoMetadata } from './services/seo/seoMetadataService';
 import { OfflinePwaHighlightSection } from './components/home/OfflinePwaHighlightSection';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { CategoryPage } from './components/pages/CategoryPage';
-import { DirectoryPage } from './components/legal/DirectoryPage';
 import { getHindiPageBySlug } from './config/hindiPages';
 import {
   setActiveToolContext,
@@ -164,6 +163,11 @@ const SmartTextTools = lazyWithRetry(() =>
 const PowerPointTool = lazyWithRetry(() =>
   import('./components/tools/PowerPointTool').then((m) => ({ default: m.PowerPointTool }))
 );
+const OfficeNoteDigitizerTool = lazyWithRetry(() =>
+  import('./components/tools/OfficeNoteDigitizerTool').then((m) => ({
+    default: m.OfficeNoteDigitizerTool,
+  }))
+);
 
 // Legal and informational pages (Lazy loaded)
 const PrivacyPolicy = React.lazy(() =>
@@ -265,17 +269,50 @@ export default function App() {
 
   // Synchronize route with browser URL history
   const navigateTo = (view: string, tool?: ToolDefinition, replaceState = false) => {
-    // URL Aliases
+    // URL & Legacy Category Aliases -> 6 unified categories
     if (view === 'about-us') view = 'about';
     if (view === 'contact-us') view = 'contact';
-    if (view === 'all-tools') view = 'directory';
-    if (view === 'convert-documents') view = 'category-convert-docs';
-    if (view === 'pdf-tools' || view === 'top-pdf-tools' || view === 'category-compress-pdf') view = 'category-pdf-tools';
-    if (view === 'word-tools') view = 'category-word-tools';
-    if (view === 'excel-tools') view = 'category-excel-tools';
-    if (view === 'powerpoint-tools') view = 'category-powerpoint-tools';
-    if (view === 'image-tools' || view === 'image-tools-presets' || view === 'gov-tools' || view === 'category-gov-tools') view = 'category-image-tools';
-    if (view === 'other-document-tools') view = 'category-other-document-tools';
+    if (view === 'all-tools' || view === 'directory') view = 'home';
+    if (
+      [
+        'pdf-tools',
+        'top-pdf-tools',
+        'organize-pdf',
+        'category-organize-pdf',
+        'compress-pdf',
+        'category-compress-pdf',
+        'pdf-security',
+        'category-pdf-security',
+        'ocr-scanned',
+        'category-ocr-scanned',
+      ].includes(view)
+    ) {
+      view = 'category-pdf-tools';
+    }
+    if (['word-tools', 'convert-documents', 'convert-docs', 'category-convert-docs'].includes(view)) {
+      view = 'category-word-tools';
+    }
+    if (['excel-tools', 'spreadsheets', 'category-spreadsheets'].includes(view)) {
+      view = 'category-excel-tools';
+    }
+    if (view === 'powerpoint-tools') {
+      view = 'category-powerpoint-tools';
+    }
+    if (
+      [
+        'image-tools',
+        'image-tools-presets',
+        'convert-images',
+        'category-convert-images',
+        'gov-tools',
+        'category-gov-tools',
+      ].includes(view)
+    ) {
+      view = 'category-image-tools';
+    }
+    if (['other-document-tools', 'smart-utilities', 'category-smart-utilities'].includes(view)) {
+      view = 'category-other-document-tools';
+    }
 
     // Auto-resolve tool instance if view matches a tool slug or id
     const isBlogView = view === 'blog' || view.startsWith('blog/');
@@ -284,7 +321,7 @@ export default function App() {
       !tool &&
       !isBlogView &&
       !isHindiView &&
-      !['home', 'about', 'contact', 'privacy', 'terms', 'disclaimer', 'directory', 'cookie-policy', 'cookies'].includes(view) &&
+      !['home', 'about', 'contact', 'privacy', 'terms', 'disclaimer', 'cookie-policy', 'cookies'].includes(view) &&
       !view.startsWith('category-')
     ) {
       const matched = getToolBySlug(view);
@@ -321,13 +358,12 @@ export default function App() {
       setActiveTool(null);
       setActiveToolContext(null);
       let path = '/';
-      if (['privacy', 'terms', 'about', 'contact', 'disclaimer', 'directory', 'cookie-policy', 'cookies'].includes(view)) {
+      if (['privacy', 'terms', 'about', 'contact', 'disclaimer', 'cookie-policy', 'cookies'].includes(view)) {
         path = view === 'cookies' ? '/cookie-policy' : `/${view}`;
       } else if (isBlogView || isHindiView) {
         path = `/${view}`;
       } else if (view.startsWith('category-')) {
-        const rawCatId = view.replace('category-', '');
-        const catId = rawCatId === 'compress-pdf' ? 'pdf-tools' : rawCatId;
+        const catId = view.replace('category-', '');
         setSelectedCategory(catId);
         path = `/${catId}`;
       }
@@ -372,9 +408,17 @@ export default function App() {
       // Route aliases
       if (pathname === 'about-us') pathname = 'about';
       if (pathname === 'contact-us') pathname = 'contact';
-      if (pathname === 'all-tools') pathname = 'directory';
-      if (pathname === 'convert-documents') pathname = 'convert-docs';
       if (pathname === 'cookies') pathname = 'cookie-policy';
+
+      // Redirect removed All Tools / Directory route cleanly to Home
+      if (pathname === 'all-tools' || pathname === 'directory') {
+        setCurrentView('home');
+        setActiveTool(null);
+        setActiveToolContext(null);
+        updatePageSeoMetadata(null, 'home');
+        window.history.replaceState({ view: 'home' }, '', '/');
+        return;
+      }
 
       if (pathname === 'blog' || pathname.startsWith('blog/')) {
         setCurrentView(pathname);
@@ -395,7 +439,7 @@ export default function App() {
         }
       }
 
-      if (['privacy', 'terms', 'about', 'contact', 'disclaimer', 'directory', 'cookie-policy'].includes(pathname)) {
+      if (['privacy', 'terms', 'about', 'contact', 'disclaimer', 'cookie-policy'].includes(pathname)) {
         setCurrentView(pathname);
         setActiveTool(null);
         setActiveToolContext(null);
@@ -403,36 +447,24 @@ export default function App() {
         return;
       }
 
-      if (pathname === 'gov-tools' || pathname === 'category-gov-tools') {
-        setSelectedCategory('image-tools');
-        setCurrentView('category-image-tools');
-        setActiveTool(null);
-        setActiveToolContext(null);
-        updatePageSeoMetadata(null, 'category-image-tools');
-        window.history.replaceState({ view: 'category-image-tools' }, '', '/image-tools');
-        return;
-      }
+      // Normalize legacy & current category routes to the 6 unified categories
+      const legacyCategoryMap: Record<string, string> = {
+        'organize-pdf': 'pdf-tools',
+        'category-compress-pdf': 'pdf-tools',
+        'ocr-scanned': 'pdf-tools',
+        'pdf-security': 'pdf-tools',
+        'top-pdf-tools': 'pdf-tools',
+        'convert-docs': 'word-tools',
+        'convert-documents': 'word-tools',
+        'spreadsheets': 'excel-tools',
+        'convert-images': 'image-tools',
+        'gov-tools': 'image-tools',
+        'category-gov-tools': 'image-tools',
+        'image-tools-presets': 'image-tools',
+        'smart-utilities': 'other-document-tools',
+      };
 
-      if (pathname === 'category-compress-pdf') {
-        setSelectedCategory('pdf-tools');
-        setCurrentView('category-pdf-tools');
-        setActiveTool(null);
-        setActiveToolContext(null);
-        updatePageSeoMetadata(null, 'category-pdf-tools');
-        window.history.replaceState({ view: 'category-pdf-tools' }, '', '/pdf-tools');
-        return;
-      }
-
-      // Check for category routes (both the 8 original categories and the 6 document categories)
-      const categorySlugs = [
-        'organize-pdf',
-        'convert-docs',
-        'convert-images',
-        'ocr-scanned',
-        'pdf-security',
-        'smart-utilities',
-        'spreadsheets',
-        'category-compress-pdf',
+      const directCategories = [
         'pdf-tools',
         'word-tools',
         'excel-tools',
@@ -440,13 +472,26 @@ export default function App() {
         'image-tools',
         'other-document-tools',
       ];
-      if (categorySlugs.includes(pathname) || pathname.startsWith('category-')) {
-        const catId = pathname.replace('category-', '');
-        setSelectedCategory(catId);
-        setCurrentView(`category-${catId}`);
+
+      const strippedCategory = pathname.startsWith('category-') ? pathname.replace('category-', '') : pathname;
+      const mappedCategory = legacyCategoryMap[pathname] || legacyCategoryMap[strippedCategory];
+
+      if (mappedCategory) {
+        setSelectedCategory(mappedCategory);
+        setCurrentView(`category-${mappedCategory}`);
         setActiveTool(null);
         setActiveToolContext(null);
-        updatePageSeoMetadata(null, `category-${catId}`);
+        updatePageSeoMetadata(null, `category-${mappedCategory}`);
+        window.history.replaceState({ view: `category-${mappedCategory}` }, '', `/${mappedCategory}`);
+        return;
+      }
+
+      if (directCategories.includes(strippedCategory)) {
+        setSelectedCategory(strippedCategory);
+        setCurrentView(`category-${strippedCategory}`);
+        setActiveTool(null);
+        setActiveToolContext(null);
+        updatePageSeoMetadata(null, `category-${strippedCategory}`);
         return;
       }
 
@@ -511,7 +556,6 @@ export default function App() {
       [
         'custom-photo-resizer',
         'photo-size-compressor',
-        'photo-signature-resizer',
         'photo-editor',
         'hd-image-enhancer',
         'image-format-converter',
@@ -522,7 +566,7 @@ export default function App() {
       return <PhotoStudioWorkspace tool={tool} onSelectNextTool={handleSelectTool} />;
     }
 
-    if (['passport-photo-cropper', 'combine-app-documents'].includes(tool.id)) {
+    if (['photo-signature-resizer', 'passport-photo-cropper', 'combine-app-documents'].includes(tool.id)) {
       return <GovPhotoResizerTool tool={tool} />;
     }
 
@@ -560,6 +604,10 @@ export default function App() {
 
     if (tool.id === 'fill-pdf-form') {
       return <FillPdfFormTool tool={tool} onSelectNextTool={handleSelectTool} />;
+    }
+
+    if (tool.id === 'office-note-digitizer') {
+      return <OfficeNoteDigitizerTool tool={tool} onSelectNextTool={handleSelectTool} />;
     }
 
     if (['protect-pdf', 'unlock-pdf', 'sign-pdf', 'pdf-metadata'].includes(tool.id)) {
@@ -600,7 +648,6 @@ export default function App() {
               onSearchChange={setSearchQuery}
               onSelectShortcut={handleSelectShortcut}
               onSelectTool={handleSelectTool}
-              onExploreAll={() => navigateTo('directory')}
             />
 
             {/* Ad Placement: Top Leaderboard Banner */}
@@ -610,10 +657,9 @@ export default function App() {
               </div>
             )}
 
-            {/* Main Categories Section: 3 shortcut cards */}
+            {/* Main Categories Section: 6 clean category cards */}
             <MainCategoriesSection
               onSelectCategoryPage={(catId) => navigateTo(`category-${catId}`)}
-              onExploreAll={() => navigateTo('directory')}
             />
 
             {/* Problem-Solver Tasks & Direct Goal Shortcuts */}
@@ -644,7 +690,6 @@ export default function App() {
             <SearchContentSection
               onSelectTool={handleSelectTool}
               onSelectCategory={(catId) => navigateTo(`category-${catId}`)}
-              onExploreAll={() => navigateTo('directory')}
             />
 
             {/* Ad Placement: Pre-Footer Leaderboard & Adsterra Native Banner */}
@@ -779,7 +824,7 @@ export default function App() {
         ) : currentView === 'about' ? (
           <React.Suspense fallback={<ToolSkeleton />}>
             <AboutPage
-              onNavigateDirectory={() => navigateTo('directory')}
+              onNavigateTools={() => navigateTo('category-pdf-tools')}
               onNavigateBlog={() => navigateTo('blog')}
             />
           </React.Suspense>
@@ -794,10 +839,6 @@ export default function App() {
         ) : currentView === 'cookie-policy' || currentView === 'cookies' ? (
           <React.Suspense fallback={<ToolSkeleton />}>
             <CookiePolicy />
-          </React.Suspense>
-        ) : currentView === 'directory' ? (
-          <React.Suspense fallback={<ToolSkeleton />}>
-            <DirectoryPage onSelectTool={handleSelectTool} onNavigate={(view) => navigateTo(view)} />
           </React.Suspense>
         ) : (
           /* 404 Custom Fallback */

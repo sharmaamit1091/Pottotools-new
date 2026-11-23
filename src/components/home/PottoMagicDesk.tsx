@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ToolDefinition } from '../../types/tools';
-import { TOOLS, getToolBySlug } from '../../config/toolsRegistry';
+import { getToolBySlug } from '../../config/toolsRegistry';
 import { formatBytes } from '../../services/utils/downloadUtils';
 import { stageFileForTool } from '../../services/utils/stagedFileService';
 import { preloadTool } from '../../services/utils/toolPreloader';
@@ -29,7 +29,6 @@ import {
 
 interface PottoMagicDeskProps {
   onSelectTool: (tool: ToolDefinition) => void;
-  onExploreAll?: () => void;
 }
 
 export type DetectedCategory = 'pdf' | 'image' | 'word' | 'excel' | 'powerpoint' | 'text' | 'unknown';
@@ -45,7 +44,7 @@ interface DetectedFileInfo {
 
 const MAX_FILE_SIZE_BYTES = 524288000; // 500 MB
 
-export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, onExploreAll }) => {
+export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool }) => {
   const [selectedFile, setSelectedFile] = useState<DetectedFileInfo | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showAllMatches, setShowAllMatches] = useState(false);
@@ -328,16 +327,12 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
       case 'image':
         return [
           ...getMatched('pdf-id-redactor', 'Unique: Hide Aadhaar / ID'),
-          ...getMatched('custom-photo-studio', 'Resize px, cm, mm & KB'),
+          ...getMatched('custom-photo-studio', 'Resize px, cm, mm, Crop & Adjust'),
           ...getMatched('photo-size-compressor', 'Compress to 20KB / 50KB'),
-          ...getMatched('image-converter', 'Convert JPG / PNG / WebP'),
+          ...getMatched('photo-signature-resizer', 'UPSC / SSC & Passport Presets'),
+          ...getMatched('image-converter', 'Convert JPG / PNG / WebP / BMP'),
           ...getMatched('image-to-pdf', 'Save Photo as PDF'),
-          ...getMatched('photo-signature-resizer', 'UPSC / SSC Exam Presets'),
-          ...getMatched('passport-photo-cropper', '2x2" / 35x45mm Passport'),
-          ...getMatched('hd-image-enhancer', 'Sharpen Blurry Photo'),
-          ...getMatched('photo-editor', 'Filters & Crop'),
-          ...getMatched('ocr-tool', 'Extract Text & Hindi'),
-          ...getMatched('photo-background-changer', 'White / Blue Studio BG'),
+          ...getMatched('ocr-tool', 'Extract Text (English & Hindi)'),
         ];
 
       case 'word':
@@ -606,21 +601,6 @@ export const PottoMagicDesk: React.FC<PottoMagicDeskProps> = ({ onSelectTool, on
               <span className="text-xs font-bold uppercase tracking-wider text-[#777789] dark:text-[#A0A5C0]">
                 Or Pick What You Need Right Now (1 Click):
               </span>
-              {onExploreAll && (
-                <a
-                  href="/directory"
-                  onClick={(e) => {
-                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
-                      e.preventDefault();
-                      onExploreAll();
-                    }
-                  }}
-                  className="text-xs font-bold text-[#5B50E6] dark:text-[#A49CFF] hover:underline inline-flex items-center gap-1 cursor-pointer"
-                >
-                  <span>All {TOOLS.length} Tools</span>
-                  <ArrowRight className="w-3 h-3" />
-                </a>
-              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

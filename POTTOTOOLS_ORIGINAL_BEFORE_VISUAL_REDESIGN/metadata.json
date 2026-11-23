@@ -1,6 +1,0 @@
-{
-  "name": "PottoTools",
-  "description": "Every document tool you need in one powerful place. Free, vibrant, fast, private, and secure PDF, image, and office utilities running directly in your browser.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

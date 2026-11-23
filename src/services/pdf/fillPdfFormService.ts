@@ -1206,18 +1206,40 @@ export async function exportFilledPdf(
 
       if (el.type === 'text' || el.type === 'date') {
         if (!el.text || !el.text.trim()) continue;
+
+        // Draw automatic background-matched dot-leader covers strictly behind this entry's text
+        if (el.coverDotsEnabled !== false && Array.isArray(el.dotCovers) && el.dotCovers.length > 0) {
+          for (const dc of el.dotCovers) {
+            const dcW = Math.max(2, dc.width * dispW);
+            const dcH = Math.max(2, dc.height * dispH);
+            const dcFill = hexToRgbComponents(dc.fillColor || '#ffffff');
+            const dcAnchor = visualNormalizedPointToPdf(dc.x, dc.y + dc.height, rawW, rawH, totalRot);
+            page.drawRectangle({
+              x: dcAnchor.x,
+              y: dcAnchor.y,
+              width: dcW,
+              height: dcH,
+              rotate: uprightAngle,
+              color: rgb(dcFill.r, dcFill.g, dcFill.b),
+              opacity: 1,
+            });
+          }
+        }
+
+        const isStrictTableCell = Boolean(el.tableId) && !el.manualWidth && !el.manualHeight;
         const needsUnicodeCanvas =
           !isWinAnsiSafe(el.text) || el.fontFamily === 'devanagari' || el.rotation !== 0;
 
         if (needsUnicodeCanvas) {
-          const targetWidthPt = el.boundedBox
-            ? boxW
-            : Math.max(boxW, (1 - el.x - 0.005) * dispW);
+          const targetWidthPt =
+            el.manualWidth || el.boundedBox || isStrictTableCell
+              ? boxW
+              : Math.min((1 - el.x - 0.004) * dispW, boxW + 6);
           let effectiveEl = el;
           let rendered = renderUnicodeTextToPngBytes(effectiveEl, targetWidthPt, boxH);
-          // For bounded table cells / short inline fields, step font down cleanly if multiline overflows height
-          if (el.boundedBox && rendered.actualHeightPt > boxH * 1.12) {
-            for (let sz = el.fontSize - 1; sz >= 6.5; sz -= 1) {
+          // Gently auto-fit ONLY inside fixed table cells if long text overflows cell borders
+          if (isStrictTableCell && rendered.actualHeightPt > boxH * 1.12) {
+            for (let sz = el.fontSize - 1; sz >= 7.5; sz -= 0.5) {
               const candidate = renderUnicodeTextToPngBytes(
                 { ...el, fontSize: sz },
                 targetWidthPt,
@@ -1239,7 +1261,7 @@ export async function exportFilledPdf(
           const actualNormW = Math.min(1 - el.x, targetWidthPt / Math.max(1, dispW));
           const actualNormH = Math.min(
             1 - el.y,
-            (el.boundedBox ? Math.min(boxH * 1.15, rendered.actualHeightPt) : rendered.actualHeightPt) /
+            (isStrictTableCell ? Math.min(boxH * 1.15, rendered.actualHeightPt) : rendered.actualHeightPt) /
               Math.max(1, dispH)
           );
           drawImageInVisualBox(img, el.x, el.y, actualNormW, Math.max(el.height, actualNormH), el.opacity);
@@ -1248,33 +1270,21 @@ export async function exportFilledPdf(
           const font = await getStdFont(el.fontFamily, el.bold, el.italic);
           const { r, g, b } = hexToRgbComponents(el.color);
 
-          if (el.backgroundColor && el.backgroundColor !== 'transparent') {
-            const bg = hexToRgbComponents(el.backgroundColor);
-            const anchor = visualNormalizedPointToPdf(el.x, el.y + el.height, rawW, rawH, totalRot);
-            page.drawRectangle({
-              x: anchor.x,
-              y: anchor.y,
-              width: boxW,
-              height: boxH,
-              rotate: uprightAngle,
-              color: rgb(bg.r, bg.g, bg.b),
-              opacity: el.opacity,
-            });
-          }
-
           const padX = 2;
           const padY = 2;
-          // Bounded table cells & short same-line slots wrap strictly within boxW so adjacent fields never overlap
-          const maxWrapWidth = el.boundedBox
-            ? Math.max(10, boxW - padX * 2)
-            : Math.max(12, Math.max(boxW, (1 - el.x - 0.005) * dispW) - padX * 2);
+          // Respect manual resized width & table cell borders strictly; add tiny +6pt tolerance on auto-expanded
+          // boxes so minor Helvetica/Arial glyph metric differences never cause an unexpected single-line wrap
+          const maxWrapWidth =
+            el.manualWidth || el.boundedBox || isStrictTableCell
+              ? Math.max(10, boxW - padX * 2)
+              : Math.max(12, Math.min((1 - el.x - 0.004) * dispW, boxW + 6) - padX * 2);
 
           let effectiveFontSize = el.fontSize;
+          let lineHeight = effectiveFontSize * (isStrictTableCell ? 1.22 : 1.28);
           let lines = wrapPdfLibText(el.text, font, effectiveFontSize, maxWrapWidth);
-          let lineHeight = effectiveFontSize * 1.24;
 
-          if (el.boundedBox) {
-            // Auto-fit font size down to 6.5pt if long text would overflow cell width or height
+          // Only gently auto-fit inside fixed unresized table cells (never shrink normal form fields!)
+          if (isStrictTableCell) {
             const exceedsBounds = (sz: number, ls: string[]) => {
               const totalH = padY * 2 + ls.length * (sz * 1.22);
               if (totalH > boxH + 1.5) return true;
@@ -1286,11 +1296,27 @@ export async function exportFilledPdf(
                 }
               });
             };
-            while (effectiveFontSize > 6.5 && exceedsBounds(effectiveFontSize, lines)) {
-              effectiveFontSize = Number((effectiveFontSize - 0.75).toFixed(2));
+            while (effectiveFontSize > 7.5 && exceedsBounds(effectiveFontSize, lines)) {
+              effectiveFontSize = Number((effectiveFontSize - 0.5).toFixed(2));
               lines = wrapPdfLibText(el.text, font, effectiveFontSize, maxWrapWidth);
               lineHeight = effectiveFontSize * 1.22;
             }
+          }
+
+          if (el.backgroundColor && el.backgroundColor !== 'transparent') {
+            const bg = hexToRgbComponents(el.backgroundColor);
+            const neededH = Math.max(boxH, padY * 2 + Math.max(1, lines.length) * lineHeight);
+            const bgHNorm = Math.min(1 - el.y - 0.002, neededH / Math.max(1, dispH));
+            const anchor = visualNormalizedPointToPdf(el.x, el.y + bgHNorm, rawW, rawH, totalRot);
+            page.drawRectangle({
+              x: anchor.x,
+              y: anchor.y,
+              width: boxW,
+              height: bgHNorm * dispH,
+              rotate: uprightAngle,
+              color: rgb(bg.r, bg.g, bg.b),
+              opacity: el.opacity,
+            });
           }
 
           lines.forEach((line, idx) => {

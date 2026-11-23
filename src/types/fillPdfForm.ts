@@ -45,12 +45,37 @@ export interface TextFormElement extends BaseFormElement {
   backgroundColor?: string;
   /** Optional ID of a detected inline slot or table cell this entry occupies */
   slotId?: string;
-  /** When true, text wraps and auto-fits strictly inside [width, height] without overflowing neighbors */
+  /** When true, text stays bounded inside [width, height] (used for table cells and tight inline siblings) */
   boundedBox?: boolean;
   /** Optional table coordinates for Tab / Enter spreadsheet-like navigation */
   tableId?: string;
   tableRow?: number;
   tableCol?: number;
+  /** Background-matched cover rectangles automatically hiding dotted leader placeholders under this entry */
+  dotCovers?: WhiteoutPatch[];
+  /** Whether dot-leader / background covering is active for this entry (defaults true when dotCovers present) */
+  coverDotsEnabled?: boolean;
+  /** True when user manually resized width via drag handles */
+  manualWidth?: boolean;
+  /** True when user manually resized height via drag handles */
+  manualHeight?: boolean;
+  /** Optional maximum auto-expand width (normalized 0..1) before hitting a sibling label on the same line */
+  maxAutoWidth?: number;
+}
+
+export interface DetectedDotLeader {
+  id: string;
+  pageNum: number;
+  /** Exact normalized bounding box of the dotted placeholder ink to cover */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Suggested text box top & height aligned with this dotted line */
+  textY: number;
+  textHeight: number;
+  fontSizePt: number;
+  source: 'text-layer' | 'canvas';
 }
 
 export interface DetectedFormSlot {
@@ -66,6 +91,12 @@ export interface DetectedFormSlot {
   label?: string;
   /** Suggested default font size in PDF points fitted to the slot height */
   suggestedFontSize?: number;
+  /** Visual placeholder style detected for this slot */
+  placeholderKind?: 'dots' | 'underline' | 'gap' | 'table-cell';
+  /** Exact normalized cover rect for dotted placeholder ink (when placeholderKind === 'dots') */
+  dotCoverRect?: { x: number; y: number; width: number; height: number };
+  /** True when another printed label sits immediately to the right on the same line */
+  hasRightSibling?: boolean;
   /** Table coordinates when kind === 'table-cell' */
   tableId?: string;
   row?: number;

@@ -52,7 +52,12 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({ tool, on
       setFiles([staged]);
     }
   }, [tool.id]);
-  const [outputFormat, setOutputFormat] = useState<'image/jpeg' | 'image/png' | 'image/webp' | 'image/bmp'>('image/png');
+  const [outputFormat, setOutputFormat] = useState<'image/jpeg' | 'image/png' | 'image/webp' | 'image/bmp'>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.toLowerCase().includes('png-to-jpg')) {
+      return 'image/jpeg';
+    }
+    return 'image/png';
+  });
   const [quality, setQuality] = useState<number>(0.9);
   const [customWidth, setCustomWidth] = useState<string>('');
   const [customHeight, setCustomHeight] = useState<string>('');

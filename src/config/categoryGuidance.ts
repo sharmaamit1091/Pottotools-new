@@ -70,8 +70,8 @@ export const CATEGORY_GUIDANCE_LIST: CategoryGuidance[] = [
         a: 'Use Exam Photo & Signature Resizer, select or enter your required width × height pixels alongside your max KB limit, and the optimizer tunes dimensions and JPEG compression iteratively.',
       },
       {
-        q: 'How is Image Tools different from the Convert Images format hub?',
-        a: 'Image Tools focuses on editing, physical cm/mm sizing, DPI scaling, passport framing, sharpening, and KB optimization, whereas Convert Images specializes in raster format transcoding (JPG, PNG, WebP, BMP) and image-PDF workflows.',
+        q: 'Can I convert between JPG, PNG, and WebP as well as resize photos?',
+        a: 'Yes. Image Tools includes both physical cm/mm/DPI resizing, exam & passport presets, and exact KB compression alongside the unified Image Format Converter (JPG, PNG, WebP, BMP) and Image to PDF.',
       },
     ],
   },
@@ -152,8 +152,8 @@ export const CATEGORY_GUIDANCE_LIST: CategoryGuidance[] = [
         a: 'Yes. Excel to PDF reads .xlsx, .xls, and .csv sheets directly in your browser and outputs formatted landscape PDF tables locally.',
       },
       {
-        q: 'How does Excel Tools differ from the Spreadsheets data category?',
-        a: 'Excel Tools covers Microsoft Excel workbook workflows (.xlsx/.xls reporting to PDF and extracting PDF tables into workbooks), while Spreadsheets focuses on raw delimited CSV inspection, UTF-8 parsing, and browser table filtering.',
+        q: 'Can I also inspect CSV files and convert between CSV and XLSX here?',
+        a: 'Yes. Excel Tools brings together workbook reporting (Excel to PDF, PDF to Excel) along with CSV to XLSX, XLSX to CSV, and the interactive browser Spreadsheet Viewer.',
       },
     ],
   },
@@ -190,28 +190,28 @@ export const CATEGORY_GUIDANCE_LIST: CategoryGuidance[] = [
   },
   {
     slug: 'other-document-tools',
-    metaTitle: 'OCR, Offline Redactor, Text Diff & Cleanup Utilities | PottoTools',
+    metaTitle: 'Other Tools – Text Diff Comparator & Smart Text Cleaner | PottoTools',
     metaDesc:
-      'Specialized browser document utilities: inspect Aadhaar/bank PDFs with offline pixel redaction, extract text from digital or scanned PDFs, compare revisions side-by-side, and clean formatting.',
-    h1: 'Specialized Document, OCR & Text Utilities',
+      'Independent browser text utilities: compare two text or document drafts side-by-side for line-by-line edits, and clean broken PDF line wraps, HTML tags, or extra spaces locally.',
+    h1: 'Other Tools & Independent Text Utilities',
     description:
-      'Go beyond basic format conversion with focused privacy, inspection, and text engineering utilities—from permanent offline ID redaction and bilingual OCR to PDF text extraction, broken line-wrap cleanup, and side-by-side revision diffing.',
-    workflowTitle: 'Combining Privacy, OCR & Text Cleanup Workflows',
+      'Focused, privacy-first text utilities that sit outside PDF, Word, Excel, PowerPoint, and Image workflows—compare two revisions side-by-side and clean messy copy-pasted formatting directly in local browser memory.',
+    workflowTitle: 'Everyday Text Cleanup & Revision Diffing in Browser Memory',
     workflowSummary:
-      'Chain lightweight browser tools together to turn messy raw scans or long PDFs into clean, share-safe drafts:',
+      'Keep private contracts, essays, and raw copy-paste blocks completely offline while tidying formatting and spotting edits:',
     workflowBullets: [
-      'Scrubbing personal IDs before sharing: Always pass bank statements, Aadhaar/PAN scans, or payslips through Offline PDF & ID Redactor before sending them anywhere.',
-      'Fixing PDF copy-paste formatting: Extract selectable prose via PDF Text Extractor, then strip broken line wraps, HTML tags, or repeated spaces in Smart Text Cleaner.',
-      'Checking contract edits line-by-line: Paste old and new revisions into Document Text Comparator to highlight added or removed clauses in local RAM.',
+      'Fixing messy copy-paste text: Strip broken line wraps, HTML tags, duplicate spaces, or unwanted casing in seconds with Smart Text Cleaner.',
+      'Checking document revisions line-by-line: Paste original and updated text into Text Diff Comparator to highlight additions, removals, and changes locally.',
+      'Pre-normalizing before comparing: Run both drafts through Smart Text Cleaner first so stray trailing whitespace never clutters your diff view.',
     ],
     faqs: [
       {
-        q: 'Do these document and text utilities store or transmit pasted text or files?',
-        a: 'No. Diff comparison, text cleaning, PDF metadata cleanup, and visual ID redaction run strictly inside local browser RAM with zero server logging.',
+        q: 'Do these text utilities store or transmit pasted text to any server?',
+        a: 'No. Both Text Diff Comparator and Smart Text Cleaner run strictly inside local browser RAM with zero network uploads or server logging.',
       },
       {
-        q: 'Which OCR languages can I extract text from?',
-        a: 'Our OCR utilities support English and Hindi (Devanagari). First-run OCR caches ~10–25 MB of language traineddata in your browser before working offline.',
+        q: 'Where can I find PDF OCR, ID Redactor, and Metadata removal?',
+        a: 'All PDF-specific utilities—including OCR Scanner, Searchable PDF Finder, PDF & ID Redactor, and Remove PDF Metadata—are organized directly inside the PDF Tools category.',
       },
     ],
   },

@@ -17,7 +17,6 @@ interface HeroSectionProps {
   onSearchChange: (query: string) => void;
   onSelectShortcut: (toolSlug: string) => void;
   onSelectTool: (tool: ToolDefinition) => void;
-  onExploreAll?: () => void;
 }
 
 export type DetectedCategory = 'pdf' | 'image' | 'word' | 'excel' | 'powerpoint' | 'text';
@@ -27,7 +26,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onSearchChange,
   onSelectShortcut,
   onSelectTool,
-  onExploreAll,
 }) => {
   // Search query logging
   useEffect(() => {
@@ -171,7 +169,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Unified Animated Magic Tool Box */}
         <div className="pt-2 pt-enter-3">
-          <PottoMagicDesk onSelectTool={onSelectTool} onExploreAll={onExploreAll} />
+          <PottoMagicDesk onSelectTool={onSelectTool} />
         </div>
 
         {/* Quick Search Bar */}

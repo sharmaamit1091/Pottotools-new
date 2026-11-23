@@ -88,11 +88,11 @@ export const HindiLandingPage: React.FC<HindiLandingPageProps> = ({
             </a>
           ) : (
             <a
-              href="/directory"
+              href="/pdf-tools"
               onClick={(e) => {
                 if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
                   e.preventDefault();
-                  onNavigateEnglishSlug('directory');
+                  onNavigateEnglishSlug('pdf-tools');
                 }
               }}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-sm transition-colors no-underline"

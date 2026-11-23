@@ -37,6 +37,7 @@ import {
   RedactIdVisual,
   RemoveScanWatermarkVisual,
   FillPdfFormVisual,
+  OfficeNoteDigitizerVisual,
   GenericToolVisual,
 } from '../components/visuals/ToolVisualIllustrations';
 
@@ -60,6 +61,18 @@ export const TOOL_VISUAL_REGISTRY: Record<string, ToolVisualSpec> = {
     actionLabel: 'Fill & edit any PDF',
     shortExplanation: 'Add text, photos, signatures, dates and checkmarks to any PDF.',
     actionButtonText: 'Fill PDF Form',
+    categoryTag: 'PDF Tools',
+    accentClass: {
+      borderHover: 'hover:border-indigo-400 dark:hover:border-indigo-500',
+      actionTag: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-900/60',
+      button: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+    },
+  },
+  'office-note-digitizer': {
+    visual: OfficeNoteDigitizerVisual,
+    actionLabel: 'Handwritten notes to text',
+    shortExplanation: 'Convert handwritten Hindi & English paper notes into editable Word, PDF, or text.',
+    actionButtonText: 'Digitize Notes',
     categoryTag: 'PDF Tools',
     accentClass: {
       borderHover: 'hover:border-indigo-400 dark:hover:border-indigo-500',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Sun, Moon, Sparkles, FileText, ArrowRight } from 'lucide-react';
-import { TOOLS, ToolDefinition, searchTools } from '../../config/toolsRegistry';
+import { ToolDefinition, searchTools } from '../../config/toolsRegistry';
 import { PottoLogo } from './PottoLogo';
 import { PWAInstallButton } from './PWAInstallButton';
 import { preloadTool, preloadView } from '../../services/utils/toolPreloader';
@@ -329,25 +329,10 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-[#1B9AAA] shrink-0" />
-            <span>Other Utilities</span>
+            <span>Other Tools</span>
           </a>
 
           <span className="h-5 w-px bg-[#E8E6F2] dark:bg-[#2A2F4A] mx-0.5 shrink-0" aria-hidden="true" />
-
-          {/* All Tools */}
-          <a
-            href="/directory"
-            onClick={(e) => handleNavClick('directory', e)}
-            onMouseEnter={() => preloadView('directory')}
-            onTouchStart={() => preloadView('directory')}
-            className={`px-3.5 py-2 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.98] ${
-              currentView === 'directory'
-                ? 'bg-[#E9E4FF] text-[#4B3A9D] dark:bg-[#2B244E] dark:text-[#D5CCFF] border border-[#CFC5FA] dark:border-[#4D4287]'
-                : 'text-[#55556B] dark:text-[#A8ADC7] hover:text-[#252536] dark:hover:text-white hover:bg-white dark:hover:bg-[#181B2E]'
-            }`}
-          >
-            <span>All Tools ({TOOLS.length})</span>
-          </a>
 
           {/* Guides & Blog */}
           <a

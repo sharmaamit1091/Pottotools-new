@@ -340,8 +340,8 @@ export function updatePageSeoMetadata(tool: ToolDefinition | null, view: string)
         desc: 'Precision Photo Studio for pixel, centimeter (cm), millimeter (mm), and inch resizing at 72–300 DPI. Crop 35x45mm or 2x2 passport photos, hit 20KB–50KB exam limits, and enhance portraits.',
       },
       'other-document-tools': {
-        title: 'OCR, Offline Redactor, Text Diff & Cleanup Utilities | PottoTools',
-        desc: 'Specialized browser document utilities: inspect Aadhaar/bank PDFs with offline pixel redaction, extract text from digital or scanned PDFs, compare revisions side-by-side, and clean formatting.',
+        title: 'Other Tools – Text Diff Comparator & Smart Text Cleaner | PottoTools',
+        desc: 'Independent browser text utilities: compare two text or document drafts side-by-side for line-by-line edits, and clean broken line wraps, HTML tags, or extra spaces locally.',
       },
     };
 

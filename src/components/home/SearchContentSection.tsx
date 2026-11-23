@@ -16,18 +16,16 @@ import {
   Search,
   WifiOff,
 } from 'lucide-react';
-import { TOOLS, ToolDefinition, getToolBySlug } from '../../config/toolsRegistry';
+import { ToolDefinition, getToolBySlug } from '../../config/toolsRegistry';
 
 interface SearchContentSectionProps {
   onSelectTool: (tool: ToolDefinition) => void;
   onSelectCategory: (categoryId: string) => void;
-  onExploreAll: () => void;
 }
 
 export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
   onSelectTool,
   onSelectCategory,
-  onExploreAll,
 }) => {
   const [activeGuideTab, setActiveGuideTab] = useState<'compress' | 'word' | 'photo' | 'merge'>('compress');
 
@@ -93,7 +91,7 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
         'Rotate any landscape or sideways sheets with the 90-degree rotate tool.',
         'Click "Merge Files" and download your organized multi-page PDF in seconds.',
       ],
-      proTip: 'You can combine PDFs and images together using our Combine Application Documents utility.',
+      proTip: 'Convert phone photos into PDF first with Image to PDF, then combine everything into one neat document using Merge PDF.',
       toolSlug: 'merge-pdf',
       toolLabel: 'Merge PDFs Free',
     },
@@ -354,16 +352,16 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
             </div>
           </div>
           <a
-            href="/convert-docs"
+            href="/word-tools"
             onClick={(e) => {
               if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
                 e.preventDefault();
-                onSelectCategory('convert-docs');
+                onSelectCategory('word-tools');
               }
             }}
             className="mt-6 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 font-semibold text-xs border border-blue-200 dark:border-blue-900 cursor-pointer no-underline"
           >
-            <span>Explore All Conversion Tools</span>
+            <span>Explore Word &amp; Document Tools</span>
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>
@@ -584,18 +582,6 @@ export const SearchContentSection: React.FC<SearchContentSectionProps> = ({
             <Search className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span>Popular Google Search Queries &amp; Quick Tool Links</span>
           </div>
-          <a
-            href="/directory"
-            onClick={(e) => {
-              if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
-                e.preventDefault();
-                onExploreAll();
-              }
-            }}
-            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-          >
-            View All {TOOLS.length} Tools &rarr;
-          </a>
         </div>
 
         <div className="flex flex-wrap gap-2 pt-2">

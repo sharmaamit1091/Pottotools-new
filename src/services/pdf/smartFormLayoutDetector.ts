@@ -1,25 +1,30 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import {
+  DetectedDotLeader,
   DetectedFormSlot,
   DetectedInteractiveField,
   PageMetaInfo,
   PdfTextSpanBox,
+  WhiteoutPatch,
 } from '../../types/fillPdfForm';
 
 export interface AnalyzedPageLayout {
   pageNum: number;
   textSpans: PdfTextSpanBox[];
   slots: DetectedFormSlot[];
+  dotLeaders: DetectedDotLeader[];
   isLikelyScanned: boolean;
 }
 
-interface RawSpan {
-  text: string;
+interface RawBlankRun {
   x: number;
   y: number;
-  w: number;
-  h: number;
+  width: number;
+  height: number;
   fontSizePt: number;
+  placeholderKind: 'dots' | 'underline';
+  dotCoverRect?: { x: number; y: number; width: number; height: number };
+  source: 'text-layer' | 'canvas';
 }
 
 interface LineSegment {
@@ -28,8 +33,51 @@ interface LineSegment {
   end: number;   // x1 for horizontal, y1 for vertical
 }
 
-const BLANK_CHARS_REGEX = /^[\s_.\-–—…•·]+$/;
-const INLINE_BLANK_RUN_REGEX = /(_{3,}|\.{4,}|-{4,}|…{2,})/g;
+const BLANK_CHARS_REGEX = /^[\s_.\-–—…•·‧∙]+$/;
+const PURE_DOT_CHARS_REGEX = /^[\s.…•·‧∙]+$/;
+const SINGLE_DOT_ITEM_REGEX = /^[.…•·‧∙]{1,2}$/;
+// Matches dense dots ("...."), spaced dots (". . . ."), ellipses ("……"), middle dots ("····"), underlines ("___"), dashes ("----")
+const INLINE_BLANK_RUN_REGEX = /(_{3,}|(?:\.[ \t]*){3,}\.?|…{2,}|(?:[·•‧∙][ \t]*){3,}|-{4,})/g;
+
+/**
+ * Estimate proportional visual character weight so splitting mixed PDF text runs
+ * like "Name of Child ..................................." locates the EXACT pixel
+ * boundary between proportional letters and narrow dots without ever clipping the label.
+ */
+function estimateCharWeight(ch: string): number {
+  if (ch === '.' || ch === ',' || ch === ':' || ch === ';' || ch === '\'' || ch === ' ' || ch === '\t' || ch === '·' || ch === '‧' || ch === '∙') {
+    return 0.28;
+  }
+  if (ch === 'i' || ch === 'l' || ch === 'I' || ch === '!' || ch === '|') return 0.28;
+  if (ch === 'f' || ch === 'j' || ch === 'r' || ch === 't' || ch === '(' || ch === ')' || ch === '[' || ch === ']' || ch === '-') return 0.36;
+  if (ch === '…' || ch === '_' || ch === '–' || ch === '—' || ch === '•') return 0.56;
+  if (ch === 'M' || ch === 'W') return 0.86;
+  if (ch === 'm' || ch === 'w') return 0.8;
+  if (ch >= 'A' && ch <= 'Z') return 0.68;
+  return 0.54;
+}
+
+function computeProportionalRange(
+  fullStr: string,
+  startIdx: number,
+  length: number
+): { fracStart: number; fracLen: number } {
+  let totalW = 0;
+  let beforeW = 0;
+  let rangeW = 0;
+  const endIdx = startIdx + length;
+  for (let i = 0; i < fullStr.length; i++) {
+    const w = estimateCharWeight(fullStr[i]);
+    if (i < startIdx) beforeW += w;
+    else if (i < endIdx) rangeW += w;
+    totalW += w;
+  }
+  if (totalW <= 0) return { fracStart: 0, fracLen: 1 };
+  return {
+    fracStart: beforeW / totalW,
+    fracLen: rangeW / totalW,
+  };
+}
 
 /**
  * Sample the dominant light paper background color just around a normalized rect on a rendered PDF canvas.
@@ -89,15 +137,15 @@ export function sampleBackgroundColorOnCanvas(
 }
 
 /**
- * Extract digital PDF text runs (split into clean word/label spans and embedded underline blank runs)
- * using exact PDF.js viewport coordinates.
+ * Extract digital PDF text runs (split into clean word/label spans and embedded underline/dot-leader runs)
+ * using exact PDF.js viewport coordinates and proportional glyph-width splitting.
  */
 async function extractPageTextSpans(
   pdfJsDoc: any,
   pageNum: number
 ): Promise<{
   wordSpans: PdfTextSpanBox[];
-  inlineBlankRuns: Array<{ x: number; y: number; width: number; height: number; fontSizePt: number }>;
+  inlineBlankRuns: RawBlankRun[];
 }> {
   const page = await pdfJsDoc.getPage(pageNum);
   const nativeRot = (((page.rotate || 0) % 360) + 360) % 360;
@@ -106,7 +154,16 @@ async function extractPageTextSpans(
   const vpH = Math.max(1, viewport.height);
 
   const wordSpans: PdfTextSpanBox[] = [];
-  const inlineBlankRuns: Array<{ x: number; y: number; width: number; height: number; fontSizePt: number }> = [];
+  const inlineBlankRuns: RawBlankRun[] = [];
+  const standaloneDots: Array<{
+    x: number;
+    y: number;
+    baselineY: number;
+    width: number;
+    height: number;
+    fontSizePt: number;
+    text: string;
+  }> = [];
 
   try {
     const tc = await page.getTextContent();
@@ -119,34 +176,96 @@ async function extractPageTextSpans(
 
       const tx = (pdfjsLib as any).Util.transform(viewport.transform, item.transform);
       const fontH = Math.max(6.5, Math.hypot(tx[2], tx[3]) || Math.abs(item.height) || 11);
-      const itemW = Math.max(4, Math.abs(item.width) || rawStr.length * fontH * 0.48);
+      const itemW = Math.max(2, Math.abs(item.width) || rawStr.length * fontH * 0.48);
       const itemX = tx[4];
-      // PDF text origin is baseline; lift by ~84% of font height to visual top
-      const itemY = tx[5] - fontH * 0.86;
-      const totalChars = Math.max(1, rawStr.length);
+      const baselineY = tx[5];
+      // PDF text origin is baseline; lift by ~86% of font height to visual top
+      const itemY = baselineY - fontH * 0.86;
+      const trimmedWhole = rawStr.trim();
 
-      // 1. If the entire item is purely underlines / dots (e.g. "________"), register as an inline blank slot!
-      if (BLANK_CHARS_REGEX.test(rawStr) && rawStr.trim().length >= 3) {
-        const bx = Math.max(0.004, Math.min(0.98, itemX / vpW));
-        const by = Math.max(0.004, Math.min(0.98, itemY / vpH));
-        const bw = Math.max(0.02, Math.min(1 - bx - 0.004, itemW / vpW));
-        const bh = Math.max(0.015, Math.min(0.08, (fontH * 1.28) / vpH));
-        inlineBlankRuns.push({ x: bx, y: by, width: bw, height: bh, fontSizePt: fontH });
+      // 0. Collect standalone single/double dot items so PDFs that emit "." one glyph at a time merge cleanly!
+      if (SINGLE_DOT_ITEM_REGEX.test(trimmedWhole)) {
+        const bx = Math.max(0.002, Math.min(0.992, itemX / vpW));
+        const by = Math.max(0.002, Math.min(0.992, itemY / vpH));
+        const bw = Math.max(0.002, Math.min(1 - bx - 0.002, itemW / vpW));
+        const bh = Math.max(0.011, Math.min(0.08, (fontH * 1.18) / vpH));
+        standaloneDots.push({
+          x: bx,
+          y: by,
+          baselineY: baselineY / vpH,
+          width: bw,
+          height: bh,
+          fontSizePt: fontH,
+          text: trimmedWhole,
+        });
         continue;
       }
 
-      // 2. Split mixed strings like "Age: ______ in Years ______ in Months ______ in Days ______"
-      //    into separate text label spans AND separate inline blank runs!
+      // 1. If the entire item is purely underlines / dots (e.g. "........", ". . . . .", "________")
+      if (BLANK_CHARS_REGEX.test(rawStr) && trimmedWhole.length >= 3) {
+        const isDots = PURE_DOT_CHARS_REGEX.test(rawStr);
+        const bx = Math.max(0.004, Math.min(0.98, itemX / vpW));
+        const by = Math.max(0.004, Math.min(0.98, itemY / vpH));
+        const bw = Math.max(0.02, Math.min(1 - bx - 0.004, itemW / vpW));
+        const bh = Math.max(0.016, Math.min(0.08, (fontH * 1.28) / vpH));
+
+        // Tight vertical ink band hugging the dots around the baseline so labels/borders above & below stay intact
+        const dotTop = Math.max(0.002, (baselineY - fontH * 0.52) / vpH);
+        const dotBot = Math.min(0.996, (baselineY + fontH * 0.26) / vpH);
+        const dotCoverRect = isDots
+          ? {
+              x: Math.max(0.002, bx - 0.0015),
+              y: dotTop,
+              width: Math.min(1 - bx - 0.002, bw + 0.003),
+              height: Math.max(0.009, dotBot - dotTop),
+            }
+          : undefined;
+
+        inlineBlankRuns.push({
+          x: bx,
+          y: by,
+          width: bw,
+          height: bh,
+          fontSizePt: fontH,
+          placeholderKind: isDots ? 'dots' : 'underline',
+          dotCoverRect,
+          source: 'text-layer',
+        });
+        continue;
+      }
+
+      // 2. Split mixed strings like "Name of Child ..........................." or
+      //    "Age: ______ in Years ______ in Months ______ in Days ______"
       const parts: Array<{ str: string; startIdx: number; isBlank: boolean }> = [];
       let lastIdx = 0;
       INLINE_BLANK_RUN_REGEX.lastIndex = 0;
       let match: RegExpExecArray | null;
       while ((match = INLINE_BLANK_RUN_REGEX.exec(rawStr)) !== null) {
-        if (match.index > lastIdx) {
-          parts.push({ str: rawStr.slice(lastIdx, match.index), startIdx: lastIdx, isBlank: false });
+        let matchStart = match.index;
+        let matchedStr = match[0];
+
+        // Preserve abbreviation periods attached to words (e.g. "Registration No. . . . .")
+        // so "No." stays intact and only the trailing placeholder dots are covered!
+        if (
+          matchStart > 0 &&
+          /[A-Za-z0-9]/.test(rawStr[matchStart - 1]) &&
+          /^\.[ \t]+/.test(matchedStr)
+        ) {
+          const skipMatch = matchedStr.match(/^\.[ \t]+/);
+          if (skipMatch) {
+            matchStart += skipMatch[0].length;
+            matchedStr = matchedStr.slice(skipMatch[0].length);
+          }
         }
-        parts.push({ str: match[0], startIdx: match.index, isBlank: true });
-        lastIdx = match.index + match[0].length;
+
+        // Guard against matching a normal 2-dot abbreviation; require >= 3 non-space blank chars
+        const nonSpaceCount = matchedStr.replace(/\s+/g, '').length;
+        if (nonSpaceCount < 3) continue;
+        if (matchStart > lastIdx) {
+          parts.push({ str: rawStr.slice(lastIdx, matchStart), startIdx: lastIdx, isBlank: false });
+        }
+        parts.push({ str: matchedStr, startIdx: matchStart, isBlank: true });
+        lastIdx = matchStart + matchedStr.length;
       }
       if (lastIdx < rawStr.length) {
         parts.push({ str: rawStr.slice(lastIdx), startIdx: lastIdx, isBlank: false });
@@ -158,8 +277,7 @@ async function extractPageTextSpans(
 
         const leadSpaces = part.str.length - part.str.trimStart().length;
         const charStart = part.startIdx + leadSpaces;
-        const fracStart = charStart / totalChars;
-        const fracLen = trimmed.length / totalChars;
+        const { fracStart, fracLen } = computeProportionalRange(rawStr, charStart, trimmed.length);
 
         const px = itemX + itemW * fracStart;
         const pw = Math.max(3, itemW * fracLen);
@@ -170,12 +288,27 @@ async function extractPageTextSpans(
         const nh = Math.max(0.011, Math.min(0.09, (fontH * 1.18) / vpH));
 
         if (part.isBlank) {
+          const isDots = PURE_DOT_CHARS_REGEX.test(trimmed);
+          const dotTop = Math.max(0.002, (baselineY - fontH * 0.52) / vpH);
+          const dotBot = Math.min(0.996, (baselineY + fontH * 0.26) / vpH);
+          const dotCoverRect = isDots
+            ? {
+                x: Math.max(0.002, nx - 0.001),
+                y: dotTop,
+                width: Math.min(1 - nx - 0.002, nw + 0.0025),
+                height: Math.max(0.009, dotBot - dotTop),
+              }
+            : undefined;
+
           inlineBlankRuns.push({
             x: nx,
-            y: Math.max(0.004, ny - (fontH * 0.14) / vpH),
+            y: Math.max(0.004, ny - (fontH * 0.1) / vpH),
             width: nw,
-            height: Math.max(0.015, (fontH * 1.32) / vpH),
+            height: Math.max(0.016, (fontH * 1.32) / vpH),
             fontSizePt: fontH,
+            placeholderKind: isDots ? 'dots' : 'underline',
+            dotCoverRect,
+            source: 'text-layer',
           });
         } else {
           // Further split multi-word runs on spaces so users can select individual words cleanly!
@@ -185,8 +318,11 @@ async function extractPageTextSpans(
             for (const tok of subTokens) {
               const idxInPart = part.str.indexOf(tok, searchFrom);
               searchFrom = idxInPart + tok.length;
-              const tokStart = (part.startIdx + idxInPart) / totalChars;
-              const tokFracW = tok.length / totalChars;
+              const { fracStart: tokStart, fracLen: tokFracW } = computeProportionalRange(
+                rawStr,
+                part.startIdx + idxInPart,
+                tok.length
+              );
               const tnx = Math.max(0.002, Math.min(0.992, (itemX + itemW * tokStart) / vpW));
               const tnw = Math.max(0.005, Math.min(1 - tnx - 0.002, (itemW * tokFracW) / vpW));
               spanCounter += 1;
@@ -217,6 +353,77 @@ async function extractPageTextSpans(
         }
       }
     }
+
+    // 3. Merge clusters of consecutive standalone "." text items on the same baseline into dot leaders!
+    if (standaloneDots.length > 0) {
+      standaloneDots.sort((a, b) =>
+        Math.abs(a.baselineY - b.baselineY) > 0.008 ? a.baselineY - b.baselineY : a.x - b.x
+      );
+
+      const clusters: Array<typeof standaloneDots> = [];
+      for (const dot of standaloneDots) {
+        const lastCluster = clusters[clusters.length - 1];
+        const prev = lastCluster?.[lastCluster.length - 1];
+        const maxGapNorm = Math.max(0.02, (dot.fontSizePt * 1.8) / vpW);
+        if (
+          prev &&
+          Math.abs(prev.baselineY - dot.baselineY) <= Math.max(0.008, (dot.fontSizePt * 0.45) / vpH) &&
+          dot.x - (prev.x + prev.width) <= maxGapNorm &&
+          dot.x >= prev.x - 0.004
+        ) {
+          lastCluster.push(dot);
+        } else {
+          clusters.push([dot]);
+        }
+      }
+
+      for (const cl of clusters) {
+        const totalChars = cl.reduce((acc, d) => acc + d.text.length, 0);
+        const minX = cl[0].x;
+        const maxX = Math.max(...cl.map((d) => d.x + d.width));
+        const avgFont = cl.reduce((acc, d) => acc + d.fontSizePt, 0) / cl.length;
+        const avgBaseY = cl.reduce((acc, d) => acc + d.baselineY, 0) / cl.length;
+        const spanW = maxX - minX;
+
+        if (totalChars >= 3 && spanW >= 0.02) {
+          const textTop = Math.max(0.004, avgBaseY - (avgFont * 0.92) / vpH);
+          const textH = Math.max(0.016, (avgFont * 1.32) / vpH);
+          const dotTop = Math.max(0.002, avgBaseY - (avgFont * 0.52) / vpH);
+          const dotBot = Math.min(0.996, avgBaseY + (avgFont * 0.26) / vpH);
+
+          inlineBlankRuns.push({
+            x: minX,
+            y: textTop,
+            width: Math.min(1 - minX - 0.004, spanW),
+            height: textH,
+            fontSizePt: avgFont,
+            placeholderKind: 'dots',
+            dotCoverRect: {
+              x: Math.max(0.002, minX - 0.0015),
+              y: dotTop,
+              width: Math.min(1 - minX - 0.002, spanW + 0.003),
+              height: Math.max(0.009, dotBot - dotTop),
+            },
+            source: 'text-layer',
+          });
+        } else {
+          // Keep isolated periods as normal word spans
+          for (const d of cl) {
+            spanCounter += 1;
+            wordSpans.push({
+              id: `span_p${pageNum}_${spanCounter}`,
+              pageNum,
+              text: d.text,
+              x: d.x,
+              y: d.y,
+              width: d.width,
+              height: d.height,
+              fontSizePt: d.fontSizePt,
+            });
+          }
+        }
+      }
+    }
   } catch {
     // Scanned or image-only PDF with no text stream
   }
@@ -227,7 +434,9 @@ async function extractPageTextSpans(
 /**
  * Scan a rendered page canvas (downsampled for speed) to detect:
  * 1) Ruled table grids (intersecting horizontal & vertical lines -> individual table cells)
- * 2) Standalone horizontal underline segments (for blank fields like Name: ______, Age: ___ Years ___ Months ___)
+ * 2) Standalone horizontal underline segments
+ * 3) Vector-drawn or scanned dotted placeholder lines (".............", ". . . . . .")
+ *    distinguished from printed text by checking clean light paper air above & below the dot band!
  */
 function detectCanvasLinesAndTables(
   canvas: HTMLCanvasElement,
@@ -236,13 +445,15 @@ function detectCanvasLinesAndTables(
   textSpans: PdfTextSpanBox[]
 ): {
   tableCells: DetectedFormSlot[];
-  underlineBlanks: Array<{ x: number; y: number; width: number; height: number; fontSizePt: number }>;
+  underlineBlanks: RawBlankRun[];
+  canvasDotBlanks: RawBlankRun[];
 } {
   const tableCells: DetectedFormSlot[] = [];
-  const underlineBlanks: Array<{ x: number; y: number; width: number; height: number; fontSizePt: number }> = [];
+  const underlineBlanks: RawBlankRun[] = [];
+  const canvasDotBlanks: RawBlankRun[] = [];
 
   if (!canvas || canvas.width < 60 || canvas.height < 60) {
-    return { tableCells, underlineBlanks };
+    return { tableCells, underlineBlanks, canvasDotBlanks };
   }
 
   // Downsample to ~760px wide for ultra-fast (<15ms) crisp line analysis
@@ -255,7 +466,7 @@ function detectCanvasLinesAndTables(
   work.width = w;
   work.height = h;
   const ctx = work.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return { tableCells, underlineBlanks };
+  if (!ctx) return { tableCells, underlineBlanks, canvasDotBlanks };
 
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, w, h);
@@ -267,7 +478,7 @@ function detectCanvasLinesAndTables(
   } catch {
     work.width = 1;
     work.height = 1;
-    return { tableCells, underlineBlanks };
+    return { tableCells, underlineBlanks, canvasDotBlanks };
   }
 
   // Build binary dark-pixel mask (1 = dark line/stroke pixel)
@@ -628,29 +839,249 @@ function detectCanvasLinesAndTables(
       width: wNorm,
       height: defaultHNorm,
       fontSizePt: 12,
+      placeholderKind: 'underline',
+      source: 'canvas',
     });
   });
 
+  // 5. Detect vector-drawn or scanned dotted placeholder lines ("...........", ". . . . . .")
+  //    A dotted leader has repeated tiny isolated dark dots (1..6px wide) along a thin horizontal band
+  //    with clean blank paper air directly above (y-8..y-4) and below (y+4..y+6) — separating it cleanly
+  //    from printed words (whose letter bodies fill y-8..y-4) and from solid table borders!
+  interface RawDotBand {
+    minY: number;
+    maxY: number;
+    startX: number;
+    endX: number;
+    dotCount: number;
+  }
+
+  const rawDotBands: RawDotBand[] = [];
+  for (let y = 10; y < h - 8; y++) {
+    let x = 3;
+    while (x < w - 3) {
+      // Check if column x has dark ink in [y-1..y+1] AND clean paper air above & below
+      const hasDotInk =
+        dark[y * w + x] === 1 ||
+        dark[(y - 1) * w + x] === 1 ||
+        dark[(y + 1) * w + x] === 1;
+      if (!hasDotInk) {
+        x++;
+        continue;
+      }
+
+      const aboveBlocked =
+        dark[(y - 5) * w + x] === 1 ||
+        dark[(y - 6) * w + x] === 1 ||
+        dark[(y - 7) * w + x] === 1;
+      const belowBlocked = dark[(y + 5) * w + x] === 1 || dark[(y + 6) * w + x] === 1;
+      if (aboveBlocked || belowBlocked) {
+        x++;
+        continue;
+      }
+
+      // Measure this single dot width
+      const chainStart = x;
+      let dotCount = 0;
+      let chainEnd = x;
+
+      while (x < w - 3) {
+        // Measure one dark speck
+        const dotStart = x;
+        let dotAirBad = false;
+        while (x < w - 3) {
+          const ink =
+            dark[y * w + x] === 1 ||
+            dark[(y - 1) * w + x] === 1 ||
+            dark[(y + 1) * w + x] === 1;
+          if (!ink) break;
+          if (
+            dark[(y - 5) * w + x] === 1 ||
+            dark[(y - 6) * w + x] === 1 ||
+            dark[(y - 7) * w + x] === 1 ||
+            dark[(y + 5) * w + x] === 1 ||
+            dark[(y + 6) * w + x] === 1
+          ) {
+            dotAirBad = true;
+            break;
+          }
+          x++;
+        }
+        const dotW = x - dotStart;
+        if (dotAirBad || dotW <= 0 || dotW > 7) {
+          // Either hit tall text/border or a solid continuous line (>7px) — end this dot chain!
+          break;
+        }
+        dotCount += 1;
+        chainEnd = x - 1;
+
+        // Measure white gap to next dot (1..14px)
+        const gapStart = x;
+        while (x < w - 3 && x - gapStart <= 14) {
+          const ink =
+            dark[y * w + x] === 1 ||
+            dark[(y - 1) * w + x] === 1 ||
+            dark[(y + 1) * w + x] === 1;
+          if (ink) break;
+          x++;
+        }
+        const gapW = x - gapStart;
+        if (gapW === 0 || gapW > 14) break;
+      }
+
+      const spanW = chainEnd - chainStart + 1;
+      if (dotCount >= 5 && spanW >= Math.max(20, Math.round(w * 0.03))) {
+        // Verify overall clear-air band above (y-8..y-4) across the full chain has < 8% dark pixels
+        let airDark = 0;
+        let airTotal = 0;
+        for (let sx = chainStart; sx <= chainEnd; sx += 2) {
+          for (let sy = y - 8; sy <= y - 4; sy++) {
+            airTotal++;
+            if (dark[sy * w + sx]) airDark++;
+          }
+        }
+        if (airTotal > 0 && airDark / airTotal < 0.08) {
+          // Verify it's not a continuous horizontal table line already detected
+          const overlapsTableLine = mergedHoriz.some(
+            (mh, hi) =>
+              hUsedInTable.has(hi) &&
+              Math.abs(mh.coord - y) <= 4 &&
+              mh.start <= chainEnd &&
+              mh.end >= chainStart
+          );
+          if (!overlapsTableLine) {
+            rawDotBands.push({
+              minY: Math.max(1, y - 1),
+              maxY: Math.min(h - 2, y + 1),
+              startX: chainStart,
+              endX: chainEnd,
+              dotCount,
+            });
+          }
+        }
+      }
+
+      if (x <= chainStart) x = chainStart + 1;
+    }
+  }
+
+  // Merge vertically adjacent scanlines belonging to the same dotted placeholder
+  const mergedDotBands: RawDotBand[] = [];
+  for (const band of rawDotBands) {
+    const existing = mergedDotBands.find(
+      (m) =>
+        band.minY <= m.maxY + 3 &&
+        band.maxY >= m.minY - 3 &&
+        band.startX <= m.endX + 8 &&
+        band.endX >= m.startX - 8
+    );
+    if (existing) {
+      existing.minY = Math.min(existing.minY, band.minY);
+      existing.maxY = Math.max(existing.maxY, band.maxY);
+      existing.startX = Math.min(existing.startX, band.startX);
+      existing.endX = Math.max(existing.endX, band.endX);
+      existing.dotCount = Math.max(existing.dotCount, band.dotCount);
+    } else {
+      mergedDotBands.push({ ...band });
+    }
+  }
+
+  for (const db of mergedDotBands) {
+    const lineYNorm = db.maxY / h;
+    if (lineYNorm < 0.03 || lineYNorm > 0.98) continue;
+
+    // Expand tightly by ~2px to cleanly cover anti-aliased gray edges of the dots, while checking no tall ink sits at edges
+    const coverX0 = Math.max(1, db.startX - 2);
+    const coverX1 = Math.min(w - 2, db.endX + 2);
+    const coverY0 = Math.max(1, db.minY - 2);
+    const coverY1 = Math.min(h - 2, db.maxY + 2);
+
+    const xNorm = coverX0 / w;
+    const wNorm = Math.max(0.02, (coverX1 - coverX0 + 1) / w);
+    const coverYNorm = coverY0 / h;
+    const coverHNorm = Math.max(0.008, (coverY1 - coverY0 + 1) / h);
+
+    const defaultHNorm = Math.max(0.018, 17 / Math.max(1, pageMeta.baseHeight));
+    const slotTop = Math.max(0.004, lineYNorm - defaultHNorm * 0.85);
+
+    canvasDotBlanks.push({
+      x: xNorm,
+      y: slotTop,
+      width: wNorm,
+      height: defaultHNorm,
+      fontSizePt: 12,
+      placeholderKind: 'dots',
+      dotCoverRect: {
+        x: xNorm,
+        y: coverYNorm,
+        width: wNorm,
+        height: coverHNorm,
+      },
+      source: 'canvas',
+    });
+  }
+
   work.width = 1;
   work.height = 1;
-  return { tableCells, underlineBlanks };
+  return { tableCells, underlineBlanks, canvasDotBlanks };
 }
 
 /**
- * Detect multiple independent inline blank slots on the same line by analyzing:
- * - Explicit underline/dot runs (from text layer + canvas lines)
- * - Gaps between short form field labels on the same baseline:
- *   e.g. "Age: ___ in Years ___ in Months ___ in Days ___"
- *   e.g. "Date: ___ Month: ___ Year: ___"
+ * Trim a dot-cover rectangle strictly away from any adjacent digital printed wordSpans on the same line
+ * so labels like "Name of Child", "Date of Birth", "Father's Name" are NEVER touched or clipped!
  */
-function buildInlineBlankSlots(
+function trimDotCoverAgainstWordSpans(
+  rect: { x: number; y: number; width: number; height: number },
+  wordSpans: PdfTextSpanBox[]
+): { x: number; y: number; width: number; height: number } | null {
+  let x0 = rect.x;
+  let x1 = rect.x + rect.width;
+  const midY = rect.y + rect.height / 2;
+
+  for (const sp of wordSpans) {
+    const sameLine = midY >= sp.y - 0.004 && midY <= sp.y + sp.height + 0.006;
+    if (!sameLine) continue;
+    const spX0 = sp.x;
+    const spX1 = sp.x + sp.width;
+    // Skip spans completely outside horizontally
+    if (spX1 <= x0 || spX0 >= x1) continue;
+
+    // If wordSpan sits on the left edge, push x0 strictly past the wordSpan
+    if (spX0 <= x0 + 0.012 && spX1 < x1 - 0.015) {
+      x0 = Math.max(x0, spX1 + 0.002);
+    } else if (spX0 > x0 + 0.015 && spX1 >= x1 - 0.012) {
+      // WordSpan sits on the right edge -> stop strictly before it
+      x1 = Math.min(x1, spX0 - 0.002);
+    }
+  }
+
+  if (x1 - x0 < 0.015) return null;
+  return {
+    x: x0,
+    y: rect.y,
+    width: x1 - x0,
+    height: rect.height,
+  };
+}
+
+/**
+ * Detect multiple independent inline blank slots AND clean dot-leader metadata on each line:
+ * - Preserves independent small sibling fields on the same line
+ *   ("Age: ___ in Years ___ in Months ___ in Days ___", "Date: ___ Month: ___ Year: ___")
+ * - Keeps single-field lines ("Name of Child ........", "Father's Address: ........")
+ *   flexible (`hasRightSibling: false`) so typing expands horizontally across the page!
+ */
+function buildInlineBlankSlotsAndDotLeaders(
   pageNum: number,
   pageMeta: PageMetaInfo,
   textSpans: PdfTextSpanBox[],
-  rawBlanks: Array<{ x: number; y: number; width: number; height: number; fontSizePt: number }>,
+  rawBlanks: RawBlankRun[],
   tableCells: DetectedFormSlot[],
   interactiveFields: DetectedInteractiveField[]
-): DetectedFormSlot[] {
+): {
+  inlineSlots: DetectedFormSlot[];
+  dotLeaders: DetectedDotLeader[];
+} {
   const candidates: Array<{
     x: number;
     y: number;
@@ -658,7 +1089,13 @@ function buildInlineBlankSlots(
     height: number;
     label?: string;
     suggestedFontSize: number;
+    placeholderKind: 'dots' | 'underline' | 'gap';
+    dotCoverRect?: { x: number; y: number; width: number; height: number };
+    hasRightSibling: boolean;
+    source: 'text-layer' | 'canvas';
   }> = [];
+
+  const dotLeaders: DetectedDotLeader[] = [];
 
   const overlapsExisting = (
     box: { x: number; y: number; width: number; height: number },
@@ -683,14 +1120,30 @@ function buildInlineBlankSlots(
     ...interactiveFields.filter((f) => f.pageNum === pageNum),
   ];
 
-  // 1. Add all explicit underline / dot-run blank fields (clipping strictly before any text label to the right)
-  for (const rb of rawBlanks) {
+  // Helper: check if another printed wordSpan sits to the right on the same visual line
+  const hasLabelToRight = (boxX: number, boxW: number, boxY: number, boxH: number): boolean => {
+    const rightEdge = boxX + boxW;
+    return textSpans.some((sp) => {
+      const sameLine = sp.y < boxY + boxH * 0.9 && sp.y + sp.height > boxY + boxH * 0.1;
+      return sameLine && sp.x >= rightEdge - 0.01 && sp.x <= 0.95;
+    });
+  };
+
+  // Prioritize text-layer dot leaders first, then canvas dot leaders, then underlines
+  const prioritizedBlanks = [...rawBlanks].sort((a, b) => {
+    const score = (r: RawBlankRun) =>
+      r.placeholderKind === 'dots' ? (r.source === 'text-layer' ? 0 : 1) : 2;
+    return score(a) - score(b);
+  });
+
+  // 1. Add all explicit dot-leader & underline blank fields (splitting cleanly around any printed labels)
+  for (const rb of prioritizedBlanks) {
     if (rb.width < 0.02) continue;
-    // Check if any printed text span sits inside this underline range — if so, split around it!
+
     const lineSpans = textSpans
       .filter(
         (sp) =>
-          Math.abs((sp.y + sp.height / 2) - (rb.y + rb.height / 2)) < Math.max(rb.height * 0.9, 0.016) &&
+          Math.abs(sp.y + sp.height / 2 - (rb.y + rb.height / 2)) < Math.max(rb.height * 0.9, 0.016) &&
           sp.x + sp.width > rb.x + 0.004 &&
           sp.x < rb.x + rb.width - 0.004
       )
@@ -699,23 +1152,67 @@ function buildInlineBlankSlots(
     const subRanges: Array<{ x: number; w: number }> = [];
     let cursorX = rb.x;
     for (const sp of lineSpans) {
-      if (sp.x - cursorX >= 0.022) {
-        subRanges.push({ x: cursorX, w: sp.x - cursorX - 0.004 });
+      if (sp.x - cursorX >= 0.02) {
+        subRanges.push({ x: cursorX, w: sp.x - cursorX - 0.003 });
       }
-      cursorX = Math.max(cursorX, sp.x + sp.width + 0.004);
+      cursorX = Math.max(cursorX, sp.x + sp.width + 0.003);
     }
-    if (rb.x + rb.width - cursorX >= 0.022) {
+    if (rb.x + rb.width - cursorX >= 0.02) {
       subRanges.push({ x: cursorX, w: rb.x + rb.width - cursorX });
     }
 
     for (const sr of subRanges) {
+      let refinedCover: { x: number; y: number; width: number; height: number } | undefined;
+      if (rb.placeholderKind === 'dots') {
+        const rawCover = rb.dotCoverRect
+          ? {
+              x: Math.max(rb.dotCoverRect.x, sr.x - 0.0015),
+              y: rb.dotCoverRect.y,
+              width: Math.min(rb.dotCoverRect.x + rb.dotCoverRect.width, sr.x + sr.w + 0.002) -
+                Math.max(rb.dotCoverRect.x, sr.x - 0.0015),
+              height: rb.dotCoverRect.height,
+            }
+          : {
+              x: sr.x,
+              y: rb.y + rb.height * 0.48,
+              width: sr.w,
+              height: Math.max(0.009, rb.height * 0.52),
+            };
+        const trimmed = trimDotCoverAgainstWordSpans(rawCover, textSpans);
+        if (trimmed) refinedCover = trimmed;
+      }
+
+      const boxX = refinedCover ? refinedCover.x : Math.max(0.004, sr.x);
+      const boxW = refinedCover ? refinedCover.width : Math.min(1 - sr.x - 0.004, sr.w);
       const box = {
-        x: Math.max(0.004, sr.x),
+        x: boxX,
         y: Math.max(0.004, rb.y),
-        width: Math.min(1 - sr.x - 0.004, sr.w),
-        height: Math.max(0.016, rb.height),
-        suggestedFontSize: Math.max(9, Math.min(13, Math.round(rb.fontSizePt))),
+        width: Math.max(0.02, Math.min(1 - boxX - 0.004, boxW)),
+        height: Math.max(0.018, rb.height),
+        suggestedFontSize: Math.max(10, Math.min(13, Math.round(rb.fontSizePt))),
+        placeholderKind: rb.placeholderKind,
+        dotCoverRect: refinedCover,
+        hasRightSibling: hasLabelToRight(boxX, boxW, rb.y, rb.height),
+        source: rb.source,
       };
+
+      // Always record unique dot leaders even if a slot overlaps an AcroForm/table region,
+      // unless another dot leader already covers the exact same band
+      if (refinedCover && !overlapsExisting(refinedCover, dotLeaders)) {
+        dotLeaders.push({
+          id: `dot_p${pageNum}_${dotLeaders.length + 1}`,
+          pageNum,
+          x: refinedCover.x,
+          y: refinedCover.y,
+          width: refinedCover.width,
+          height: refinedCover.height,
+          textY: box.y,
+          textHeight: box.height,
+          fontSizePt: box.suggestedFontSize,
+          source: rb.source,
+        });
+      }
+
       if (!overlapsExisting(box, occupiedRegions) && !overlapsExisting(box, candidates)) {
         candidates.push(box);
       }
@@ -746,34 +1243,36 @@ function buildInlineBlankSlots(
       const cur = row[i];
       const next = row[i + 1];
       const curRight = cur.x + cur.width;
-      const gapRight = next ? next.x - curRight : 0.94 - curRight;
+      const gapRight = next ? next.x - curRight : 0.96 - curRight;
 
-      // Skip if an explicit underline/blank slot already exists immediately after this prompt on the same line
       const hasExplicitSlotAfter = candidates.some(
         (c) =>
-          Math.abs((c.y + c.height / 2) - (cur.y + cur.height / 2)) <= Math.max(cur.height, 0.016) &&
+          Math.abs(c.y + c.height / 2 - (cur.y + cur.height / 2)) <= Math.max(cur.height, 0.016) &&
           c.x >= curRight - 0.012 &&
           c.x <= (next ? next.x : curRight + 0.14)
       );
       if (hasExplicitSlotAfter) continue;
 
-      // Detect clear horizontal blank gap after a prompt word (or before "in Years/Months/Days")
       const isPrompt = FIELD_PROMPT_KEYWORD.test(cur.text.trim());
       const nextIsUnit = next && /^(years?|months?|days?|in)$/i.test(next.text.trim());
 
       if ((isPrompt || nextIsUnit) && gapRight >= 0.042) {
         const slotX = curRight + 0.006;
-        const maxSlotW = next ? gapRight - 0.01 : Math.min(0.32, gapRight - 0.01);
+        // If there is NO sibling label to the right, give full comfortable width up to page right margin!
+        const maxSlotW = next ? gapRight - 0.01 : Math.min(0.65, gapRight - 0.01);
         if (maxSlotW < 0.025) continue;
 
-        const slotH = Math.max(0.018, (cur.fontSizePt * 1.32) / Math.max(1, pageMeta.baseHeight));
+        const slotH = Math.max(0.019, (cur.fontSizePt * 1.32) / Math.max(1, pageMeta.baseHeight));
         const box = {
           x: slotX,
           y: Math.max(0.004, cur.y - 0.002),
           width: maxSlotW,
           height: slotH,
           label: cur.text.replace(/[:._-]+$/, '').trim(),
-          suggestedFontSize: Math.max(9, Math.min(13, Math.round(cur.fontSizePt))),
+          suggestedFontSize: Math.max(10, Math.min(13, Math.round(cur.fontSizePt))),
+          placeholderKind: 'gap' as const,
+          hasRightSibling: Boolean(next),
+          source: 'text-layer' as const,
         };
         if (!overlapsExisting(box, occupiedRegions) && !overlapsExisting(box, candidates)) {
           candidates.push(box);
@@ -782,22 +1281,27 @@ function buildInlineBlankSlots(
     }
   }
 
-  return candidates.map((c, idx) => ({
+  const inlineSlots: DetectedFormSlot[] = candidates.map((c, idx) => ({
     id: `slot_p${pageNum}_${idx + 1}`,
     pageNum,
-    kind: 'inline-blank' as const,
+    kind: 'inline-blank',
     x: c.x,
     y: c.y,
     width: c.width,
     height: c.height,
     label: c.label,
     suggestedFontSize: c.suggestedFontSize,
+    placeholderKind: c.placeholderKind,
+    dotCoverRect: c.dotCoverRect,
+    hasRightSibling: c.hasRightSibling,
   }));
+
+  return { inlineSlots, dotLeaders };
 }
 
 /**
- * Full fast page layout analysis (combines PDF.js text geometry + rendered canvas line/table geometry).
- * Runs locally in ~15–30ms per page with zero external dependencies and no mandatory OCR.
+ * Full fast page layout analysis (combines PDF.js text geometry + rendered canvas line/table/dot-leader geometry).
+ * Runs locally in ~15–35ms per page with zero external dependencies.
  */
 export async function analyzePageFormLayout(
   pdfJsDoc: any,
@@ -807,24 +1311,23 @@ export async function analyzePageFormLayout(
   interactiveFields: DetectedInteractiveField[]
 ): Promise<AnalyzedPageLayout> {
   const { wordSpans, inlineBlankRuns } = await extractPageTextSpans(pdfJsDoc, pageNum);
-  const { tableCells, underlineBlanks } = detectCanvasLinesAndTables(
+  const { tableCells, underlineBlanks, canvasDotBlanks } = detectCanvasLinesAndTables(
     renderedCanvas,
     pageNum,
     pageMeta,
     wordSpans
   );
 
-  const inlineSlots = buildInlineBlankSlots(
+  const { inlineSlots, dotLeaders } = buildInlineBlankSlotsAndDotLeaders(
     pageNum,
     pageMeta,
     wordSpans,
-    [...inlineBlankRuns, ...underlineBlanks],
+    [...inlineBlankRuns, ...canvasDotBlanks, ...underlineBlanks],
     tableCells,
     interactiveFields
   );
 
   const allSlots = [...tableCells, ...inlineSlots].sort((a, b) => {
-    // Keep same-table cells strictly in row-by-row, left-to-right order
     if (a.tableId && b.tableId && a.tableId === b.tableId) {
       if ((a.row ?? 0) !== (b.row ?? 0)) return (a.row ?? 0) - (b.row ?? 0);
       return (a.col ?? 0) - (b.col ?? 0);
@@ -837,15 +1340,128 @@ export async function analyzePageFormLayout(
     pageNum,
     textSpans: wordSpans,
     slots: allSlots,
+    dotLeaders,
     isLikelyScanned: wordSpans.length < 4,
   };
 }
 
 /**
- * Given a raw click at normalized (normX, normY) on a page, determine the exact bounded placement:
- * 1) If the click lands inside a detected table cell or inline blank slot -> snap strictly to that slot!
- * 2) Otherwise -> place cursor at exact (normX, normY) and cap its width before the nearest printed text
- *    label or table cell on the same line so short inline fields NEVER collide or overlap!
+ * Compute exact background-matched dot cover patches for a text entry based on:
+ * - Any dot leader it sits directly on top of (full field dot run from dot start to dot end,
+ *   clipped past any existing entry to the left on the same line!)
+ * - Any additional dot leaders on subsequent lines when typing multiline text (e.g. Address across 2–3 dotted lines!)
+ * Never touches printed labels or unrelated dots elsewhere on the page.
+ */
+export function computeDotCoversForEntry(
+  entryRect: { pageNum: number; x: number; y: number; width: number; height: number },
+  layout: AnalyzedPageLayout | undefined,
+  fillColor: string,
+  primaryDotLeader?: DetectedDotLeader,
+  otherEntriesOnPage: Array<{ id?: string; x: number; y: number; width: number; height: number }> = []
+): WhiteoutPatch[] {
+  const leaders: DetectedDotLeader[] = [];
+  const seenIds = new Set<string>();
+
+  if (primaryDotLeader) {
+    leaders.push(primaryDotLeader);
+    seenIds.add(primaryDotLeader.id);
+  }
+
+  if (layout && layout.dotLeaders.length > 0) {
+    const ex0 = entryRect.x;
+    const ex1 = entryRect.x + entryRect.width;
+    const ey0 = entryRect.y;
+    const ey1 = entryRect.y + entryRect.height;
+
+    for (const dl of layout.dotLeaders) {
+      if (seenIds.has(dl.id)) continue;
+      const dlMidY = dl.y + dl.height / 2;
+      const verticalOverlap = dlMidY >= ey0 - 0.004 && dlMidY <= ey1 + 0.008;
+      if (!verticalOverlap) continue;
+
+      const horizOverlap = dl.x < ex1 + 0.004 && dl.x + dl.width > ex0 - 0.006;
+      if (!horizOverlap) continue;
+
+      leaders.push(dl);
+      seenIds.add(dl.id);
+    }
+  }
+
+  if (leaders.length === 0) return [];
+
+  const patches: WhiteoutPatch[] = [];
+  for (const dl of leaders) {
+    let coverX0 = dl.x;
+    const coverX1 = dl.x + dl.width;
+
+    // If this is a secondary line below line 1, clip to start no further left than the text box itself
+    // (unless the entire line is a continuation blank with no label to its left!)
+    const isPrimary = primaryDotLeader && dl.id === primaryDotLeader.id;
+    if (!isPrimary) {
+      // Check if there is a printed label immediately to the left of this dot leader on this line
+      const hasLeftLabel = layout?.textSpans.some((sp) => {
+        const sameLine = Math.abs(sp.y + sp.height / 2 - (dl.y + dl.height / 2)) <= 0.014;
+        return sameLine && sp.x + sp.width <= dl.x + 0.015;
+      });
+      if (hasLeftLabel) {
+        coverX0 = Math.max(dl.x, entryRect.x - 0.002);
+      }
+    }
+
+    // Never overwrite another existing typed entry sitting to the left on the same dotted line
+    for (const other of otherEntriesOnPage) {
+      const sameLine =
+        other.y < dl.y + dl.height + 0.006 && other.y + other.height > dl.y - 0.01;
+      if (sameLine && other.x + other.width <= entryRect.x + 0.004) {
+        coverX0 = Math.max(coverX0, other.x + other.width + 0.002);
+      }
+    }
+
+    if (coverX1 - coverX0 < 0.01) continue;
+
+    patches.push({
+      id: `dc_${dl.id}`,
+      pageNum: entryRect.pageNum,
+      x: coverX0,
+      y: dl.y,
+      width: coverX1 - coverX0,
+      height: dl.height,
+      fillColor: fillColor || '#ffffff',
+      removedText: 'dot-leader',
+    });
+  }
+
+  return patches;
+}
+
+/**
+ * Find the specific dot leader under or immediately below a click point (normX, normY).
+ */
+export function findDotLeaderAtPoint(
+  normX: number,
+  normY: number,
+  layout: AnalyzedPageLayout | undefined
+): DetectedDotLeader | undefined {
+  if (!layout || layout.dotLeaders.length === 0) return undefined;
+  return layout.dotLeaders.find(
+    (dl) =>
+      normX >= dl.x - 0.012 &&
+      normX <= dl.x + dl.width + 0.012 &&
+      normY >= dl.textY - 0.006 &&
+      normY <= dl.y + dl.height + 0.01
+  );
+}
+
+/**
+ * Given a raw click at normalized (normX, normY) on a page, determine exact placement:
+ * 1) Table cell -> snaps cleanly inside cell borders (`boundedBox: true`).
+ * 2) Tight multi-field inline slot (with right sibling label like "in Years", "Month:") ->
+ *    snaps cleanly into that slot (`boundedBox: true`, `maxAutoWidth: slot.width`).
+ * 3) Single-field dotted line / open blank -> flexible auto-expanding box (`boundedBox: false`)
+ *    that preserves exact click location (or neat start alignment when clicking near start of dots)
+ *    and automatically links its detected dot leader!
+ * 4) Freehand click anywhere else -> cursor at exact (normX, normY), expands horizontally across
+ *    available page space (stopping before a tight same-line sibling label if one exists).
  */
 export function resolveSmartClickPlacement(
   normX: number,
@@ -861,10 +1477,16 @@ export function resolveSmartClickPlacement(
   height: number;
   fontSize: number;
   slot?: DetectedFormSlot;
+  dotLeader?: DetectedDotLeader;
   boundedBox: boolean;
+  maxAutoWidth: number;
 } {
-  // 1. Check exact hit inside a detected table cell first (most strict geometry)
+  const lineHeightPt = defaultFontSize * 1.28;
+  const padPt = 2;
+  const defaultLineHNorm = Math.max(0.022, (lineHeightPt + padPt * 2) / Math.max(1, pageMeta.baseHeight));
+
   if (layout) {
+    // 1. Exact hit inside a detected table cell (strict grid geometry)
     const hitCell = layout.slots.find(
       (s) =>
         s.kind === 'table-cell' &&
@@ -882,53 +1504,123 @@ export function resolveSmartClickPlacement(
         fontSize: Math.min(defaultFontSize, hitCell.suggestedFontSize || 11),
         slot: hitCell,
         boundedBox: true,
+        maxAutoWidth: hitCell.width,
       };
     }
 
-    // 2. Check exact hit inside a detected inline blank slot (e.g., Years, Months, Days, Date, Month, Year)
+    // 2. Check if click landed on or right above a detected dotted placeholder line
+    const hitDotLeader = findDotLeaderAtPoint(normX, normY, layout);
     const hitBlank = layout.slots.find(
       (s) =>
         s.kind === 'inline-blank' &&
-        normX >= s.x - 0.006 &&
-        normX <= s.x + s.width + 0.006 &&
-        normY >= s.y - 0.006 &&
-        normY <= s.y + s.height + 0.008
+        normX >= s.x - 0.008 &&
+        normX <= s.x + s.width + 0.008 &&
+        normY >= s.y - 0.008 &&
+        normY <= s.y + s.height + 0.01
     );
+
     if (hitBlank) {
+      const matchedDot =
+        hitDotLeader ||
+        (hitBlank.placeholderKind === 'dots' && hitBlank.dotCoverRect
+          ? layout.dotLeaders.find(
+              (dl) =>
+                Math.abs(dl.x - hitBlank.dotCoverRect!.x) < 0.015 &&
+                Math.abs(dl.y - hitBlank.dotCoverRect!.y) < 0.015
+            )
+          : undefined);
+
+      // Compute available right space on this line
+      let rightLimit = 0.985;
+      if (hitBlank.hasRightSibling) {
+        rightLimit = Math.min(0.985, hitBlank.x + hitBlank.width);
+      } else {
+        for (const sp of layout.textSpans) {
+          const sameLine =
+            sp.y < hitBlank.y + hitBlank.height * 0.85 &&
+            sp.y + sp.height > hitBlank.y + hitBlank.height * 0.15;
+          if (sameLine && sp.x > hitBlank.x + 0.01 && sp.x - 0.005 < rightLimit) {
+            rightLimit = sp.x - 0.005;
+          }
+        }
+      }
+
+      // Snap cleanly to start of blank when clicking near its left start (or inside a tight sibling blank),
+      // otherwise respect exact clicked X on wide lines!
+      const clickedNearStart = normX <= hitBlank.x + 0.045 || Boolean(hitBlank.hasRightSibling);
+      const placedX = clickedNearStart
+        ? hitBlank.x
+        : Math.max(hitBlank.x, Math.min(rightLimit - 0.04, normX));
+      const maxAutoWidth = Math.max(0.045, rightLimit - placedX);
+      const initialW = hitBlank.hasRightSibling
+        ? hitBlank.width
+        : Math.min(maxAutoWidth, Math.max(0.14, hitBlank.x + hitBlank.width - placedX));
+
       return {
-        x: hitBlank.x,
+        x: placedX,
         y: hitBlank.y,
-        width: hitBlank.width,
-        height: hitBlank.height,
-        fontSize: Math.min(defaultFontSize, hitBlank.suggestedFontSize || 12),
+        width: initialW,
+        height: Math.max(hitBlank.height, defaultLineHNorm),
+        fontSize: Math.min(defaultFontSize, hitBlank.suggestedFontSize || defaultFontSize),
         slot: hitBlank,
-        boundedBox: true,
+        dotLeader: matchedDot,
+        boundedBox: Boolean(hitBlank.hasRightSibling),
+        maxAutoWidth,
+      };
+    }
+
+    // 3. Direct click on a detected dot leader that wasn't registered as an inline slot
+    if (hitDotLeader) {
+      let rightLimit = 0.985;
+      for (const sp of layout.textSpans) {
+        const sameLine =
+          sp.y < hitDotLeader.textY + hitDotLeader.textHeight * 0.85 &&
+          sp.y + sp.height > hitDotLeader.textY + hitDotLeader.textHeight * 0.15;
+        if (sameLine && sp.x > hitDotLeader.x + 0.01 && sp.x - 0.005 < rightLimit) {
+          rightLimit = sp.x - 0.005;
+        }
+      }
+      const clickedNearStart = normX <= hitDotLeader.x + 0.045;
+      const placedX = clickedNearStart
+        ? hitDotLeader.x
+        : Math.max(hitDotLeader.x, Math.min(rightLimit - 0.04, normX));
+      const maxAutoWidth = Math.max(0.05, rightLimit - placedX);
+      const hasTightRight = rightLimit < 0.95;
+
+      return {
+        x: placedX,
+        y: hitDotLeader.textY,
+        width: Math.min(maxAutoWidth, Math.max(0.14, hitDotLeader.x + hitDotLeader.width - placedX)),
+        height: Math.max(hitDotLeader.textHeight, defaultLineHNorm),
+        fontSize: Math.min(defaultFontSize, hitDotLeader.fontSizePt || defaultFontSize),
+        dotLeader: hitDotLeader,
+        boundedBox: hasTightRight,
+        maxAutoWidth,
       };
     }
   }
 
-  // 3. Freehand click anywhere else: calculate exact horizontal barrier (next printed label or entry on the same line!)
-  const lineHeightPt = defaultFontSize * 1.28;
-  const padPt = 2;
-  const lineHeightNorm = (lineHeightPt + padPt * 2) / Math.max(1, pageMeta.baseHeight);
+  // 4. Freehand click anywhere else on the page: cursor appears at the EXACT clicked location!
   const padXNorm = padPt / Math.max(1, pageMeta.baseWidth);
-
   const x = Math.max(0.004, Math.min(0.94, normX - padXNorm));
-  const y = Math.max(0.004, Math.min(0.97 - lineHeightNorm, normY - lineHeightNorm * 0.52));
+  const y = Math.max(0.004, Math.min(0.97 - defaultLineHNorm, normY - defaultLineHNorm * 0.52));
 
-  let rightBarrier = 0.992;
+  let rightBarrier = 0.988;
 
   if (layout) {
-    // Stop before the next printed text span on the same visual line
+    // Stop auto-expand before the next printed text span on the same visual line
     for (const sp of layout.textSpans) {
-      const sameLine = sp.y < y + lineHeightNorm * 0.85 && sp.y + sp.height > y + lineHeightNorm * 0.15;
+      const sameLine =
+        sp.y < y + defaultLineHNorm * 0.85 && sp.y + sp.height > y + defaultLineHNorm * 0.15;
       if (sameLine && sp.x > normX + 0.008 && sp.x - 0.005 < rightBarrier) {
         rightBarrier = sp.x - 0.005;
       }
     }
     // Also stop before any table cell boundary to the right on the same line
     for (const sl of layout.slots) {
-      const sameLine = sl.y < y + lineHeightNorm * 0.85 && sl.y + sl.height > y + lineHeightNorm * 0.15;
+      if (sl.kind !== 'table-cell') continue;
+      const sameLine =
+        sl.y < y + defaultLineHNorm * 0.85 && sl.y + sl.height > y + defaultLineHNorm * 0.15;
       if (sameLine && sl.x > normX + 0.008 && sl.x - 0.004 < rightBarrier) {
         rightBarrier = sl.x - 0.004;
       }
@@ -937,21 +1629,23 @@ export function resolveSmartClickPlacement(
 
   // Also stop before another already-typed entry on the same line
   for (const ex of existingEntriesOnPage) {
-    const sameLine = ex.y < y + lineHeightNorm * 0.85 && ex.y + ex.height > y + lineHeightNorm * 0.15;
+    const sameLine =
+      ex.y < y + defaultLineHNorm * 0.85 && ex.y + ex.height > y + defaultLineHNorm * 0.15;
     if (sameLine && ex.x > normX + 0.008 && ex.x - 0.005 < rightBarrier) {
       rightBarrier = ex.x - 0.005;
     }
   }
 
-  const maxW = Math.max(0.045, rightBarrier - x);
-  const hasTightBarrier = rightBarrier < 0.96;
+  const maxAutoWidth = Math.max(0.045, rightBarrier - x);
+  const hasTightBarrier = rightBarrier < 0.95;
 
   return {
     x,
     y,
-    width: Math.min(maxW, hasTightBarrier ? maxW : 0.36),
-    height: Math.max(0.022, lineHeightNorm),
+    width: hasTightBarrier ? maxAutoWidth : Math.min(maxAutoWidth, 0.22),
+    height: defaultLineHNorm,
     fontSize: defaultFontSize,
     boundedBox: hasTightBarrier,
+    maxAutoWidth,
   };
 }

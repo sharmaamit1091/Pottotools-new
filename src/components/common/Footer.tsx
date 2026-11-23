@@ -4,7 +4,7 @@ import { PottoLogo } from './PottoLogo';
 import { ShieldCheck, Heart, Lock, Zap, Mail, ArrowUpRight, Copy, Check, ExternalLink, WifiOff } from 'lucide-react';
 import { AdSlot } from './AdSlot';
 import { MONETIZATION_CONFIG } from '../../config/monetization';
-import { TOOLS, ToolDefinition, getToolBySlug } from '../../config/toolsRegistry';
+import { ToolDefinition, getToolBySlug } from '../../config/toolsRegistry';
 
 interface FooterProps {
   onNavigate: (view: string) => void;
@@ -163,20 +163,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
               </li>
               <li>
                 <a
-                  href="/pdf-to-word"
-                  onClick={(e) => handleNavClick('pdf-to-word', e)}
+                  href="/pdf-to-editable-word"
+                  onClick={(e) => handleNavClick('pdf-to-editable-word', e)}
                   className="text-[#1E5C9A] dark:text-sky-300 hover:underline font-medium transition-colors text-left cursor-pointer block"
                 >
                   PDF to Word (.docx)
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/pdf-to-editable-word"
-                  onClick={(e) => handleNavClick('pdf-to-editable-word', e)}
-                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
-                >
-                  PDF to Editable Word (OCR)
                 </a>
               </li>
               <li>
@@ -194,7 +185,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                   onClick={(e) => handleNavClick('sign-pdf', e)}
                   className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Sign PDF &amp; Draw Signatures
+                  Sign PDF Document
                 </a>
               </li>
               <li>
@@ -204,6 +195,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                   className="text-[#196B47] dark:text-emerald-300 font-semibold transition-colors text-left cursor-pointer hover:underline block"
                 >
                   PDF &amp; ID Redactor (Offline)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/pdf-metadata"
+                  onClick={(e) => handleNavClick('pdf-metadata', e)}
+                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                >
+                  Remove PDF Metadata
                 </a>
               </li>
               <li>
@@ -236,7 +236,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
             </ul>
           </div>
 
-          {/* Col 3: Image Tools & Presets */}
+          {/* Col 3: Image & Office Tools */}
           <div>
             <a
               href="/image-tools"
@@ -245,7 +245,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
               title="View all Image tools"
             >
               <span className="w-2 h-2 rounded-full bg-[#6E5CE6] group-hover:scale-125 transition-transform" />
-              <span>Image Tools &amp; Presets</span>
+              <span>Image &amp; Office Tools</span>
               <ArrowUpRight className="w-3 h-3 text-[#777789] group-hover:text-[#6E5CE6] transition-colors" />
             </a>
             <ul className="space-y-2 text-xs">
@@ -264,7 +264,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                   onClick={(e) => handleNavClick('photo-signature-resizer', e)}
                   className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Exam Photo &amp; Signature Presets
+                  Exam &amp; Passport Photo Resizer
                 </a>
               </li>
               <li>
@@ -278,11 +278,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
               </li>
               <li>
                 <a
-                  href="/image-format-converter"
-                  onClick={(e) => handleNavClick('image-format-converter', e)}
+                  href="/image-converter"
+                  onClick={(e) => handleNavClick('image-converter', e)}
                   className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Image Format Converter (JPG, PNG, WebP)
+                  Image Converter (JPG, PNG, WebP, BMP)
                 </a>
               </li>
               <li>
@@ -291,52 +291,43 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                   onClick={(e) => handleNavClick('image-to-pdf', e)}
                   className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Photos (JPG/PNG) to PDF
+                  JPG &amp; PNG to PDF
+                </a>
+              </li>
+              <li className="pt-2 border-t border-[#E4E1F0] dark:border-[#242942]">
+                <a
+                  href="/word-tools"
+                  onClick={(e) => handleNavClick('category-word-tools', e)}
+                  className="text-[#1E5C9A] dark:text-sky-300 font-semibold transition-colors text-left cursor-pointer hover:underline block"
+                >
+                  Word Tools (.docx &amp; PDF)
                 </a>
               </li>
               <li>
                 <a
-                  href="/passport-photo-cropper"
-                  onClick={(e) => handleNavClick('passport-photo-cropper', e)}
-                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  href="/excel-tools"
+                  onClick={(e) => handleNavClick('category-excel-tools', e)}
+                  className="text-[#196B47] dark:text-emerald-300 font-semibold transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Passport Photo Cropper (35×45mm)
+                  Excel Tools (.xlsx &amp; CSV)
                 </a>
               </li>
               <li>
                 <a
-                  href="/photo-editor"
-                  onClick={(e) => handleNavClick('photo-editor', e)}
-                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
+                  href="/powerpoint-tools"
+                  onClick={(e) => handleNavClick('category-powerpoint-tools', e)}
+                  className="text-[#8A5E10] dark:text-amber-300 font-semibold transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  Photo Editor &amp; Color Adjustments
+                  PowerPoint Tools (.pptx to PDF)
                 </a>
               </li>
               <li>
                 <a
-                  href="/hd-image-enhancer"
-                  onClick={(e) => handleNavClick('hd-image-enhancer', e)}
+                  href="/other-document-tools"
+                  onClick={(e) => handleNavClick('category-other-document-tools', e)}
                   className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
                 >
-                  HD Image Enhancer
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/jpg-to-png"
-                  onClick={(e) => handleNavClick('jpg-to-png', e)}
-                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
-                >
-                  JPG to PNG Converter
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/png-to-jpg"
-                  onClick={(e) => handleNavClick('png-to-jpg', e)}
-                  className="text-[#626278] dark:text-[#A0A5C0] hover:text-[#252536] dark:hover:text-white transition-colors text-left cursor-pointer hover:underline block"
-                >
-                  PNG to JPG Converter
+                  Other Tools (Text Diff &amp; Cleaner)
                 </a>
               </li>
             </ul>
@@ -488,15 +479,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectTool }) => {
                   className="hover:underline transition-colors text-left font-medium text-[#196B47] dark:text-emerald-300 block"
                 >
                   PottoTools हिंदी (Hindi)
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/directory"
-                  onClick={(e) => handleNavClick('directory', e)}
-                  className="hover:underline transition-colors text-left font-medium text-[#5B50E6] dark:text-[#A49CFF] block"
-                >
-                  All Tools ({TOOLS.length})
                 </a>
               </li>
             </ul>

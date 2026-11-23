@@ -118,6 +118,7 @@ export default defineConfig(() => {
               !dep.includes('vendor-office') &&
               !dep.includes('vendor-pdf') &&
               !dep.includes('vendor-ocr') &&
+              !dep.includes('vendor-htr') &&
               !dep.includes('html2canvas') &&
               !dep.includes('purify') &&
               !dep.includes('index.es')
@@ -133,6 +134,9 @@ export default defineConfig(() => {
               }
               if (id.includes('xlsx') || id.includes('docx') || id.includes('mammoth') || id.includes('jszip')) {
                 return 'vendor-office';
+              }
+              if (id.includes('@huggingface/transformers') || id.includes('onnxruntime')) {
+                return 'vendor-htr';
               }
               if (id.includes('tesseract.js')) {
                 return 'vendor-ocr';

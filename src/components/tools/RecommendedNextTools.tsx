@@ -59,11 +59,6 @@ const RECOMMENDATION_MAP: Record<string, { slug: string; reason: string }[]> = {
     { slug: 'compress-pdf', reason: 'Shrink original or modified PDFs for small file sizes' },
     { slug: 'ocr-tool', reason: 'Dedicated OCR for multi-language scanned records' },
   ],
-  'pdf-to-word': [
-    { slug: 'pdf-to-editable-word', reason: 'Preserve menus, prices, and photos with full layout reconstruction' },
-    { slug: 'word-to-pdf', reason: 'Convert back to pristine PDF after finishing your edits' },
-    { slug: 'compress-pdf', reason: 'Shrink original or modified PDFs for small file sizes' },
-  ],
   'word-to-pdf': [
     { slug: 'compress-pdf', reason: 'Compress your newly exported PDF for online portals' },
     { slug: 'protect-pdf', reason: 'Add password encryption to your PDF contract or report' },
@@ -76,30 +71,22 @@ const RECOMMENDATION_MAP: Record<string, { slug: string; reason: string }[]> = {
   ],
   'image-converter': [
     { slug: 'photo-signature-resizer', reason: 'Resize to strict exam or passport dimension limits' },
+    { slug: 'photo-size-compressor', reason: 'Shrink converted images to an exact KB ceiling' },
     { slug: 'image-to-pdf', reason: 'Package converted images into a single multi-page PDF' },
-    { slug: 'combine-app-documents', reason: 'Consolidate multiple image certificates into one file' },
   ],
   'pdf-to-images': [
     { slug: 'image-converter', reason: 'Convert extracted images to PNG or WebP format' },
     { slug: 'photo-signature-resizer', reason: 'Crop and optimize extracted signature or photo' },
   ],
   'ocr-tool': [
-    { slug: 'pdf-to-word', reason: 'Turn full scanned documents into formatted Word files' },
+    { slug: 'pdf-to-editable-word', reason: 'Turn full scanned documents into formatted Word files' },
     { slug: 'compress-pdf', reason: 'Compress the original scanned PDF file' },
     { slug: 'text-cleaner', reason: 'Format, trim whitespace, and clean extracted OCR text' },
   ],
   'photo-signature-resizer': [
-    { slug: 'passport-photo-cropper', reason: 'Crop photo to exact 3.5 x 4.5 cm passport standard' },
-    { slug: 'combine-app-documents', reason: 'Combine photo, signature, and ID into one application file' },
+    { slug: 'custom-photo-studio', reason: 'Fine-tune crop, rotation, brightness, and custom cm/mm dimensions' },
+    { slug: 'photo-size-compressor', reason: 'Dial in an exact target KB limit for any portal' },
     { slug: 'image-to-pdf', reason: 'Convert your verified image to PDF format' },
-  ],
-  'passport-photo-cropper': [
-    { slug: 'photo-signature-resizer', reason: 'Compress to exact 20KB–50KB exam portal ceilings' },
-    { slug: 'combine-app-documents', reason: 'Combine with signature and marksheet' },
-  ],
-  'combine-app-documents': [
-    { slug: 'compress-pdf', reason: 'Ensure entire document package stays below 1MB or 2MB' },
-    { slug: 'protect-pdf', reason: 'Add password protection to your application dossier' },
   ],
   'protect-pdf': [
     { slug: 'unlock-pdf', reason: 'Remove password protection later whenever needed' },

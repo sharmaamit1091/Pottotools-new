@@ -254,7 +254,7 @@ export const BLOG_POSTS: BlogPost[] = [
     publishedAt: '2026-11-14',
     updatedAt: '2026-11-18',
     readTime: '7 min read',
-    relatedToolSlugs: ['custom-photo-studio', 'photo-signature-resizer', 'passport-photo-cropper', 'photo-size-compressor'],
+    relatedToolSlugs: ['custom-photo-studio', 'photo-signature-resizer', 'photo-size-compressor', 'image-converter'],
     sections: [
       {
         heading: 'The Exact Formula Converting Centimeters & Millimeters to Pixels',
@@ -527,7 +527,7 @@ export const BLOG_POSTS: BlogPost[] = [
     publishedAt: '2026-11-18',
     updatedAt: '2026-11-18',
     readTime: '6 min read',
-    relatedToolSlugs: ['image-converter', 'image-format-converter', 'jpg-to-png', 'png-to-jpg'],
+    relatedToolSlugs: ['image-converter', 'custom-photo-studio', 'photo-size-compressor', 'image-to-pdf'],
     sections: [
       {
         heading: 'How Each Image Compression Algorithm Handles Pixels Differently',
@@ -590,7 +590,7 @@ export const BLOG_POSTS: BlogPost[] = [
     publishedAt: '2026-11-18',
     updatedAt: '2026-11-18',
     readTime: '6 min read',
-    relatedToolSlugs: ['image-to-pdf', 'combine-app-documents', 'pdf-page-organizer', 'compress-pdf'],
+    relatedToolSlugs: ['image-to-pdf', 'merge-pdf', 'pdf-page-organizer', 'compress-pdf'],
     sections: [
       {
         heading: 'Why Raw Camera Photos Create Messy PDF Submissions',

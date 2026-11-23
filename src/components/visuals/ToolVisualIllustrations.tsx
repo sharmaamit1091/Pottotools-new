@@ -1913,7 +1913,152 @@ export const FillPdfFormVisual: React.FC = () => (
 );
 
 // =========================================================================
-// 38. Generic Default Fallback Visual
+// 38. OFFICE NOTE DIGITIZER: Handwritten Ruled Paper Note -> Clean Editable Text
+//     Instantly communicates: Handwritten Hindi/English Note -> Editable Word/PDF
+// =========================================================================
+export const OfficeNoteDigitizerVisual: React.FC = () => (
+  <VisualStage>
+    <div className="flex items-center justify-center gap-2">
+      {/* LEFT: Authentic Ruled Paper Sheet with Blue Handwritten Ink + Pen */}
+      <div className="relative shrink-0">
+        {/* Soft 2.5D stacked back paper */}
+        <div className="pointer-events-none absolute inset-0 translate-x-[3px] translate-y-[3px] rounded-[7px] bg-amber-100/80 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/60" />
+
+        <div className="relative w-[68px] h-[84px] rounded-[7px] bg-[#FFFDF5] dark:bg-[#211E17] border border-amber-300/90 dark:border-amber-700/80 shadow-[0_8px_18px_-6px_rgba(120,53,15,0.22)] flex flex-col justify-between overflow-hidden">
+          {/* Authentic subtle ruled paper margin line */}
+          <div className="pointer-events-none absolute inset-y-0 left-2.5 w-[1px] bg-rose-300/60 dark:bg-rose-500/30" />
+
+          {/* Header Pill */}
+          <div className="pt-1.5 px-1.5 flex items-center justify-between z-10">
+            <span className="px-1.5 py-[2px] rounded-[4px] bg-amber-600 text-white text-[6.5px] font-black tracking-wider leading-none shadow-2xs">
+              NOTE
+            </span>
+          </div>
+
+          {/* Handwritten Blue Ink Lines on Ruled Sheet */}
+          <div className="relative flex-1 px-2 pl-3.5 py-1 flex flex-col justify-center gap-[5px]">
+            {/* Gentle scanner sweep moving down the handwritten page */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent shadow-[0_0_8px_2px_rgba(99,102,241,0.75)] tv-note-scan-beam z-20" />
+
+            {/* Ruled line 1 + cursive ink stroke */}
+            <div className="border-b border-amber-200/80 dark:border-amber-800/40 pb-[2px]">
+              <svg viewBox="0 0 46 8" className="w-full h-[7px]" fill="none">
+                <path
+                  d="M1 5.5 C4 1.5, 7 6.5, 11 3.5 C14 1.5, 17 6.5, 22 4 C26 2, 29 6, 35 3.5 C38 2, 41 5.5, 44 3.8"
+                  stroke="#1d4ed8"
+                  strokeWidth="1.45"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+
+            {/* Ruled line 2 + cursive ink stroke */}
+            <div className="border-b border-amber-200/80 dark:border-amber-800/40 pb-[2px]">
+              <svg viewBox="0 0 46 8" className="w-full h-[7px]" fill="none">
+                <path
+                  d="M1 4.5 C5 2, 8 6.5, 13 3.5 C17 1.5, 20 6, 26 4 C30 2.5, 34 6, 39 3.5"
+                  stroke="#1d4ed8"
+                  strokeWidth="1.45"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+
+            {/* Ruled line 3 + shorter ink stroke */}
+            <div className="border-b border-amber-200/80 dark:border-amber-800/40 pb-[2px]">
+              <svg viewBox="0 0 46 8" className="w-full h-[7px]" fill="none">
+                <path
+                  d="M1 5 C4 2, 9 6.5, 14 3.5 C18 1.8, 22 6, 28 4"
+                  stroke="#2563eb"
+                  strokeWidth="1.45"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* Footer label */}
+          <div className="px-1 pb-1 pt-0.5 border-t border-amber-200/70 dark:border-amber-800/50 bg-amber-50/70 dark:bg-amber-950/40 text-center">
+            <span className="block text-[7px] font-mono font-extrabold text-amber-800 dark:text-amber-300 leading-none truncate">
+              Handwritten
+            </span>
+          </div>
+        </div>
+
+        {/* Tiny Blue Pen Badge resting at bottom-right of handwritten note */}
+        <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500 text-white shadow-sm ring-2 ring-white dark:ring-slate-900 flex items-center justify-center z-30">
+          <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none">
+            <path
+              d="M11.5 2.5L13.5 4.5L5.5 12.5L2.5 13.5L3.5 10.5L11.5 2.5Z"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+      </div>
+
+      {/* CENTER: Unmistakable Action Arrow */}
+      <ActionArrow label="To Text" accent="indigo" />
+
+      {/* RIGHT: Clean Editable Digital Document (Hindi + English + Cursor + DOCX/PDF) */}
+      <div className="relative shrink-0 tv-soft-float">
+        {/* Soft stacked back page */}
+        <div className="pointer-events-none absolute inset-0 translate-x-[3px] translate-y-[3px] rounded-[7px] bg-indigo-100/90 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/70" />
+
+        <div className="relative w-[74px] h-[86px] rounded-[7px] bg-white dark:bg-slate-900 border border-indigo-300/90 dark:border-indigo-700/80 ring-2 ring-indigo-500/35 shadow-[0_10px_20px_-6px_rgba(79,70,229,0.28)] flex flex-col justify-between overflow-hidden">
+          {/* Top Digital Document Header */}
+          <div className="pt-1.5 px-1.5 flex items-center justify-between">
+            <span className="px-1.5 py-[2px] rounded-[4px] bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-[6.5px] font-black tracking-wider leading-none shadow-2xs">
+              EDITABLE
+            </span>
+          </div>
+
+          {/* Crisp Typed Hindi & English Text Preview + Live Cursor */}
+          <div className="flex-1 px-1.5 py-1 flex flex-col justify-center gap-[4.5px]">
+            {/* Highlighted active typing line with Devanagari + English + blinking cursor */}
+            <div className="flex items-center gap-[3px] px-1 py-[2px] rounded-[3px] bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200/80 dark:border-indigo-800/70">
+              <span className="text-[8px] font-extrabold text-indigo-700 dark:text-indigo-300 leading-none tracking-tight">
+                अ · Aa
+              </span>
+              <span className="w-[1.5px] h-[9px] bg-indigo-600 dark:bg-indigo-400 tv-cursor-blink rounded-full" />
+            </div>
+
+            {/* Clean typed lines revealing smoothly */}
+            <div className="space-y-[3.5px] px-0.5">
+              <div className="h-[3px] w-full rounded-full bg-slate-700/75 dark:bg-slate-300/80 tv-note-line-1" />
+              <div className="h-[2.5px] w-11/12 rounded-full bg-slate-300 dark:bg-slate-600 tv-note-line-1" />
+              <div className="h-[2.5px] w-4/5 rounded-full bg-indigo-400/80 dark:bg-indigo-400/70 tv-note-line-2" />
+            </div>
+          </div>
+
+          {/* Output Formats Strip */}
+          <div className="px-1 pb-1 pt-0.5 border-t border-slate-100 dark:border-slate-800 bg-indigo-50/70 dark:bg-indigo-950/40 text-center">
+            <span className="block text-[7px] font-mono font-extrabold text-indigo-700 dark:text-indigo-300 leading-none truncate">
+              DOCX · PDF
+            </span>
+          </div>
+        </div>
+
+        {/* Clean Green Checkmark Badge */}
+        <div className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-sm ring-2 ring-white dark:ring-slate-900 z-30">
+          <svg viewBox="0 0 12 12" className="w-2.5 h-2.5" fill="none">
+            <path
+              d="M2.5 6.2L5 8.7L9.5 3.5"
+              stroke="currentColor"
+              strokeWidth="2.1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </VisualStage>
+);
+
+// =========================================================================
+// 39. Generic Default Fallback Visual
 // =========================================================================
 export const GenericToolVisual: React.FC<{ title: string; category?: string }> = () => (
   <VisualStage>

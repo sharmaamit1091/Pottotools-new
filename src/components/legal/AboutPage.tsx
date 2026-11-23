@@ -4,12 +4,12 @@ import { Mail, ArrowRight, Compass, BookOpen, Sparkles, ShieldCheck } from 'luci
 import { AdSlot } from '../common/AdSlot';
 
 interface AboutPageProps {
-  onNavigateDirectory?: () => void;
+  onNavigateTools?: () => void;
   onNavigateBlog?: () => void;
 }
 
 export const AboutPage: React.FC<AboutPageProps> = ({
-  onNavigateDirectory,
+  onNavigateTools,
   onNavigateBlog,
 }) => {
   const supportEmail = SITE_CONFIG.supportEmail || 'sharma.amit1091@gmail.com';
@@ -42,19 +42,19 @@ export const AboutPage: React.FC<AboutPageProps> = ({
           </p>
 
           <div className="flex flex-wrap gap-3 pt-2">
-            {onNavigateDirectory && (
+            {onNavigateTools && (
               <a
-                href="/directory"
+                href="/pdf-tools"
                 onClick={(e) => {
                   if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
                     e.preventDefault();
-                    onNavigateDirectory();
+                    onNavigateTools();
                   }
                 }}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all no-underline"
               >
                 <Compass className="w-4 h-4" />
-                <span>Explore All Tools</span>
+                <span>Explore PDF Tools</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
             )}

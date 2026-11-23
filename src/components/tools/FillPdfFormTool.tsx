@@ -23,7 +23,10 @@ import {
 } from '../../services/pdf/fillPdfFormService';
 import {
   AnalyzedPageLayout,
+  computeDotCoversForEntry,
+  findDotLeaderAtPoint,
   resolveSmartClickPlacement,
+  sampleBackgroundColorOnCanvas,
 } from '../../services/pdf/smartFormLayoutDetector';
 import { DirectTypePdfPage, SelectedPdfRegion } from './fill-pdf/DirectTypePdfPage';
 import { FileUploadZone } from '../common/FileUploadZone';
@@ -51,7 +54,10 @@ const uid = (prefix = 'txt') =>
 
 function cloneSnapshot(snap: EditorSnapshot): EditorSnapshot {
   return {
-    entries: snap.entries.map((el) => ({ ...el })),
+    entries: snap.entries.map((el) => ({
+      ...el,
+      dotCovers: el.dotCovers ? el.dotCovers.map((dc) => ({ ...dc })) : undefined,
+    })),
     whiteoutPatches: snap.whiteoutPatches.map((wp) => ({ ...wp })),
     interactiveValues: { ...snap.interactiveValues },
   };
@@ -97,6 +103,7 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
   const textareaRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
   const interactiveRefs = useRef<Map<string, HTMLElement>>(new Map());
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const pageCanvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const entriesRef = useRef<TextFormElement[]>(entries);
   const whiteoutPatchesRef = useRef<WhiteoutPatch[]>(whiteoutPatches);
   const interactiveValuesRef = useRef<Record<string, string | boolean>>(interactiveValues);
@@ -140,6 +147,14 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
       pageRefs.current.set(pageNum, node);
     } else {
       pageRefs.current.delete(pageNum);
+    }
+  }, []);
+
+  const registerPageCanvasRef = useCallback((pageNum: number, node: HTMLCanvasElement | null) => {
+    if (node) {
+      pageCanvasRefs.current.set(pageNum, node);
+    } else {
+      pageCanvasRefs.current.delete(pageNum);
     }
   }, []);
 
@@ -327,7 +342,7 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
     }
   }, []);
 
-  // Helper: Activate a detected slot (table cell or inline blank) — reuses existing entry or creates one synchronously
+  // Helper: Activate a detected slot (table cell, dotted placeholder, or inline blank)
   const activateSlot = useCallback(
     (slot: DetectedFormSlot) => {
       const existing = entriesRef.current.find((e) => e.slotId === slot.id);
@@ -337,9 +352,70 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
       }
 
       const cleanedExisting = entriesRef.current.filter((e) => e.text.trim().length > 0);
+      const existingOnPage = cleanedExisting.filter((e) => e.pageNum === slot.pageNum);
       pushUndoSnapshot(cleanedExisting);
 
+      const layout = pageLayoutsRef.current[slot.pageNum];
+      const pageMeta = loadedPdf?.pagesMeta[slot.pageNum - 1];
+      const isTableCell = slot.kind === 'table-cell';
+      const isTightInline = Boolean(slot.hasRightSibling);
+
+      // Compute available right expansion boundary for non-table, non-sibling fields
+      let rightLimit = 0.985;
+      if (isTableCell || isTightInline) {
+        rightLimit = Math.min(0.985, slot.x + slot.width);
+      } else if (layout) {
+        for (const sp of layout.textSpans) {
+          const sameLine =
+            sp.y < slot.y + slot.height * 0.85 && sp.y + sp.height > slot.y + slot.height * 0.15;
+          if (sameLine && sp.x > slot.x + 0.01 && sp.x - 0.005 < rightLimit) {
+            rightLimit = sp.x - 0.005;
+          }
+        }
+      }
+
       const fontSize = Math.min(defaultFontSize, slot.suggestedFontSize || defaultFontSize);
+      const minLineH = pageMeta
+        ? (fontSize * 1.28 + 4) / Math.max(1, pageMeta.baseHeight)
+        : slot.height;
+      const entryHeight = isTableCell ? slot.height : Math.max(slot.height, minLineH);
+
+      // Match dotted leader if this slot sits on a dotted placeholder line
+      let primaryDotLeader =
+        slot.placeholderKind === 'dots' && slot.dotCoverRect && layout
+          ? layout.dotLeaders.find(
+              (dl) =>
+                Math.abs(dl.x - slot.dotCoverRect!.x) < 0.015 &&
+                Math.abs(dl.y - slot.dotCoverRect!.y) < 0.015
+            )
+          : undefined;
+      if (!primaryDotLeader && !isTableCell && layout) {
+        primaryDotLeader = findDotLeaderAtPoint(
+          slot.x + Math.min(0.02, slot.width * 0.25),
+          slot.y + slot.height * 0.65,
+          layout
+        );
+      }
+
+      const pageCanvas = pageCanvasRefs.current.get(slot.pageNum) || null;
+      const sampleRect = primaryDotLeader || slot.dotCoverRect || slot;
+      const fillColor = sampleBackgroundColorOnCanvas(pageCanvas, sampleRect);
+      const dotCovers = isTableCell
+        ? []
+        : computeDotCoversForEntry(
+            {
+              pageNum: slot.pageNum,
+              x: slot.x,
+              y: slot.y,
+              width: slot.width,
+              height: entryHeight,
+            },
+            layout,
+            fillColor,
+            primaryDotLeader,
+            existingOnPage
+          );
+
       const newEntry: TextFormElement = {
         id: uid('txt'),
         type: 'text',
@@ -347,7 +423,7 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
         x: slot.x,
         y: slot.y,
         width: slot.width,
-        height: slot.height,
+        height: entryHeight,
         rotation: 0,
         opacity: 1,
         text: '',
@@ -359,10 +435,13 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
         align: 'left',
         backgroundColor: 'transparent',
         slotId: slot.id,
-        boundedBox: true,
+        boundedBox: isTableCell || isTightInline,
+        maxAutoWidth: Math.max(slot.width, rightLimit - slot.x),
         tableId: slot.tableId,
         tableRow: slot.row,
         tableCol: slot.col,
+        dotCovers: dotCovers.length > 0 ? dotCovers : undefined,
+        coverDotsEnabled: dotCovers.length > 0,
       };
 
       editingCapturedUndoRef.current.add(newEntry.id);
@@ -379,10 +458,11 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
         node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     },
-    [defaultFontSize, defaultColor, focusExistingEntry, pushUndoSnapshot]
+    [loadedPdf, defaultFontSize, defaultColor, focusExistingEntry, pushUndoSnapshot]
   );
 
-  // Direct click/tap anywhere on a PDF page: smart-snaps to table cells / inline blanks or bounds freehand clicks before neighbor labels
+  // Direct click/tap anywhere on a PDF page: smart-snaps to table cells / inline blanks,
+  // auto-links dotted leader covers, or places a flexible cursor at the exact clicked location
   const handleClickBlankPage = useCallback(
     (pageNum: number, normX: number, normY: number) => {
       if (!loadedPdf) return;
@@ -391,12 +471,13 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
 
       const cleanedExisting = entriesRef.current.filter((e) => e.text.trim().length > 0);
       const existingOnPage = cleanedExisting.filter((e) => e.pageNum === pageNum);
+      const layout = pageLayoutsRef.current[pageNum];
 
       const placement = resolveSmartClickPlacement(
         normX,
         normY,
         pageMeta,
-        pageLayoutsRef.current[pageNum],
+        layout,
         defaultFontSize,
         existingOnPage
       );
@@ -411,6 +492,32 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
       }
 
       pushUndoSnapshot(cleanedExisting);
+
+      const isTableCell = Boolean(placement.slot?.tableId);
+      const pageCanvas = pageCanvasRefs.current.get(pageNum) || null;
+      const sampleRect = placement.dotLeader || {
+        x: placement.x,
+        y: placement.y,
+        width: placement.width,
+        height: placement.height,
+      };
+      const fillColor = sampleBackgroundColorOnCanvas(pageCanvas, sampleRect);
+
+      const dotCovers = isTableCell
+        ? []
+        : computeDotCoversForEntry(
+            {
+              pageNum,
+              x: placement.x,
+              y: placement.y,
+              width: placement.width,
+              height: placement.height,
+            },
+            layout,
+            fillColor,
+            placement.dotLeader,
+            existingOnPage
+          );
 
       const newEntry: TextFormElement = {
         id: uid('txt'),
@@ -432,9 +539,12 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
         backgroundColor: 'transparent',
         slotId: placement.slot?.id,
         boundedBox: placement.boundedBox,
+        maxAutoWidth: placement.maxAutoWidth,
         tableId: placement.slot?.tableId,
         tableRow: placement.slot?.row,
         tableCol: placement.slot?.col,
+        dotCovers: dotCovers.length > 0 ? dotCovers : undefined,
+        coverDotsEnabled: dotCovers.length > 0,
       };
 
       editingCapturedUndoRef.current.add(newEntry.id);
@@ -723,7 +833,10 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
     setActiveEntryId((curr) => (curr === id ? null : curr));
   }, []);
 
-  // Live typing inside a text entry (records a single clean undo step per editing session)
+  // Live typing inside a text entry:
+  // - Expands horizontally smoothly up to available page width (unless table cell / tight sibling / manually narrowed)
+  // - Expands vertically automatically on Enter or word-wrap so multiline text never clips
+  // - Dynamically syncs dotted-line covers as multiline text spans across stacked dotted lines
   const handleChangeEntryText = useCallback(
     (id: string, text: string, measuredWidthNorm: number, measuredHeightNorm: number) => {
       if (!editingCapturedUndoRef.current.has(id)) {
@@ -733,20 +846,91 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
       setEntries((prev) =>
         prev.map((el) => {
           if (el.id !== id) return el;
-          if (el.boundedBox) {
-            return {
-              ...el,
-              text,
-              height: el.tableId
-                ? el.height
-                : Math.max(el.height, Math.min(1 - el.y - 0.004, measuredHeightNorm)),
-            };
+
+          const isStrictTableCell = Boolean(el.tableId) && !el.manualWidth && !el.manualHeight;
+          const availPageW = Math.max(0.04, 1 - el.x - 0.006);
+          const availPageH = Math.max(0.018, 1 - el.y - 0.004);
+          const maxAutoW = Math.min(availPageW, el.maxAutoWidth ?? availPageW);
+
+          let nextWidth = el.width;
+          let nextHeight = el.height;
+
+          if (isStrictTableCell) {
+            nextWidth = el.width;
+            nextHeight = el.height;
+          } else if (el.manualWidth) {
+            // Respect user's manually chosen width, while automatically growing height so text never clips!
+            nextWidth = Math.min(availPageW, el.width);
+            nextHeight = Math.min(
+              availPageH,
+              el.manualHeight ? Math.max(el.height, measuredHeightNorm) : measuredHeightNorm
+            );
+          } else if (el.boundedBox) {
+            // Tight sibling inline slot (e.g. Years / Months / Days): stay clear of neighbor label horizontally,
+            // grow vertically if user presses Enter
+            nextWidth = Math.min(maxAutoW, el.width);
+            nextHeight = Math.min(availPageH, Math.max(el.height, measuredHeightNorm));
+          } else {
+            // Flexible text box: expand horizontally as user types, and expand vertically on Enter / page-edge wrap!
+            const minBaseW = el.dotCovers?.[0]?.width
+              ? Math.min(maxAutoW, Math.max(0.14, el.dotCovers[0].width))
+              : Math.min(maxAutoW, Math.max(0.14, el.width));
+            nextWidth = Math.min(maxAutoW, Math.max(minBaseW, measuredWidthNorm));
+            nextHeight = Math.min(
+              availPageH,
+              el.manualHeight ? Math.max(el.height, measuredHeightNorm) : measuredHeightNorm
+            );
           }
+
+          // Dynamically sync dot covers for multiline / horizontally-expanded typing over dotted lines
+          let nextDotCovers = el.dotCovers;
+          let nextCoverEnabled = el.coverDotsEnabled;
+          if (!isStrictTableCell && el.coverDotsEnabled !== false) {
+            const layout = pageLayoutsRef.current[el.pageNum];
+            if (layout && layout.dotLeaders.length > 0) {
+              const primaryLeaderId = el.dotCovers?.[0]?.id?.replace(/^dc_/, '');
+              const primaryLeader = primaryLeaderId
+                ? layout.dotLeaders.find((dl) => dl.id === primaryLeaderId)
+                : findDotLeaderAtPoint(el.x + 0.008, el.y + 0.01, layout);
+
+              const fillColor =
+                el.dotCovers?.[0]?.fillColor ||
+                sampleBackgroundColorOnCanvas(pageCanvasRefs.current.get(el.pageNum) || null, {
+                  x: el.x,
+                  y: el.y,
+                  width: nextWidth,
+                  height: nextHeight,
+                });
+
+              const otherEntries = prev.filter((o) => o.id !== el.id && o.pageNum === el.pageNum);
+              const syncedCovers = computeDotCoversForEntry(
+                {
+                  pageNum: el.pageNum,
+                  x: el.x,
+                  y: el.y,
+                  width: nextWidth,
+                  height: nextHeight,
+                },
+                layout,
+                fillColor,
+                primaryLeader,
+                otherEntries
+              );
+
+              if (syncedCovers.length > 0) {
+                nextDotCovers = syncedCovers;
+                nextCoverEnabled = true;
+              }
+            }
+          }
+
           return {
             ...el,
             text,
-            width: Math.min(1 - el.x - 0.004, measuredWidthNorm + 0.012),
-            height: Math.min(1 - el.y - 0.004, measuredHeightNorm),
+            width: nextWidth,
+            height: nextHeight,
+            dotCovers: nextDotCovers,
+            coverDotsEnabled: nextCoverEnabled,
           };
         })
       );
@@ -772,12 +956,117 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
           return {
             ...el,
             ...patch,
-            height: el.tableId ? el.height : Math.max(el.height, minH),
+            height: el.tableId && !el.manualHeight ? el.height : Math.max(el.height, minH),
           };
         })
       );
     },
     [loadedPdf, pushUndoSnapshot]
+  );
+
+  // Manual smooth resizing from left, right, bottom, or corner drag handles
+  const handleResizeEntry = useCallback(
+    (
+      id: string,
+      nextRect: { x: number; y: number; width: number; height: number },
+      flags: { manualWidth?: boolean; manualHeight?: boolean },
+      isStart = false
+    ) => {
+      if (isStart) pushUndoSnapshot();
+      setEntries((prev) =>
+        prev.map((el) => {
+          if (el.id !== id) return el;
+
+          const clampedX = Math.max(0.004, Math.min(0.96, nextRect.x));
+          const clampedY = Math.max(0.004, Math.min(0.97, nextRect.y));
+          const clampedW = Math.max(0.035, Math.min(1 - clampedX - 0.004, nextRect.width));
+          const clampedH = Math.max(0.018, Math.min(1 - clampedY - 0.004, nextRect.height));
+
+          // Re-sync dot covers if cover is active and resized box now overlaps additional dotted lines
+          let nextDotCovers = el.dotCovers;
+          if (el.coverDotsEnabled !== false && el.dotCovers && el.dotCovers.length > 0) {
+            const layout = pageLayoutsRef.current[el.pageNum];
+            if (layout && layout.dotLeaders.length > 0) {
+              const primaryLeaderId = el.dotCovers[0]?.id?.replace(/^dc_/, '');
+              const primaryLeader = primaryLeaderId
+                ? layout.dotLeaders.find((dl) => dl.id === primaryLeaderId)
+                : undefined;
+              const fillColor = el.dotCovers[0]?.fillColor || '#ffffff';
+              const otherEntries = prev.filter((o) => o.id !== el.id && o.pageNum === el.pageNum);
+              const synced = computeDotCoversForEntry(
+                {
+                  pageNum: el.pageNum,
+                  x: clampedX,
+                  y: clampedY,
+                  width: clampedW,
+                  height: clampedH,
+                },
+                layout,
+                fillColor,
+                primaryLeader,
+                otherEntries
+              );
+              if (synced.length > 0) {
+                nextDotCovers = synced;
+              }
+            }
+          }
+
+          return {
+            ...el,
+            x: clampedX,
+            y: clampedY,
+            width: clampedW,
+            height: clampedH,
+            boundedBox: flags.manualWidth ? false : el.boundedBox,
+            manualWidth: flags.manualWidth ? true : el.manualWidth,
+            manualHeight: flags.manualHeight ? true : el.manualHeight,
+            dotCovers: nextDotCovers,
+          };
+        })
+      );
+    },
+    [pushUndoSnapshot]
+  );
+
+  // Toggle background / dot covering behind an active entry (auto-dots or resizable box cover for uncertain scans)
+  const handleToggleEntryCover = useCallback(
+    (id: string) => {
+      pushUndoSnapshot();
+      setEntries((prev) =>
+        prev.map((el) => {
+          if (el.id !== id) return el;
+          const hasAutoDots = Boolean(el.coverDotsEnabled !== false && el.dotCovers && el.dotCovers.length > 0);
+          const hasManualBg = Boolean(el.backgroundColor && el.backgroundColor !== 'transparent');
+
+          if (hasAutoDots || hasManualBg) {
+            return {
+              ...el,
+              coverDotsEnabled: false,
+              backgroundColor: 'transparent',
+            };
+          }
+
+          const pageCanvas = pageCanvasRefs.current.get(el.pageNum) || null;
+          const fillColor = sampleBackgroundColorOnCanvas(pageCanvas, el);
+
+          if (el.dotCovers && el.dotCovers.length > 0) {
+            return {
+              ...el,
+              coverDotsEnabled: true,
+              dotCovers: el.dotCovers.map((dc) => ({ ...dc, fillColor })),
+            };
+          }
+
+          // Fallback for scanned / ambiguous dotted lines: cover exact resizable text box with matching paper color
+          return {
+            ...el,
+            backgroundColor: fillColor,
+          };
+        })
+      );
+    },
+    [pushUndoSnapshot]
   );
 
   // Subtle drag repositioning via the active entry's grip handle
@@ -1118,6 +1407,7 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
                   registerTextareaRef={registerTextareaRef}
                   registerInteractiveRef={registerInteractiveRef}
                   registerPageRef={registerPageRef}
+                  registerPageCanvasRef={registerPageCanvasRef}
                   onPageLayoutAnalyzed={handlePageLayoutAnalyzed}
                   onClickBlankPage={handleClickBlankPage}
                   onClickSlot={activateSlot}
@@ -1128,6 +1418,8 @@ export const FillPdfFormTool: React.FC<FillPdfFormToolProps> = ({ onSelectNextTo
                   onChangeEntryText={handleChangeEntryText}
                   onUpdateEntryStyle={handleUpdateEntryStyle}
                   onMoveEntry={handleMoveEntry}
+                  onResizeEntry={handleResizeEntry}
+                  onToggleEntryCover={handleToggleEntryCover}
                   onDeleteEntry={handleDeleteEntry}
                   onNavigateField={handleNavigateField}
                   onNavigateTableDown={handleNavigateTableDown}

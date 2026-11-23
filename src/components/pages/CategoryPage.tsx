@@ -155,16 +155,18 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
     : 'Resize, compress, edit photos, exam photo & signature presets (UPSC/SSC), and convert JPG, PNG, WebP.';
 
   const categoryTools = docNavCategory
-    ? tools.filter((t) => docNavCategory.toolIds.includes(t.id))
-    : tools.filter((t) => t.category === normalizedCategoryId || (isImageCategory && t.categoryName === 'Image Tools'));
+    ? docNavCategory.toolIds
+        .map((id) => tools.find((t) => t.id === id))
+        .filter((t): t is ToolDefinition => Boolean(t))
+    : tools.filter((t) => t.category === normalizedCategoryId);
 
-  const theme = CATEGORY_THEMES[normalizedCategoryId] || CATEGORY_THEMES['image-tools'] || CATEGORY_THEMES['convert-docs'];
+  const theme = CATEGORY_THEMES[normalizedCategoryId] || CATEGORY_THEMES['image-tools'] || CATEGORY_THEMES['pdf-tools'];
   const IconComp = CATEGORY_ICONS[normalizedCategoryId] || Image;
   const guidance = CATEGORY_GUIDANCE_MAP[normalizedCategoryId];
 
   // Filter tools for image subcategory if applicable
   const examTools = categoryTools.filter(
-    (t) => t.subCategory === 'Photo & Signature for Exams' || t.id === 'photo-signature-resizer' || t.id === 'passport-photo-cropper' || t.id === 'combine-app-documents'
+    (t) => t.subCategory === 'Photo & Signature for Exams' || t.id === 'photo-signature-resizer'
   );
   const generalImageTools = categoryTools.filter(
     (t) => !examTools.some((e) => e.id === t.id)
@@ -183,7 +185,6 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
       <Breadcrumbs
         items={[
           { label: 'Home', href: '/', onClick: onNavigateHome },
-          { label: 'All Tools', href: '/directory', onClick: () => onNavigateCategory('directory') },
           { label: categoryName },
         ]}
       />
@@ -373,25 +374,24 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-          {CATEGORIES.filter((c) => c.id !== categoryId && !(categoryId === 'pdf-tools' && c.id === 'compress-pdf')).map((otherCat) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+          {DOCUMENT_NAV_CATEGORIES.filter((c) => c.id !== normalizedCategoryId).map((otherCat) => {
             const OtherIcon = CATEGORY_ICONS[otherCat.id] || Layers;
-            const targetCatId = otherCat.id === 'compress-pdf' ? 'pdf-tools' : otherCat.id;
             return (
               <a
                 key={otherCat.id}
-                href={`/${targetCatId}`}
+                href={`/${otherCat.id}`}
                 onClick={(e) => {
                   if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
                     e.preventDefault();
-                    onNavigateCategory(targetCatId);
+                    onNavigateCategory(otherCat.id);
                   }
                 }}
                 className="pt-card-hover flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-[#181B2E] border border-[#E8E6F2] dark:border-[#2A2F4A] hover:border-[#CFC5FA] dark:hover:border-[#4B4485] text-left group no-underline"
               >
                 <OtherIcon className="w-4 h-4 text-[#777789] dark:text-[#A0A5C0] group-hover:text-[#5B50E6] dark:group-hover:text-[#A99EFF] transition-colors shrink-0" />
                 <span className="text-xs font-semibold text-[#252536] dark:text-[#E2E6F7] group-hover:text-[#5B50E6] dark:group-hover:text-[#A99EFF] truncate transition-colors">
-                  {otherCat.name.replace(/^\d+\.\s*/, '')}
+                  {otherCat.name}
                 </span>
               </a>
             );
