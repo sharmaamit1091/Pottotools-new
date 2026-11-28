@@ -29,7 +29,7 @@ const RECOMMENDATION_MAP: Record<string, { slug: string; reason: string }[]> = {
   'compress-pdf': [
     { slug: 'merge-pdf', reason: 'Combine this compressed file with other documents' },
     { slug: 'delete-pdf-pages', reason: 'Remove unwanted or blank pages' },
-    { slug: 'pdf-to-word', reason: 'Turn this PDF into an editable Word document' },
+    { slug: 'pdf-to-editable-word', reason: 'Turn this PDF into an editable Word document' },
   ],
   'merge-pdf': [
     { slug: 'compress-pdf', reason: 'Shrink your newly combined PDF for email or upload' },
@@ -39,7 +39,7 @@ const RECOMMENDATION_MAP: Record<string, { slug: string; reason: string }[]> = {
   'split-pdf': [
     { slug: 'compress-pdf', reason: 'Optimize extracted pages down to under 200KB' },
     { slug: 'merge-pdf', reason: 'Re-assemble selected pages into a new clean document' },
-    { slug: 'pdf-to-word', reason: 'Convert extracted pages into editable Word format' },
+    { slug: 'pdf-to-editable-word', reason: 'Convert extracted pages into editable Word format' },
   ],
   'delete-pdf-pages': [
     { slug: 'compress-pdf', reason: 'Shrink the remaining clean document' },
@@ -132,7 +132,7 @@ const RECOMMENDATION_MAP: Record<string, { slug: string; reason: string }[]> = {
   ],
   'text-diff-comparator': [
     { slug: 'text-cleaner', reason: 'Format and normalize comparison text' },
-    { slug: 'pdf-to-word', reason: 'Open documents in Word for detailed review' },
+    { slug: 'pdf-to-editable-word', reason: 'Open documents in Word for detailed review' },
   ],
   'text-cleaner': [
     { slug: 'text-diff-comparator', reason: 'Verify differences after text cleaning' },
@@ -150,7 +150,7 @@ export const RecommendedNextTools: React.FC<RecommendedNextToolsProps> = ({
   const recommendations = RECOMMENDATION_MAP[currentToolId] || [
     { slug: 'compress-pdf', reason: 'Compress your processed document' },
     { slug: 'merge-pdf', reason: 'Combine with other files' },
-    { slug: 'pdf-to-word', reason: 'Convert to editable Word format' },
+    { slug: 'pdf-to-editable-word', reason: 'Convert to editable Word format' },
   ];
 
   if (dismissed || recommendations.length === 0) return null;

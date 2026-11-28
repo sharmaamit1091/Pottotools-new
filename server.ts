@@ -171,16 +171,38 @@ async function createServer() {
     next();
   });
 
-  // Canonical 301 redirects for duplicate/alias routes so Google never sees duplicate pages
+  // Canonical 301 redirects for duplicate/alias routes so Google never sees duplicate pages or chains
   const CANONICAL_ALIAS_REDIRECTS: Record<string, string> = {
     '/about-us': '/about',
     '/contact-us': '/contact',
-    '/all-tools': '/directory',
-    '/convert-documents': '/convert-docs',
+    '/all-tools': '/',
+    '/directory': '/',
     '/cookies': '/cookie-policy',
+    '/pdf-to-word': '/pdf-to-editable-word',
     '/custom-photo-resizer': '/custom-photo-studio',
+    '/photo-editor': '/custom-photo-studio',
+    '/hd-image-enhancer': '/custom-photo-studio',
+    '/crop-rotate-straighten': '/custom-photo-studio',
+    '/passport-photo-cropper': '/photo-signature-resizer',
+    '/photo-background-changer': '/photo-signature-resizer',
+    '/image-format-converter': '/image-converter',
+    '/jpg-to-png': '/image-converter',
+    '/png-to-jpg': '/image-converter',
+    '/combine-app-documents': '/merge-pdf',
+    '/office-note-organizer': '/office-note-digitizer',
+    '/organize-pdf': '/pdf-tools',
+    '/ocr-scanned': '/pdf-tools',
+    '/pdf-security': '/pdf-tools',
+    '/category-compress-pdf': '/pdf-tools',
+    '/top-pdf-tools': '/pdf-tools',
+    '/convert-docs': '/word-tools',
+    '/convert-documents': '/word-tools',
+    '/spreadsheets': '/excel-tools',
+    '/convert-images': '/image-tools',
     '/gov-tools': '/image-tools',
     '/category-gov-tools': '/image-tools',
+    '/image-tools-presets': '/image-tools',
+    '/smart-utilities': '/other-document-tools',
   };
 
   app.use((req: Request, res: Response, next: NextFunction) => {

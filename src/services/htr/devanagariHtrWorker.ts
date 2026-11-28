@@ -1,14 +1,25 @@
 import * as ort from 'onnxruntime-web';
-import { DEVANAGARI_CTC_VOCAB } from './devanagariCharset';
+import {
+  DEVANAGARI_CTC_VOCAB,
+  DEVANAGARI_EXOTIC_VOCAB_INDICES,
+} from './devanagariCharset';
 
 const MODEL_ID = 'PaddlePaddle/devanagari_PP-OCRv5_mobile_rec_onnx';
-const MODEL_FILE_NAME = 'inference.onnx';
 const MODEL_URL =
   'https://huggingface.co/PaddlePaddle/devanagari_PP-OCRv5_mobile_rec_onnx/resolve/main/inference.onnx';
 const CACHE_NAME = 'pottotools-htr-models-v1';
 const TARGET_HEIGHT = 48;
 const MIN_PADDED_WIDTH = 320;
 const MAX_WIDTH = 2048;
+
+export interface DevanagariChunkInput {
+  blob: Blob;
+  resized48?: {
+    width: number;
+    height: number;
+    rgba: ArrayBuffer;
+  };
+}
 
 export interface DevanagariLineInput {
   id: string;
@@ -20,6 +31,8 @@ export interface DevanagariLineInput {
     height: number;
     rgba: ArrayBuffer;
   };
+  /** Optional gap-split phrase chunks for wide form lines. */
+  chunks?: DevanagariChunkInput[];
 }
 
 type WorkerRequest =
@@ -195,7 +208,7 @@ async function getSession(): Promise<ort.InferenceSession> {
 }
 
 async function extractRgbaAtHeight48(
-  item: DevanagariLineInput
+  item: DevanagariChunkInput
 ): Promise<{ width: number; height: number; rgba: Uint8ClampedArray }> {
   if (item.resized48) {
     return {
@@ -291,11 +304,14 @@ function decodeCtcProbabilities(
   for (let t = 0; t < timeSteps; t++) {
     const base = t * vocabSize;
     let bestIdx = 0;
-    let bestProb = -1;
+    let bestScore = -1;
     for (let c = 0; c < vocabSize; c++) {
-      const p = data[base + c];
-      if (p > bestProb) {
-        bestProb = p;
+      let score = data[base + c];
+      if (DEVANAGARI_EXOTIC_VOCAB_INDICES.has(c)) {
+        score *= 0.25;
+      }
+      if (score > bestScore) {
+        bestScore = score;
         bestIdx = c;
       }
     }
@@ -304,7 +320,7 @@ function decodeCtcProbabilities(
       const ch = DEVANAGARI_CTC_VOCAB[bestIdx];
       if (ch !== undefined) {
         text += ch;
-        probSum += bestProb;
+        probSum += data[base + bestIdx];
         emittedCount++;
       }
     }
@@ -318,6 +334,34 @@ function decodeCtcProbabilities(
       : undefined;
 
   return { text: cleaned, confidence };
+}
+
+async function recognizeSingleCrop(
+  session: ort.InferenceSession,
+  inputName: string,
+  outputName: string,
+  crop: DevanagariChunkInput
+): Promise<{ text: string; confidence?: number }> {
+  const { width, height, rgba } = await extractRgbaAtHeight48(crop);
+  const inputTensor = buildPaddleRecTensor(rgba, width, height);
+
+  let outputMap: ort.InferenceSession.OnnxValueMapType | null = null;
+  try {
+    outputMap = await session.run({ [inputName]: inputTensor });
+    const outTensor = outputMap[outputName];
+    const dims = outTensor.dims;
+    const timeSteps = Number(dims[1] || 0);
+    const vocabSize = Number(dims[2] || 0);
+    const outData = outTensor.data as Float32Array;
+    return decodeCtcProbabilities(outData, timeSteps, vocabSize);
+  } finally {
+    inputTensor.dispose?.();
+    if (outputMap) {
+      for (const key of Object.keys(outputMap)) {
+        outputMap[key]?.dispose?.();
+      }
+    }
+  }
 }
 
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
@@ -337,7 +381,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         type: 'error',
         error:
           err?.message ||
-          'Failed to initialize the local Devanagari ONNX model. Please check your connection for the one-time ~7.6 MB model weight download.',
+          'Could not complete first-time setup. Please check your internet connection and try again.',
       });
     }
     return;
@@ -378,33 +422,43 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
           detail: `Reading line ${i + 1} of ${total}...`,
         });
 
-        const { width, height, rgba } = await extractRgbaAtHeight48(item);
-        const inputTensor = buildPaddleRecTensor(rgba, width, height);
+        let finalText = '';
+        let finalConfidence: number | undefined;
 
-        let outputMap: ort.InferenceSession.OnnxValueMapType | null = null;
-        try {
-          outputMap = await session.run({ [inputName]: inputTensor });
-          const outTensor = outputMap[outputName];
-          const dims = outTensor.dims;
-          const timeSteps = Number(dims[1] || 0);
-          const vocabSize = Number(dims[2] || 0);
-          const outData = outTensor.data as Float32Array;
-          const decoded = decodeCtcProbabilities(outData, timeSteps, vocabSize);
-
-          results.push({
-            id: item.id,
-            lineIndex: item.lineIndex,
-            text: decoded.text,
-            confidence: decoded.confidence,
-          });
-        } finally {
-          inputTensor.dispose?.();
-          if (outputMap) {
-            for (const key of Object.keys(outputMap)) {
-              outputMap[key]?.dispose?.();
+        if (item.chunks && item.chunks.length > 1) {
+          const parts: string[] = [];
+          let confWeightedSum = 0;
+          let weightTotal = 0;
+          for (const chunk of item.chunks) {
+            if (cancelledJobId === jobId) {
+              post({ type: 'cancelled', jobId });
+              return;
+            }
+            const decoded = await recognizeSingleCrop(session, inputName, outputName, chunk);
+            if (decoded.text) {
+              parts.push(decoded.text);
+              if (typeof decoded.confidence === 'number') {
+                const w = Math.max(1, decoded.text.length);
+                confWeightedSum += decoded.confidence * w;
+                weightTotal += w;
+              }
             }
           }
+          finalText = parts.join(' ').replace(/\s+/g, ' ').trim().normalize('NFC');
+          finalConfidence =
+            weightTotal > 0 ? Number((confWeightedSum / weightTotal).toFixed(4)) : undefined;
+        } else {
+          const decoded = await recognizeSingleCrop(session, inputName, outputName, item);
+          finalText = decoded.text;
+          finalConfidence = decoded.confidence;
         }
+
+        results.push({
+          id: item.id,
+          lineIndex: item.lineIndex,
+          text: finalText,
+          confidence: finalConfidence,
+        });
 
         post({
           type: 'line-progress',

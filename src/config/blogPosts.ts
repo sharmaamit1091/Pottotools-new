@@ -187,7 +187,7 @@ export const BLOG_POSTS: BlogPost[] = [
     publishedAt: '2026-11-13',
     updatedAt: '2026-11-18',
     readTime: '7 min read',
-    relatedToolSlugs: ['pdf-to-word', 'pdf-to-editable-word', 'ocr-tool', 'searchable-pdf-text-finder'],
+    relatedToolSlugs: ['pdf-to-editable-word', 'word-to-pdf', 'ocr-tool', 'searchable-pdf-text-finder'],
     sections: [
       {
         heading: 'Under the Hood: PDF Text Operators vs. Flat Raster Scans',
@@ -399,7 +399,7 @@ export const BLOG_POSTS: BlogPost[] = [
     publishedAt: '2026-11-18',
     updatedAt: '2026-11-18',
     readTime: '6 min read',
-    relatedToolSlugs: ['word-to-pdf', 'pdf-to-word', 'docx-to-html', 'markdown-to-pdf'],
+    relatedToolSlugs: ['word-to-pdf', 'pdf-to-editable-word', 'docx-to-html', 'markdown-to-pdf'],
     sections: [
       {
         heading: 'Why Word (.docx) Documents Shift Between Desktop Office and Browsers',

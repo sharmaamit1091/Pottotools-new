@@ -28,6 +28,7 @@ import { formatBytes } from '../../services/utils/downloadUtils';
 import { triggerToast } from '../common/Toast';
 import { RecommendedNextTools } from './RecommendedNextTools';
 import {
+  DEFAULT_ENHANCEMENT_SETTINGS,
   DigitizerPageItem,
   DigitizerSourceFile,
   HandwritingStyleMode,
@@ -88,6 +89,32 @@ function formatDraftDate(ts: number): string {
   } catch {
     return 'recently';
   }
+}
+
+/**
+ * Builds the canvas fed into line detection, recognition, or export.
+ * Geometry transforms (rotation + deskew) are ALWAYS honored even when optional
+ * contrast/shadow cleanup filters are unchecked.
+ */
+function buildPageWorkingCanvas(
+  rawCanvas: HTMLCanvasElement,
+  page: DigitizerPageItem,
+  applyToneFilters = page.useEnhancedForRecognition
+): HTMLCanvasElement {
+  if (applyToneFilters) {
+    return applyImageEnhancements(rawCanvas, page.enhancement);
+  }
+  const hasGeometry =
+    page.enhancement.rotation !== 0 || Math.abs(page.enhancement.deskewDeg) >= 0.15;
+  if (hasGeometry) {
+    return applyImageEnhancements(rawCanvas, {
+      ...DEFAULT_ENHANCEMENT_SETTINGS,
+      rotation: page.enhancement.rotation,
+      deskewDeg: page.enhancement.deskewDeg,
+      enabled: false,
+    });
+  }
+  return rawCanvas;
 }
 
 export const OfficeNoteDigitizerTool: React.FC<OfficeNoteDigitizerToolProps> = ({
@@ -249,7 +276,21 @@ export const OfficeNoteDigitizerTool: React.FC<OfficeNoteDigitizerToolProps> = (
           originalCanvasRef.current = { pageId: selectedPage.id, canvas: baseCanvas };
         }
 
-        const origUrl = baseCanvas.toDataURL('image/jpeg', 0.9);
+        // Keep Original preview aligned with page rotation so Split Compare & overlays match
+        let origCanvas: HTMLCanvasElement = baseCanvas;
+        if (selectedPage.enhancement.rotation !== 0) {
+          origCanvas = applyImageEnhancements(baseCanvas, {
+            ...DEFAULT_ENHANCEMENT_SETTINGS,
+            rotation: selectedPage.enhancement.rotation,
+            enabled: false,
+          });
+        }
+        const origUrl = origCanvas.toDataURL('image/jpeg', 0.9);
+        if (origCanvas !== baseCanvas) {
+          origCanvas.width = 0;
+          origCanvas.height = 0;
+        }
+
         const enhancedCanvas = applyImageEnhancements(baseCanvas, selectedPage.enhancement);
         const enhUrl = enhancedCanvas.toDataURL('image/jpeg', 0.9);
         enhancedCanvas.width = 0;
@@ -531,9 +572,7 @@ export const OfficeNoteDigitizerTool: React.FC<OfficeNoteDigitizerToolProps> = (
 
   const handleDetectLinesPreview = async () => {
     if (!selectedPage || !originalCanvasRef.current) return;
-    const targetCanvas = selectedPage.useEnhancedForRecognition
-      ? applyImageEnhancements(originalCanvasRef.current.canvas, selectedPage.enhancement)
-      : originalCanvasRef.current.canvas;
+    const targetCanvas = buildPageWorkingCanvas(originalCanvasRef.current.canvas, selectedPage);
 
     const lines = detectHandwrittenLines(targetCanvas);
     if (targetCanvas !== originalCanvasRef.current.canvas) {
@@ -609,9 +648,7 @@ export const OfficeNoteDigitizerTool: React.FC<OfficeNoteDigitizerToolProps> = (
             1800
           );
 
-          workingCanvas = currentPage.useEnhancedForRecognition
-            ? applyImageEnhancements(rawCanvas, currentPage.enhancement)
-            : rawCanvas;
+          workingCanvas = buildPageWorkingCanvas(rawCanvas, currentPage);
 
           const output = await localHtrEngine.recognizePageCanvas(
             workingCanvas,
@@ -636,12 +673,28 @@ export const OfficeNoteDigitizerTool: React.FC<OfficeNoteDigitizerToolProps> = (
             }
           );
 
+          const rotDelta = output.appliedRotationDelta || 0;
+          if (rotDelta !== 0) {
+            triggerToast('info', 'Auto-rotated page upright for accurate reading.');
+          }
+
           completedCount++;
           setPages((prev) =>
             prev.map((p) =>
               p.id === pageId
                 ? {
                     ...p,
+                    enhancement:
+                      rotDelta !== 0
+                        ? {
+                            ...p.enhancement,
+                            rotation: ((p.enhancement.rotation + rotDelta) % 360) as
+                              | 0
+                              | 90
+                              | 180
+                              | 270,
+                          }
+                        : p.enhancement,
                     status: 'done',
                     progressPercent: 100,
                     statusMessage:
@@ -749,9 +802,7 @@ export const OfficeNoteDigitizerTool: React.FC<OfficeNoteDigitizerToolProps> = (
 
     try {
       rawCanvas = await renderPageToCanvas(page, pdfDocsRef.current, imageUrlsRef.current, 1800);
-      workingCanvas = page.useEnhancedForRecognition
-        ? applyImageEnhancements(rawCanvas, page.enhancement)
-        : rawCanvas;
+      workingCanvas = buildPageWorkingCanvas(rawCanvas, page);
 
       const updatedLine = await localHtrEngine.recognizeSingleLine(
         workingCanvas,
@@ -818,13 +869,12 @@ export const OfficeNoteDigitizerTool: React.FC<OfficeNoteDigitizerToolProps> = (
     async (page: DigitizerPageItem, useEnhanced: boolean): Promise<HTMLCanvasElement> => {
       if (hasLiveMediaForPage(page)) {
         const raw = await renderPageToCanvas(page, pdfDocsRef.current, imageUrlsRef.current, 2000);
-        if (useEnhanced) {
-          const enhanced = applyImageEnhancements(raw, page.enhancement);
+        const prepared = buildPageWorkingCanvas(raw, page, useEnhanced);
+        if (prepared !== raw) {
           raw.width = 0;
           raw.height = 0;
-          return enhanced;
         }
-        return raw;
+        return prepared;
       }
 
       // Graceful fallback for >40 MB text+thumbnail restored drafts

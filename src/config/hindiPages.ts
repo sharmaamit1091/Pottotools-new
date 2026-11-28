@@ -84,8 +84,8 @@ export const HINDI_PAGES: HindiPageConfig[] = [
   },
   {
     slug: 'hi/pdf-to-word',
-    enSlug: 'pdf-to-word',
-    linkedToolId: 'pdf-to-word',
+    enSlug: 'pdf-to-editable-word',
+    linkedToolId: 'pdf-to-editable-word',
     title: 'PDF को Word (.docx) में बदलें – मुफ़्त ऑनलाइन कन्वर्टर | PottoTools हिंदी',
     metaDescription:
       'PDF दस्तावेज़ को सीधे ब्राउज़र में एडिटेबल Microsoft Word (.docx) फ़ाइल में बदलें। बिना ईमेल और बिना सर्वर अपलोड के तेज़ और निजी रूपांतरण।',

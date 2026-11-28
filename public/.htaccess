@@ -10,29 +10,46 @@ DirectorySlash Off
   RewriteBase /
 
   # ----------------------------------------------------------------------
-  # 1. Canonical 301 Redirect: Force HTTPS & non-WWW (Unified 1-Hop Redirect)
+  # 1. Canonical 301 Redirect: Force HTTPS, non-WWW & Clean Path (Unified 1-Hop)
   # ----------------------------------------------------------------------
-  # Case A: If request arrives at www (HTTP or HTTPS), redirect in 1 hop directly to https://domain
+  # Case A: www (HTTP or HTTPS) -> strip www AND any non-root trailing slash in 1 hop
   RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-  RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+  RewriteRule ^$ https://%1/ [L,R=301]
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^(.+?)/?$ https://%1/$1 [L,R=301]
 
-  # Case B: If request is non-www but HTTP, redirect in 1 hop to https://domain
+  # Case B: non-www HTTP -> force HTTPS AND strip any non-root trailing slash in 1 hop
   RewriteCond %{HTTPS} off [OR]
   RewriteCond %{HTTP:X-Forwarded-Proto} =http
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  RewriteRule ^$ https://%{HTTP_HOST}/ [L,R=301]
+  RewriteCond %{HTTPS} off [OR]
+  RewriteCond %{HTTP:X-Forwarded-Proto} =http
+  RewriteRule ^(.+?)/?$ https://%{HTTP_HOST}/$1 [L,R=301]
 
   # ----------------------------------------------------------------------
-  # 2. Canonical 301 Redirects for Alias Routes & Trailing Slashes
+  # 2. Canonical 301 Redirects for Alias/Merged Routes & Trailing Slashes (1-Hop)
   # ----------------------------------------------------------------------
   RewriteRule ^about-us/?$ /about [L,R=301]
   RewriteRule ^contact-us/?$ /contact [L,R=301]
-  RewriteRule ^all-tools/?$ /directory [L,R=301]
-  RewriteRule ^convert-documents/?$ /convert-docs [L,R=301]
+  RewriteRule ^(all-tools|directory)/?$ / [L,R=301]
   RewriteRule ^cookies/?$ /cookie-policy [L,R=301]
-  RewriteRule ^custom-photo-resizer/?$ /custom-photo-studio [L,R=301]
-  RewriteRule ^(gov-tools|category-gov-tools)/?$ /image-tools [L,R=301]
 
-  # Normalize trailing slash on non-root URLs (prevents DirectorySlash 301 mismatch)
+  # Merged tool aliases -> direct 1-hop 301 to canonical tool page
+  RewriteRule ^pdf-to-word/?$ /pdf-to-editable-word [L,R=301]
+  RewriteRule ^(custom-photo-resizer|photo-editor|hd-image-enhancer|crop-rotate-straighten)/?$ /custom-photo-studio [L,R=301]
+  RewriteRule ^(passport-photo-cropper|photo-background-changer)/?$ /photo-signature-resizer [L,R=301]
+  RewriteRule ^(image-format-converter|jpg-to-png|png-to-jpg)/?$ /image-converter [L,R=301]
+  RewriteRule ^combine-app-documents/?$ /merge-pdf [L,R=301]
+  RewriteRule ^office-note-organizer/?$ /office-note-digitizer [L,R=301]
+
+  # Merged legacy category aliases -> direct 1-hop 301 to the 6 unified category hubs
+  RewriteRule ^(organize-pdf|ocr-scanned|pdf-security|category-compress-pdf|top-pdf-tools)/?$ /pdf-tools [L,R=301]
+  RewriteRule ^(convert-docs|convert-documents)/?$ /word-tools [L,R=301]
+  RewriteRule ^spreadsheets/?$ /excel-tools [L,R=301]
+  RewriteRule ^(convert-images|gov-tools|category-gov-tools|image-tools-presets)/?$ /image-tools [L,R=301]
+  RewriteRule ^smart-utilities/?$ /other-document-tools [L,R=301]
+
+  # Normalize trailing slash on remaining non-root URLs (prevents DirectorySlash 301 mismatch)
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^(.+)/$ /$1 [L,R=301]
 
@@ -53,9 +70,9 @@ DirectorySlash Off
   RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
   RewriteRule ^([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)$ $1/index.html [L]
 
-  # D. Route any remaining valid SPA tool, category, blog, Hindi, or legal routes to index.html
+  # D. Route any remaining valid canonical SPA tool, category, blog, Hindi, or legal routes to index.html
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^(office-note-digitizer|office-note-organizer|fill-pdf-form|pdf-page-organizer|searchable-pdf-text-finder|pdf-to-editable-word|pdf-id-redactor|remove-scan-watermark|custom-photo-studio|photo-size-compressor|photo-editor|hd-image-enhancer|image-format-converter|crop-rotate-straighten|photo-background-changer|passport-photo-cropper|combine-app-documents|merge-pdf|split-pdf|delete-pdf-pages|watermark-pdf|page-numbers-pdf|compress-pdf|pdf-to-word|word-to-pdf|docx-to-txt|docx-to-html|txt-to-pdf|markdown-to-pdf|image-converter|image-to-pdf|pdf-to-images|ocr-tool|protect-pdf|unlock-pdf|sign-pdf|pdf-metadata|photo-signature-resizer|pdf-text-extractor|text-diff-comparator|text-cleaner|csv-to-xlsx|xlsx-to-csv|sheet-viewer|powerpoint-to-pdf|excel-to-pdf|pdf-to-excel|jpg-to-png|png-to-jpg|pdf-tools|word-tools|excel-tools|powerpoint-tools|image-tools|other-document-tools|organize-pdf|convert-docs|convert-images|ocr-scanned|pdf-security|smart-utilities|spreadsheets|about|contact|privacy|terms|disclaimer|cookie-policy|directory|blog|blog/[a-zA-Z0-9-]+|hi|hi/[a-zA-Z0-9-]+|category-[a-zA-Z0-9-]+)$ index.html [L]
+  RewriteRule ^(office-note-digitizer|fill-pdf-form|pdf-page-organizer|searchable-pdf-text-finder|pdf-to-editable-word|pdf-id-redactor|remove-scan-watermark|custom-photo-studio|photo-size-compressor|merge-pdf|split-pdf|delete-pdf-pages|watermark-pdf|page-numbers-pdf|compress-pdf|word-to-pdf|docx-to-txt|docx-to-html|txt-to-pdf|markdown-to-pdf|image-converter|image-to-pdf|pdf-to-images|ocr-tool|protect-pdf|unlock-pdf|sign-pdf|pdf-metadata|photo-signature-resizer|pdf-text-extractor|text-diff-comparator|text-cleaner|csv-to-xlsx|xlsx-to-csv|sheet-viewer|powerpoint-to-pdf|excel-to-pdf|pdf-to-excel|pdf-tools|word-tools|excel-tools|powerpoint-tools|image-tools|other-document-tools|about|contact|privacy|terms|disclaimer|cookie-policy|blog|blog/[a-zA-Z0-9-]+|hi|hi/[a-zA-Z0-9-]+)$ index.html [L]
 
   # E. Unknown asset files or paths trigger HTTP 404
   RewriteRule ^ - [R=404,L]

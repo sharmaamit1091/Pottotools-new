@@ -860,37 +860,6 @@
   animation: ptPageEnter 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* 3. Floating Background Document Illustrations (ultra-gentle CSS drift) */
-@keyframes ptFloatSlowA {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
-  50% { transform: translate3d(4px, -12px, 0) rotate(2deg); }
-}
-
-@keyframes ptFloatSlowB {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(4deg); }
-  50% { transform: translate3d(-6px, -10px, 0) rotate(-2deg); }
-}
-
-@keyframes ptFloatSlowC {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(-2deg); }
-  50% { transform: translate3d(5px, 10px, 0) rotate(3deg); }
-}
-
-.pt-float-a {
-  animation: ptFloatSlowA 11s ease-in-out infinite;
-  will-change: transform;
-}
-
-.pt-float-b {
-  animation: ptFloatSlowB 13.5s ease-in-out infinite;
-  will-change: transform;
-}
-
-.pt-float-c {
-  animation: ptFloatSlowC 15s ease-in-out infinite;
-  will-change: transform;
-}
-
 /* 4. Branded PottoTools Document Loader (scan highlight + bar shimmer) */
 @keyframes ptLoaderScan {
   0% { transform: translateY(-6px); opacity: 0.25; }
@@ -995,9 +964,6 @@
   .pt-check-stroke {
     stroke-dashoffset: 0 !important;
   }
-  .pt-float-a,
-  .pt-float-b,
-  .pt-float-c,
   .pt-confetti-dot {
     animation: none !important;
   }

@@ -103,11 +103,11 @@ export function registerWebMcpTools(): void {
         },
       },
       execute: async () => {
-        window.location.href = '/pdf-to-word';
+        window.location.href = '/pdf-to-editable-word';
         return {
           success: true,
-          tool: 'pdf-to-word',
-          url: 'https://pottotools.in/pdf-to-word',
+          tool: 'pdf-to-editable-word',
+          url: 'https://pottotools.in/pdf-to-editable-word',
         };
       },
     },

@@ -15,6 +15,25 @@ interface ToolSeoConfig {
   metaDesc: string;
 }
 
+const LEGACY_CATEGORY_TO_CANONICAL: Record<string, string> = {
+  'organize-pdf': 'pdf-tools',
+  'compress-pdf': 'pdf-tools',
+  'ocr-scanned': 'pdf-tools',
+  'pdf-security': 'pdf-tools',
+  'top-pdf-tools': 'pdf-tools',
+  'convert-docs': 'word-tools',
+  'convert-documents': 'word-tools',
+  'spreadsheets': 'excel-tools',
+  'convert-images': 'image-tools',
+  'gov-tools': 'image-tools',
+  'image-tools-presets': 'image-tools',
+  'smart-utilities': 'other-document-tools',
+};
+
+function toCanonicalCategorySlug(category: string): string {
+  return LEGACY_CATEGORY_TO_CANONICAL[category] || category;
+}
+
 // Curated international search-intent titles and meta descriptions
 const TOOL_SEO_MAP: Record<string, ToolSeoConfig> = {
   'fill-pdf-form': {
@@ -258,7 +277,7 @@ export function updatePageSeoMetadata(tool: ToolDefinition | null, view: string)
   } else if (view === 'directory') {
     title = `All ${TOOLS.length} Free Tools Directory | PottoTools`;
     description = `Browse all ${TOOLS.length} free document, PDF, Word, Excel, image, OCR, and text tools available on PottoTools.`;
-    canonicalPath = '/directory';
+    canonicalPath = '/';
   } else if (view === 'blog') {
     title = `Document, PDF & Image Guides Blog | PottoTools`;
     description =
@@ -281,7 +300,7 @@ export function updatePageSeoMetadata(tool: ToolDefinition | null, view: string)
     }
   } else if (view.startsWith('category-')) {
     const rawCat = view.replace('category-', '');
-    const catId = rawCat === 'convert-documents' ? 'convert-docs' : rawCat;
+    const catId = toCanonicalCategorySlug(rawCat);
     const catMeta: Record<string, { title: string; desc: string }> = {
       'organize-pdf': {
         title: 'Organize PDF Online – Merge, Split, Rotate & Reorder PDF Pages | PottoTools',
@@ -584,7 +603,7 @@ function updatePageStructuredData(
           '@type': 'ListItem',
           position: 2,
           name: tool.categoryName,
-          item: `https://pottotools.in/${tool.category === 'compress-pdf' ? 'pdf-tools' : tool.category}`,
+          item: `https://pottotools.in/${toCanonicalCategorySlug(tool.category)}`,
         },
         {
           '@type': 'ListItem',

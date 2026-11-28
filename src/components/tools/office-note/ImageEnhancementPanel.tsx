@@ -67,13 +67,17 @@ export const ImageEnhancementPanel: React.FC<ImageEnhancementPanelProps> = ({
       rotation: settings.rotation,
       deskewDeg: settings.deskewDeg,
     });
-    onToggleUseEnhanced(presetId !== 'original' || settings.rotation !== 0 || settings.deskewDeg !== 0);
+    onToggleUseEnhanced(presetId !== 'original');
   };
 
-  const handleRotate90 = () => {
+  const handleRotateLeft90 = () => {
+    const nextRot = ((settings.rotation + 270) % 360) as 0 | 90 | 180 | 270;
+    onChangeSettings({ ...settings, rotation: nextRot });
+  };
+
+  const handleRotateRight90 = () => {
     const nextRot = ((settings.rotation + 90) % 360) as 0 | 90 | 180 | 270;
     onChangeSettings({ ...settings, rotation: nextRot });
-    onToggleUseEnhanced(true);
   };
 
   const handleResetAll = () => {
@@ -376,18 +380,37 @@ export const ImageEnhancementPanel: React.FC<ImageEnhancementPanelProps> = ({
 
           {/* Orientation & Deskew Quick Bar */}
           <div className="space-y-2 pt-3 border-t border-[#ECEAF4] dark:border-[#242840]">
-            <span className="text-xs font-bold text-[#252536] dark:text-[#F2F4FC]">
-              Orientation &amp; Deskew
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#252536] dark:text-[#F2F4FC]">
+                Orientation &amp; Deskew
+              </span>
+              {settings.rotation !== 0 && (
+                <span className="text-[11px] font-mono text-[#5B50E6] dark:text-[#B9B0FF]">
+                  Rotated {settings.rotation}°
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 disabled={disabled}
-                onClick={handleRotate90}
+                onClick={handleRotateLeft90}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#FAFAFC] dark:bg-[#121524] border border-[#E2DFEF] dark:border-[#2A304D] text-[#252536] dark:text-[#F2F4FC] hover:border-[#5B50E6] transition-colors cursor-pointer disabled:opacity-50"
+                title="Rotate 90° counter-clockwise"
+              >
+                <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Rotate Left</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={handleRotateRight90}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#FAFAFC] dark:bg-[#121524] border border-[#E2DFEF] dark:border-[#2A304D] text-[#252536] dark:text-[#F2F4FC] hover:border-[#5B50E6] transition-colors cursor-pointer disabled:opacity-50"
+                title="Rotate 90° clockwise"
               >
                 <RotateCw className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>Rotate 90° ({settings.rotation}°)</span>
+                <span>Rotate Right</span>
               </button>
 
               <button
@@ -413,10 +436,10 @@ export const ImageEnhancementPanel: React.FC<ImageEnhancementPanelProps> = ({
             />
             <div className="text-xs leading-relaxed">
               <span className="font-bold text-[#252536] dark:text-[#F2F4FC] block">
-                Use enhanced version for recognition
+                Use cleanup filters for recognition
               </span>
               <span className="text-[#777789] dark:text-[#9CA2BE]">
-                Recommended for faded, shadowed, or tilted notes. Uncheck to run recognition directly on the original scan.
+                Enable for faded or shadowed notes. Rotation and tilt adjustments are always applied automatically.
               </span>
             </div>
           </label>

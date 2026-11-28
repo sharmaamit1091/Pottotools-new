@@ -72,7 +72,7 @@ const COMMON_TASKS: CommonTaskItem[] = [
   },
   {
     id: 'edit-contract',
-    toolSlug: 'pdf-to-word',
+    toolSlug: 'pdf-to-editable-word',
     icon: FileEdit,
     tagline: 'Edit Your PDF',
     title: 'Turn a PDF into an Editable Word File',

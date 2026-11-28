@@ -10,7 +10,6 @@ import { logSearchQuery } from '../../services/analytics/searchQueryLogger';
 import { PWAInstallButton } from '../common/PWAInstallButton';
 import { OfflineStatusBadge } from '../common/OfflineStatusBadge';
 import { PottoMagicDesk } from './PottoMagicDesk';
-import { FloatingDocumentBackdrop } from './FloatingDocumentBackdrop';
 
 interface HeroSectionProps {
   searchQuery: string;
@@ -58,7 +57,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     },
     {
       label: 'PDF to Word',
-      slug: 'pdf-to-word',
+      slug: 'pdf-to-editable-word',
       color: 'bg-[#DDEEFF]/85 text-[#1A528C] border-[#B2D7FB] hover:bg-[#DDEEFF] dark:bg-[#1B314E]/80 dark:text-[#B9DCFF] dark:border-[#325785]',
     },
     {
@@ -85,9 +84,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   return (
     <section aria-label="Hero Section" className="relative pt-7 pb-6 sm:pt-10 sm:pb-8 text-center overflow-hidden">
-      {/* Subtle Low-Opacity Floating Document Illustrations */}
-      <FloatingDocumentBackdrop />
-
       {/* Gentle Soft Pastel Ambient Halo (very subtle, preserves clean light canvas) */}
       <div
         aria-hidden="true"

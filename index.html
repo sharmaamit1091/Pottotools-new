@@ -541,7 +541,7 @@
             "@type": "SearchAction",
             "target": {
               "@type": "EntryPoint",
-              "urlTemplate": "https://pottotools.in/directory?q={search_term_string}"
+              "urlTemplate": "https://pottotools.in/?q={search_term_string}"
             },
             "query-input": "required name=search_term_string"
           }
@@ -785,7 +785,6 @@
           <a href="/word-tools" style="color: #475569; text-decoration: none;">Word Tools</a>
           <a href="/blog" style="color: #475569; text-decoration: none;">Guides</a>
           <a href="/hi" style="color: #475569; text-decoration: none;">हिंदी</a>
-          <a href="/directory" style="color: #475569; text-decoration: none;">All Tools</a>
           <a href="/about" style="color: #475569; text-decoration: none;">About Us</a>
           <a href="/contact" style="color: #475569; text-decoration: none;">Contact Us</a>
           <a href="/privacy" style="color: #475569; text-decoration: none;">Privacy Policy</a>
@@ -802,27 +801,20 @@
         </p>
 
         <!-- WebMCP Form for Browser Agents -->
-        <form action="/directory" method="GET" toolname="document-tool-search" tooldescription="Search free in-browser PDF, document, and image tools" style="margin-bottom: 2.5rem;">
+        <form action="/" method="GET" toolname="document-tool-search" tooldescription="Search free in-browser PDF, document, and image tools" style="margin-bottom: 2.5rem;">
           <input type="text" name="q" placeholder="Search for tools (e.g. compress pdf 100kb, photo resizer cm, pdf to word)..." aria-label="Search tools" style="padding: 0.75rem 1rem; width: 360px; max-width: 90%; border: 1px solid #cbd5e1; border-radius: 8px;" />
           <button type="submit" style="padding: 0.75rem 1.25rem; background-color: #0284c7; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-left: 0.5rem;">Search Tools</button>
         </form>
 
         <section style="margin-top: 2.5rem; text-align: left; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 2rem; margin-bottom: 2rem;">
-          <h2 style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem;">Core Tool Categories &amp; Complete 45 Free Tools Directory</h2>
+          <h2 style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem;">Core Tool Categories &amp; Free In-Browser Document Tools</h2>
           <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.8rem;">
             <a href="/pdf-tools" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">PDF Tools</a>
-            <a href="/image-tools" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Image Tools</a>
-            <a href="/convert-docs" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Convert Docs</a>
             <a href="/word-tools" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Word Tools</a>
             <a href="/excel-tools" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Excel Tools</a>
             <a href="/powerpoint-tools" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">PowerPoint Tools</a>
-            <a href="/other-document-tools" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Document Utilities</a>
-            <a href="/organize-pdf" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Organize PDF</a>
-            <a href="/convert-images" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Convert Images</a>
-            <a href="/ocr-scanned" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">OCR &amp; Scanned</a>
-            <a href="/pdf-security" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">PDF Security</a>
-            <a href="/smart-utilities" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Smart Text Utilities</a>
-            <a href="/spreadsheets" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Spreadsheets</a>
+            <a href="/image-tools" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Image Tools</a>
+            <a href="/other-document-tools" style="padding: 0.35rem 0.75rem; background: #f1f5f9; border-radius: 6px; color: #0f172a; text-decoration: none; font-weight: 600;">Other Tools</a>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
             <div>
@@ -831,6 +823,8 @@
               </h3>
               <ul style="list-style: none; padding: 0; line-height: 1.8; font-size: 0.875rem;">
                 <li><a href="/compress-pdf" style="color: #0284c7; text-decoration: none;">&bull; Compress PDF to 100KB, 200KB &amp; 500KB</a></li>
+                <li><a href="/fill-pdf-form" style="color: #0284c7; text-decoration: none;">&bull; Fill PDF Form (Text, Photo &amp; Signature)</a></li>
+                <li><a href="/office-note-digitizer" style="color: #0284c7; text-decoration: none;">&bull; Office Note Digitizer (Handwriting to Text)</a></li>
                 <li><a href="/merge-pdf" style="color: #0284c7; text-decoration: none;">&bull; Merge PDF Files with Custom Page Order</a></li>
                 <li><a href="/split-pdf" style="color: #0284c7; text-decoration: none;">&bull; Split PDF &amp; Extract Specific Page Ranges</a></li>
                 <li><a href="/pdf-page-organizer" style="color: #0284c7; text-decoration: none;">&bull; PDF Page Organizer (Reorder &amp; Rotate up to 500MB)</a></li>
@@ -838,7 +832,9 @@
                 <li><a href="/watermark-pdf" style="color: #0284c7; text-decoration: none;">&bull; Add Text Watermark to PDF</a></li>
                 <li><a href="/page-numbers-pdf" style="color: #0284c7; text-decoration: none;">&bull; Add Page Numbers to PDF</a></li>
                 <li><a href="/pdf-id-redactor" style="color: #0284c7; text-decoration: none;">&bull; Offline PDF &amp; ID Redactor (Hide Aadhaar / Bank Info)</a></li>
-                <li><a href="/protect-pdf" style="color: #0284c7; text-decoration: none;">&bull; PDF Privacy Sanitizer &amp; Stream Cleanup</a></li>
+                <li><a href="/protect-pdf" style="color: #0284c7; text-decoration: none;">&bull; Protect PDF with AES-256 Password</a></li>
+                <li><a href="/unlock-pdf" style="color: #0284c7; text-decoration: none;">&bull; Unlock Password-Protected PDF</a></li>
+                <li><a href="/remove-scan-watermark" style="color: #0284c7; text-decoration: none;">&bull; Remove Scan Watermark from PDFs</a></li>
                 <li><a href="/sign-pdf" style="color: #0284c7; text-decoration: none;">&bull; Sign PDF Online Free</a></li>
                 <li><a href="/pdf-metadata" style="color: #0284c7; text-decoration: none;">&bull; View, Edit &amp; Wipe PDF Metadata</a></li>
               </ul>
@@ -851,28 +847,19 @@
               <ul style="list-style: none; padding: 0; line-height: 1.8; font-size: 0.875rem;">
                 <li><a href="/custom-photo-studio" style="color: #0284c7; text-decoration: none;">&bull; Custom Photo Studio (px, cm, mm, KB &amp; Crop)</a></li>
                 <li><a href="/photo-size-compressor" style="color: #0284c7; text-decoration: none;">&bull; Compress Photo to Exact 20KB, 50KB, 100KB</a></li>
-                <li><a href="/photo-signature-resizer" style="color: #0284c7; text-decoration: none;">&bull; Exam Photo &amp; Signature Resizer</a></li>
-                <li><a href="/passport-photo-cropper" style="color: #0284c7; text-decoration: none;">&bull; Passport Photo Maker (35x45mm &amp; 2x2 inch)</a></li>
-                <li><a href="/photo-editor" style="color: #0284c7; text-decoration: none;">&bull; Online Photo Editor (Crop, Rotate &amp; Adjust)</a></li>
-                <li><a href="/hd-image-enhancer" style="color: #0284c7; text-decoration: none;">&bull; HD Image Enhancer &amp; Sharpener</a></li>
-                <li><a href="/photo-background-changer" style="color: #0284c7; text-decoration: none;">&bull; Photo Background Color Changer</a></li>
+                <li><a href="/photo-signature-resizer" style="color: #0284c7; text-decoration: none;">&bull; Exam &amp; Passport Photo &amp; Signature Resizer</a></li>
                 <li><a href="/image-converter" style="color: #0284c7; text-decoration: none;">&bull; Convert JPG, PNG, WebP &amp; BMP Online</a></li>
-                <li><a href="/image-format-converter" style="color: #0284c7; text-decoration: none;">&bull; Batch Image Format Converter</a></li>
-                <li><a href="/jpg-to-png" style="color: #0284c7; text-decoration: none;">&bull; JPG to Transparent PNG Converter</a></li>
-                <li><a href="/png-to-jpg" style="color: #0284c7; text-decoration: none;">&bull; PNG to Lightweight JPG Converter</a></li>
                 <li><a href="/image-to-pdf" style="color: #0284c7; text-decoration: none;">&bull; Images (JPG/PNG) to PDF Converter</a></li>
                 <li><a href="/pdf-to-images" style="color: #0284c7; text-decoration: none;">&bull; PDF to High-Res JPG / PNG Images</a></li>
-                <li><a href="/combine-app-documents" style="color: #0284c7; text-decoration: none;">&bull; Combine Photo &amp; Signature on One Sheet</a></li>
               </ul>
             </div>
 
             <div>
               <h3 style="font-size: 1.1rem; font-weight: 700; color: #2563eb; margin-bottom: 0.5rem;">
-                <a href="/convert-docs" style="color: #2563eb; text-decoration: none;">Word, OCR &amp; Document Conversion</a>
+                <a href="/word-tools" style="color: #2563eb; text-decoration: none;">Word, OCR &amp; Document Conversion</a>
               </h3>
               <ul style="list-style: none; padding: 0; line-height: 1.8; font-size: 0.875rem;">
                 <li><a href="/pdf-to-editable-word" style="color: #0284c7; text-decoration: none;">&bull; PDF to Editable Word (.docx) with OCR</a></li>
-                <li><a href="/pdf-to-word" style="color: #0284c7; text-decoration: none;">&bull; PDF to Word Converter Online</a></li>
                 <li><a href="/word-to-pdf" style="color: #0284c7; text-decoration: none;">&bull; Convert Word (.docx) to Clean PDF</a></li>
                 <li><a href="/docx-to-txt" style="color: #0284c7; text-decoration: none;">&bull; Word DOCX to Plain Text (.txt)</a></li>
                 <li><a href="/docx-to-html" style="color: #0284c7; text-decoration: none;">&bull; Word DOCX to Clean HTML Code</a></li>
@@ -966,8 +953,7 @@
           <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a> |
           <a href="/terms" style="color: #475569; margin: 0 0.5rem;">Terms and Conditions</a> |
           <a href="/disclaimer" style="color: #475569; margin: 0 0.5rem;">Disclaimer</a> |
-          <a href="/cookie-policy" style="color: #475569; margin: 0 0.5rem;">Cookie Policy</a> |
-          <a href="/directory" style="color: #475569; margin: 0 0.5rem;">All Tools</a>
+          <a href="/cookie-policy" style="color: #475569; margin: 0 0.5rem;">Cookie Policy</a>
         </p>
         <p style="font-size: 0.75rem; color: #94a3b8;">
           &copy; 2026 PottoTools.in &bull; Simple, Reliable Online PDF &amp; Image Tools

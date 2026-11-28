@@ -218,6 +218,40 @@ const TOOL_SEO_MAP: Record<string, SeoConfig> = {
   },
 };
 
+const CANONICAL_CATEGORY_SLUGS = new Set([
+  'pdf-tools',
+  'word-tools',
+  'excel-tools',
+  'powerpoint-tools',
+  'image-tools',
+  'other-document-tools',
+]);
+
+function toCanonicalCategorySlug(rawCategory: string): string {
+  switch (rawCategory) {
+    case 'organize-pdf':
+    case 'compress-pdf':
+    case 'pdf-security':
+    case 'ocr-scanned':
+    case 'pdf-tools':
+      return 'pdf-tools';
+    case 'convert-docs':
+    case 'word-tools':
+      return 'word-tools';
+    case 'spreadsheets':
+    case 'excel-tools':
+      return 'excel-tools';
+    case 'powerpoint-tools':
+      return 'powerpoint-tools';
+    case 'convert-images':
+    case 'gov-tools':
+    case 'image-tools':
+      return 'image-tools';
+    default:
+      return 'other-document-tools';
+  }
+}
+
 export function buildToolPageHtml(templateHtml: string, tool: ToolDefinition): string {
   const seo = TOOL_SEO_MAP[tool.id] || {
     title: `${tool.title} – Free Online Document & Image Tools | PottoTools`,
@@ -225,7 +259,7 @@ export function buildToolPageHtml(templateHtml: string, tool: ToolDefinition): s
   };
   const canonicalUrl = `https://pottotools.in/${tool.slug}`;
 
-  const categorySlug = tool.category === 'compress-pdf' ? 'pdf-tools' : tool.category;
+  const categorySlug = toCanonicalCategorySlug(tool.category);
   const graphItems: Record<string, unknown>[] = [
     {
       '@type': 'WebApplication',
@@ -305,7 +339,6 @@ export function buildToolPageHtml(templateHtml: string, tool: ToolDefinition): s
         <a href="/image-tools" style="color: #475569; text-decoration: none;">Image Tools</a>
         <a href="/word-tools" style="color: #475569; text-decoration: none;">Word Tools</a>
         <a href="/blog" style="color: #475569; text-decoration: none;">Guides</a>
-        <a href="/directory" style="color: #475569; text-decoration: none;">All Tools</a>
         <a href="/about" style="color: #475569; text-decoration: none;">About</a>
         <a href="/contact" style="color: #475569; text-decoration: none;">Contact</a>
       </nav>
@@ -314,7 +347,7 @@ export function buildToolPageHtml(templateHtml: string, tool: ToolDefinition): s
     <main style="max-width: 1100px; margin: 2rem auto; padding: 0 1rem;">
       <nav aria-label="Breadcrumb" style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem;">
         <a href="/" style="color: #0284c7; text-decoration: none;">Home</a> &rsaquo;
-        <a href="/${tool.category === 'compress-pdf' ? 'pdf-tools' : tool.category}" style="color: #0284c7; text-decoration: none;">${tool.categoryName}</a> &rsaquo;
+        <a href="/${categorySlug}" style="color: #0284c7; text-decoration: none;">${tool.categoryName}</a> &rsaquo;
         <span>${tool.title}</span>
       </nav>
 
@@ -508,8 +541,7 @@ export function buildToolPageHtml(templateHtml: string, tool: ToolDefinition): s
         <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a> |
         <a href="/terms" style="color: #475569; margin: 0 0.5rem;">Terms of Service</a> |
         <a href="/disclaimer" style="color: #475569; margin: 0 0.5rem;">Disclaimer</a> |
-        <a href="/cookie-policy" style="color: #475569; margin: 0 0.5rem;">Cookie Policy</a> |
-        <a href="/directory" style="color: #475569; margin: 0 0.5rem;">Tools Directory</a>
+        <a href="/cookie-policy" style="color: #475569; margin: 0 0.5rem;">Cookie Policy</a>
       </p>
       <p style="font-size: 0.75rem; color: #94a3b8;">
         &copy; 2026 PottoTools.in &bull; Client-Side In-Browser Processing &bull; No Server Uploads
@@ -637,7 +669,9 @@ const CATEGORY_FILTERS: Record<string, (t: ToolDefinition) => boolean> = {
   'spreadsheets': (t) => t.id === 'sheet-viewer' || t.id === 'csv-to-xlsx' || t.id === 'xlsx-to-csv' || t.id === 'excel-to-pdf' || t.id === 'pdf-to-excel',
 };
 
-export const CATEGORY_PAGES_DATA = CATEGORY_GUIDANCE_LIST.map((g) => ({
+export const CATEGORY_PAGES_DATA = CATEGORY_GUIDANCE_LIST.filter((g) =>
+  CANONICAL_CATEGORY_SLUGS.has(g.slug)
+).map((g) => ({
   slug: g.slug,
   title: g.metaTitle,
   metaDesc: g.metaDesc,
@@ -696,9 +730,8 @@ export function buildCategoryPageHtml(templateHtml: string, categoryData: (typeo
         <a href="/" style="color: #0284c7; text-decoration: none;">Home</a>
         <a href="/pdf-tools" style="color: #475569; text-decoration: none;">PDF Tools</a>
         <a href="/image-tools" style="color: #475569; text-decoration: none;">Image Tools</a>
-        <a href="/convert-docs" style="color: #475569; text-decoration: none;">Document Conversion</a>
+        <a href="/word-tools" style="color: #475569; text-decoration: none;">Word Tools</a>
         <a href="/blog" style="color: #475569; text-decoration: none;">Guides</a>
-        <a href="/directory" style="color: #475569; text-decoration: none;">All Tools</a>
         <a href="/about" style="color: #475569; text-decoration: none;">About</a>
         <a href="/contact" style="color: #475569; text-decoration: none;">Contact</a>
       </nav>
@@ -795,8 +828,7 @@ export function buildCategoryPageHtml(templateHtml: string, categoryData: (typeo
         <a href="/about" style="color: #475569; margin: 0 0.5rem;">About</a> |
         <a href="/contact" style="color: #475569; margin: 0 0.5rem;">Contact</a> |
         <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a> |
-        <a href="/terms" style="color: #475569; margin: 0 0.5rem;">Terms of Service</a> |
-        <a href="/directory" style="color: #475569; margin: 0 0.5rem;">All Tools</a>
+        <a href="/terms" style="color: #475569; margin: 0 0.5rem;">Terms of Service</a>
       </p>
       <p style="font-size: 0.75rem; color: #94a3b8;">
         &copy; 2026 PottoTools.in &bull; 100% Free Client-Side In-Browser Processing
@@ -834,7 +866,7 @@ export const INFORMATIONAL_PAGES_DATA = [
       <ul style="padding-left: 1.5rem; margin-top: 0.75rem;">
         <li><a href="/pdf-tools" style="color: #0284c7; font-weight: 600; text-decoration: none;">PDF Tools Suite</a> — Compress PDF, Merge PDF, Split PDF, PDF Page Organizer, and PDF &amp; ID Redactor.</li>
         <li><a href="/image-tools" style="color: #0284c7; font-weight: 600; text-decoration: none;">Image Tools &amp; Photo Studio</a> — Custom Photo Studio (px, cm, mm, in), Exam Photo &amp; Signature Resizer, Passport Cropper, and format converters.</li>
-        <li><a href="/convert-docs" style="color: #0284c7; font-weight: 600; text-decoration: none;">Document Conversion &amp; OCR</a> — Word to PDF, PDF to Editable Word, PowerPoint to PDF, and bilingual English/Hindi OCR.</li>
+        <li><a href="/word-tools" style="color: #0284c7; font-weight: 600; text-decoration: none;">Word &amp; Document Conversion</a> — Word to PDF, PDF to Editable Word, PowerPoint to PDF, and bilingual English/Hindi OCR.</li>
         <li><a href="/excel-tools" style="color: #0284c7; font-weight: 600; text-decoration: none;">Excel &amp; Spreadsheet Tools</a> — CSV to XLSX, XLSX to CSV, Excel to PDF, and PDF Table Extractor.</li>
         <li><a href="/blog" style="color: #0284c7; font-weight: 600; text-decoration: none;">Practical Guides &amp; Blog</a> — Step-by-step formatting tutorials and reference tables.</li>
       </ul>
@@ -861,7 +893,7 @@ export const INFORMATIONAL_PAGES_DATA = [
         <li>The file type, approximate file size, and any on-screen error message you observed.</li>
       </ul>
       <h2>Helpful Quick Links</h2>
-      <p>Looking for answers before reaching out? Review our <a href="/privacy" style="color: #0284c7; font-weight: 600;">Zero-Upload Privacy Policy</a>, <a href="/about" style="color: #0284c7; font-weight: 600;">Platform Architecture</a>, or browse all tools in the <a href="/directory" style="color: #0284c7; font-weight: 600;">Tools Directory</a>.</p>
+      <p>Looking for answers before reaching out? Review our <a href="/privacy" style="color: #0284c7; font-weight: 600;">Zero-Upload Privacy Policy</a>, <a href="/about" style="color: #0284c7; font-weight: 600;">Platform Architecture</a>, or browse all tools on the <a href="/" style="color: #0284c7; font-weight: 600;">PottoTools Homepage</a>.</p>
     `,
   },
   {
@@ -906,7 +938,7 @@ export const INFORMATIONAL_PAGES_DATA = [
       <h2>1. Output Verification &amp; Accuracy</h2>
       <p>PottoTools relies on established open-source processing engines including pdf-lib, PDF.js, Tesseract.js, Mammoth.js, and SheetJS running locally inside your browser. Because source PDFs, legacy office files, and smartphone scans vary widely in encoding, resolution, and font embedding, users should visually verify every output file before submitting it to official portals, courts, banks, or examination boards.</p>
       <h2>2. Exam &amp; Government Form Presets</h2>
-      <p>Preset dimensions and KB targets offered inside <a href="/photo-signature-resizer" style="color: #0284c7;">Exam Photo &amp; Signature Resizer</a> and <a href="/passport-photo-cropper" style="color: #0284c7;">Passport Photo Cropper</a> are provided strictly for convenience based on published historical guidelines. Recruitment boards and embassies update specifications periodically—always confirm pixel width, height, background color, and file size ceilings in your current official notification.</p>
+      <p>Preset dimensions and KB targets offered inside <a href="/photo-signature-resizer" style="color: #0284c7;">Exam &amp; Passport Photo Resizer</a> and <a href="/custom-photo-studio" style="color: #0284c7;">Custom Photo Studio</a> are provided strictly for convenience based on published historical guidelines. Recruitment boards and embassies update specifications periodically—always confirm pixel width, height, background color, and file size ceilings in your current official notification.</p>
       <h2>3. Independent Platform Notice</h2>
       <p>PottoTools is an independent web utility platform and is not affiliated with, endorsed by, or sponsored by Adobe Inc., Microsoft Corporation, Google LLC, or any government testing agency (such as UPSC, SSC, IBPS, NTA, or passport authorities). Please also review our <a href="/privacy" style="color: #0284c7;">Privacy Policy</a> and <a href="/terms" style="color: #0284c7;">Terms of Service</a>.</p>
     `,
@@ -922,30 +954,9 @@ export const INFORMATIONAL_PAGES_DATA = [
       <h2>2. How PottoTools Uses Essential Storage</h2>
       <p>PottoTools does not require user accounts or login sessions, so we never set authentication tracking cookies. We use lightweight browser Local Storage solely for functional conveniences: remembering your chosen Light/Dark appearance theme, caching recently used utilities for quick access, and storing offline Service Worker application assets so tools run smoothly without internet.</p>
       <h2>3. Analytics &amp; Advertising Cookies</h2>
-      <p>To support free public access across all tools in our <a href="/directory" style="color: #0284c7;">Tools Directory</a>, third-party advertising providers such as Google AdSense and aggregated traffic measurement tags may place standard cookies to measure page reach, prevent ad fraud, and serve relevant ads.</p>
+      <p>To support free public access across all tools on <a href="/" style="color: #0284c7;">PottoTools</a>, third-party advertising providers such as Google AdSense and aggregated traffic measurement tags may place standard cookies to measure page reach, prevent ad fraud, and serve relevant ads.</p>
       <h2>4. Managing or Disabling Cookies</h2>
       <p>You can clear, block, or restrict cookies anytime through your browser privacy settings (Chrome, Firefox, Edge, Safari) or adjust ad personalization preferences via Google Ad Settings. Blocking third-party advertising cookies will not prevent any PottoTools PDF, image, or office converter from working locally on your device. Read our <a href="/privacy" style="color: #0284c7;">Privacy Policy</a> or <a href="/contact" style="color: #0284c7;">contact us</a> for questions.</p>
-    `,
-  },
-  {
-    slug: 'directory',
-    title: `All ${TOOLS.length} Free Tools Directory | PottoTools`,
-    metaDesc: `Browse all ${TOOLS.length} free document, PDF, Word, Excel, image, OCR, and text tools available on PottoTools.`,
-    h1: `All Tools Directory: ${TOOLS.length} Free Online Tools`,
-    content: `
-      <p style="margin-bottom: 1.5rem;">Explore all ${TOOLS.length} free, private PDF, photo, and document tools that work right in your browser:</p>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-        ${TOOLS.map(
-          (t) => `
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem;">
-            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">
-              <a href="/${t.slug}" style="color: #0284c7; text-decoration: none;">${t.title}</a>
-            </h3>
-            <p style="font-size: 0.8rem; color: #64748b; line-height: 1.4;">${t.fullDesc}</p>
-          </div>
-        `
-        ).join('\n')}
-      </div>
     `,
   },
 ];
@@ -989,9 +1000,8 @@ export function buildInformationalPageHtml(templateHtml: string, pageData: (type
         <a href="/" style="color: #0284c7; text-decoration: none;">Home</a>
         <a href="/pdf-tools" style="color: #475569; text-decoration: none;">PDF Tools</a>
         <a href="/image-tools" style="color: #475569; text-decoration: none;">Image Tools</a>
-        <a href="/convert-docs" style="color: #475569; text-decoration: none;">Document Conversion</a>
+        <a href="/word-tools" style="color: #475569; text-decoration: none;">Word Tools</a>
         <a href="/blog" style="color: #475569; text-decoration: none;">Guides</a>
-        <a href="/directory" style="color: #475569; text-decoration: none;">All Tools</a>
         <a href="/about" style="color: #475569; text-decoration: none;">About</a>
         <a href="/contact" style="color: #475569; text-decoration: none;">Contact</a>
       </nav>
@@ -1023,8 +1033,7 @@ export function buildInformationalPageHtml(templateHtml: string, pageData: (type
         <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a> |
         <a href="/terms" style="color: #475569; margin: 0 0.5rem;">Terms of Service</a> |
         <a href="/disclaimer" style="color: #475569; margin: 0 0.5rem;">Disclaimer</a> |
-        <a href="/cookie-policy" style="color: #475569; margin: 0 0.5rem;">Cookie Policy</a> |
-        <a href="/directory" style="color: #475569; margin: 0 0.5rem;">All Tools</a>
+        <a href="/cookie-policy" style="color: #475569; margin: 0 0.5rem;">Cookie Policy</a>
       </p>
       <p style="font-size: 0.75rem; color: #94a3b8;">
         &copy; 2026 PottoTools.in &bull; 100% Free Client-Side In-Browser Processing
@@ -1081,7 +1090,6 @@ export function buildBlogIndexHtml(templateHtml: string): string {
         <a href="/image-tools" style="color: #475569; text-decoration: none;">Image Tools</a>
         <a href="/blog" style="color: #0284c7; font-weight: 700; text-decoration: none;">Guides</a>
         <a href="/hi" style="color: #475569; text-decoration: none;">हिंदी</a>
-        <a href="/directory" style="color: #475569; text-decoration: none;">All Tools</a>
       </nav>
     </header>
     <main style="max-width: 1000px; margin: 2rem auto; padding: 0 1rem;">
@@ -1111,7 +1119,7 @@ export function buildBlogIndexHtml(templateHtml: string): string {
       </div>
     </main>
     <footer style="margin-top: 4rem; padding: 2rem 1rem; border-top: 1px solid #e2e8f0; font-size: 0.875rem; color: #475569; text-align: center; max-width: 1200px; margin-left: auto; margin-right: auto;">
-      <p><a href="/about" style="color: #475569; margin: 0 0.5rem;">About</a> | <a href="/contact" style="color: #475569; margin: 0 0.5rem;">Contact</a> | <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a> | <a href="/directory" style="color: #475569; margin: 0 0.5rem;">All Tools</a> | <a href="/hi" style="color: #475569; margin: 0 0.5rem;">PottoTools हिंदी</a></p>
+      <p><a href="/about" style="color: #475569; margin: 0 0.5rem;">About</a> | <a href="/contact" style="color: #475569; margin: 0 0.5rem;">Contact</a> | <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a> | <a href="/hi" style="color: #475569; margin: 0 0.5rem;">PottoTools हिंदी</a></p>
       <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">&copy; 2026 PottoTools.in</p>
     </footer>
   `;
@@ -1173,7 +1181,6 @@ export function buildBlogPostHtml(templateHtml: string, post: BlogPost): string 
         <a href="/blog" style="color: #0284c7; font-weight: 700; text-decoration: none;">Guides</a>
         <a href="/pdf-tools" style="color: #475569; text-decoration: none;">PDF Tools</a>
         <a href="/image-tools" style="color: #475569; text-decoration: none;">Image Tools</a>
-        <a href="/directory" style="color: #475569; text-decoration: none;">All Tools</a>
       </nav>
     </header>
     <main style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
@@ -1247,7 +1254,7 @@ export function buildBlogPostHtml(templateHtml: string, post: BlogPost): string 
       </article>
     </main>
     <footer style="margin-top: 4rem; padding: 2rem 1rem; border-top: 1px solid #e2e8f0; font-size: 0.875rem; color: #475569; text-align: center;">
-      <p><a href="/blog" style="color: #0284c7; margin: 0 0.5rem;">All Guides</a> | <a href="/directory" style="color: #475569; margin: 0 0.5rem;">All Tools</a> | <a href="/about" style="color: #475569; margin: 0 0.5rem;">About</a> | <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a></p>
+      <p><a href="/blog" style="color: #0284c7; margin: 0 0.5rem;">All Guides</a> | <a href="/about" style="color: #475569; margin: 0 0.5rem;">About</a> | <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a></p>
       <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">&copy; 2026 PottoTools.in</p>
     </footer>
   `;
@@ -1309,7 +1316,7 @@ export function buildHindiPageHtml(templateHtml: string, page: HindiPageConfig):
       <nav aria-label="Primary Navigation" style="display: flex; gap: 1rem; font-size: 0.875rem; flex-wrap: wrap;">
         <a href="/" style="color: #0284c7; text-decoration: none;">Home (EN)</a>
         <a href="/hi" style="color: #059669; font-weight: 700; text-decoration: none;">हिंदी होम</a>
-        <a href="${linkedTool ? `/${linkedTool.slug}` : '/directory'}" style="color: #475569; text-decoration: none;">${linkedTool ? linkedTool.title : 'All Tools'}</a>
+        <a href="${linkedTool ? `/${linkedTool.slug}` : '/'}" style="color: #475569; text-decoration: none;">${linkedTool ? linkedTool.title : 'All Tools'}</a>
         <a href="/blog" style="color: #475569; text-decoration: none;">Guides</a>
       </nav>
     </header>
@@ -1321,7 +1328,7 @@ export function buildHindiPageHtml(templateHtml: string, page: HindiPageConfig):
       <h1 style="font-size: 2.1rem; font-weight: 800; color: #0f172a; line-height: 1.3; margin-bottom: 0.75rem;">${page.h1}</h1>
       <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin-bottom: 1.5rem;">${page.subtitle}</p>
       <p style="margin-bottom: 2rem;">
-        <a href="${linkedTool ? `/${linkedTool.slug}` : '/directory'}" style="display: inline-block; padding: 0.75rem 1.5rem; background: #0284c7; color: #ffffff; border-radius: 10px; font-weight: 700; text-decoration: none;">${page.ctaLabel} &rarr;</a>
+        <a href="${linkedTool ? `/${linkedTool.slug}` : '/'}" style="display: inline-block; padding: 0.75rem 1.5rem; background: #0284c7; color: #ffffff; border-radius: 10px; font-weight: 700; text-decoration: none;">${page.ctaLabel} &rarr;</a>
         <a href="${page.enSlug ? `/${page.enSlug}` : '/'}" style="display: inline-block; margin-left: 0.75rem; padding: 0.75rem 1.25rem; border: 1px solid #cbd5e1; color: #0f172a; border-radius: 10px; font-weight: 600; text-decoration: none;">English Version</a>
       </p>
       <section style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
@@ -1348,7 +1355,7 @@ export function buildHindiPageHtml(templateHtml: string, page: HindiPageConfig):
       </section>
     </main>
     <footer style="margin-top: 4rem; padding: 2rem 1rem; border-top: 1px solid #e2e8f0; font-size: 0.875rem; color: #475569; text-align: center;">
-      <p><a href="/" style="color: #0284c7; margin: 0 0.5rem;">Home (EN)</a> | <a href="/hi" style="color: #059669; margin: 0 0.5rem;">PottoTools हिंदी</a> | <a href="/directory" style="color: #475569; margin: 0 0.5rem;">All Tools</a> | <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a></p>
+      <p><a href="/" style="color: #0284c7; margin: 0 0.5rem;">Home (EN)</a> | <a href="/hi" style="color: #059669; margin: 0 0.5rem;">PottoTools हिंदी</a> | <a href="/privacy" style="color: #475569; margin: 0 0.5rem;">Privacy Policy</a></p>
       <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">&copy; 2026 PottoTools.in</p>
     </footer>
   `;

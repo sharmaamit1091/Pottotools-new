@@ -4,6 +4,7 @@ import {
   DigitizerPageItem,
   DigitizerSourceFile,
 } from './types';
+import { detectSidewaysOrientation } from './lineSegmenter';
 
 // Ensure PDF.js worker uses the local bundled worker for strict client-side execution
 if (typeof window !== 'undefined') {
@@ -222,15 +223,44 @@ export async function loadDocumentsLocally(
         const tmp = document.createElement('canvas');
         tmp.width = img.naturalWidth || img.width;
         tmp.height = img.naturalHeight || img.height;
-        const ctx = tmp.getContext('2d');
+        const ctx = tmp.getContext('2d', { willReadFrequently: true });
         if (ctx) {
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, tmp.width, tmp.height);
           ctx.drawImage(img, 0, 0);
         }
-        const thumbnailUrl = await createThumbnailFromCanvas(tmp, 220);
-        const w = tmp.width;
-        const h = tmp.height;
+
+        // Fast (<15ms) check for sideways photos saved without EXIF orientation (e.g. WhatsApp)
+        const orientation = detectSidewaysOrientation(tmp);
+        const initialRotation: 0 | 90 | 180 | 270 =
+          orientation.isLikelySideways && orientation.suggestedRotation !== 0
+            ? orientation.suggestedRotation
+            : 0;
+
+        let thumbSource: HTMLCanvasElement = tmp;
+        let rotatedThumbCanvas: HTMLCanvasElement | null = null;
+        if (initialRotation === 90 || initialRotation === 270) {
+          rotatedThumbCanvas = document.createElement('canvas');
+          rotatedThumbCanvas.width = tmp.height;
+          rotatedThumbCanvas.height = tmp.width;
+          const rCtx = rotatedThumbCanvas.getContext('2d');
+          if (rCtx) {
+            rCtx.fillStyle = '#FFFFFF';
+            rCtx.fillRect(0, 0, rotatedThumbCanvas.width, rotatedThumbCanvas.height);
+            rCtx.translate(rotatedThumbCanvas.width / 2, rotatedThumbCanvas.height / 2);
+            rCtx.rotate((initialRotation * Math.PI) / 180);
+            rCtx.drawImage(tmp, -tmp.width / 2, -tmp.height / 2);
+          }
+          thumbSource = rotatedThumbCanvas;
+        }
+
+        const thumbnailUrl = await createThumbnailFromCanvas(thumbSource, 220);
+        const w = initialRotation === 90 || initialRotation === 270 ? tmp.height : tmp.width;
+        const h = initialRotation === 90 || initialRotation === 270 ? tmp.width : tmp.height;
+        if (rotatedThumbCanvas) {
+          rotatedThumbCanvas.width = 0;
+          rotatedThumbCanvas.height = 0;
+        }
         tmp.width = 0;
         tmp.height = 0;
 
@@ -252,7 +282,10 @@ export async function loadDocumentsLocally(
           width: w,
           height: h,
           thumbnailUrl,
-          enhancement: { ...DEFAULT_ENHANCEMENT_SETTINGS },
+          enhancement: {
+            ...DEFAULT_ENHANCEMENT_SETTINGS,
+            rotation: initialRotation,
+          },
           useEnhancedForRecognition: false,
           status: 'idle',
           progressPercent: 0,

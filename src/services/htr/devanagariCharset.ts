@@ -581,6 +581,20 @@ export const DEVANAGARI_CTC_VOCAB: readonly string[] = [
   ' ',
 ] as const;
 
+const COMMON_DEVANAGARI_AND_OFFICE_CHAR_RE =
+  /^[\u0900-\u097F\x20-\x7E₹£€¥°±×÷–—‘’“”…•·§№✓✔]$/;
+
+/**
+ * CTC vocab indices for exotic dingbats / circled numbers / mathematical glyphs
+ * that handwritten notes almost never contain, gently down-weighted during decoding
+ * while keeping full Devanagari (U+0900..U+097F), English ASCII, and office symbols untouched.
+ */
+export const DEVANAGARI_EXOTIC_VOCAB_INDICES: ReadonlySet<number> = new Set(
+  DEVANAGARI_CTC_VOCAB.map((ch, idx) =>
+    idx > 0 && !COMMON_DEVANAGARI_AND_OFFICE_CHAR_RE.test(ch) ? idx : -1
+  ).filter((idx) => idx > 0)
+);
+
 const DEVANAGARI_RE = /[ऀ-ॿ]/g;
 const LATIN_RE = /[A-Za-z]/g;
 
@@ -603,9 +617,9 @@ export function detectLineScript(text: string): 'hin' | 'eng' | 'mixed' {
 }
 
 /**
- * Decides whether a line initially processed by the fast Devanagari ONNX model
- * in Hindi+English mode should be upgraded with the dedicated English Handwriting
- * TrOCR neural model (which handles normal & cursive English handwriting much better).
+ * Decides whether a line initially processed by the Devanagari recognizer
+ * in Hindi+English mode should also be evaluated by the dedicated English
+ * recognizer for sharper Latin handwriting accuracy.
  */
 export function shouldRouteLineToEnglishHtr(
   text: string,
@@ -618,11 +632,11 @@ export function shouldRouteLineToEnglishHtr(
   const conf = typeof ctcConfidence === 'number' ? ctcConfidence : 0;
 
   // Lines with genuine Devanagari script MUST stay on the Devanagari adapter
-  // because English TrOCR cannot emit Devanagari Unicode characters.
+  // because the English recognizer cannot emit Devanagari Unicode characters.
   if (dev >= 2) return false;
   if (dev === 1 && lat < 3 && conf >= 0.72) return false;
 
-  // Empty output or very low confidence on a non-Devanagari line: likely cursive English
+  // Empty output or very low confidence on a non-Devanagari line: try English recognizer
   if (!trimmed) return true;
 
   // Pure numeric / date / file-code lines (e.g. "14/03/2026", "2026-27") with strong CTC confidence
@@ -630,15 +644,12 @@ export function shouldRouteLineToEnglishHtr(
     return false;
   }
 
-  // English / Latin line: route to dedicated English handwriting TrOCR model.
-  // In running/cursive style, always prefer TrOCR for Latin lines.
+  // English / Latin line: evaluate with the dedicated English handwriting recognizer.
   if (lat >= 2) {
-    if (handwritingStyle === 'running') return true;
-    // Even if PP-OCRv5 read some Latin letters, TrOCR is specialized for handwritten English
     return true;
   }
 
-  // Short ambiguous non-Devanagari line with low confidence -> let English HTR try
+  // Short ambiguous non-Devanagari line with low confidence -> let English recognizer try
   const threshold = handwritingStyle === 'running' ? 0.84 : 0.75;
   return conf < threshold;
 }

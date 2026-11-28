@@ -719,20 +719,29 @@ export default function App() {
           /* Dedicated Tool Page */
           <div className="py-6 sm:py-8">
             <Breadcrumbs
-              items={[
-                { label: 'Home', href: '/', onClick: () => navigateTo('home') },
-                {
-                  label: activeTool.categoryName,
-                  href: `/${activeTool.category === 'compress-pdf' ? 'pdf-tools' : activeTool.category}`,
-                  onClick: () =>
-                    navigateTo(
-                      activeTool.category === 'compress-pdf'
-                        ? 'category-pdf-tools'
-                        : `category-${activeTool.category}`
-                    ),
-                },
-                { label: activeTool.title },
-              ]}
+              items={(() => {
+                const canonicalCategorySlug =
+                  activeTool.category === 'word-tools' || activeTool.category === 'convert-docs'
+                    ? 'word-tools'
+                    : activeTool.category === 'excel-tools' || activeTool.category === 'spreadsheets'
+                    ? 'excel-tools'
+                    : activeTool.category === 'powerpoint-tools'
+                    ? 'powerpoint-tools'
+                    : activeTool.category === 'image-tools' || activeTool.category === 'convert-images' || activeTool.category === 'gov-tools'
+                    ? 'image-tools'
+                    : activeTool.category === 'other-document-tools' || activeTool.category === 'smart-utilities'
+                    ? 'other-document-tools'
+                    : 'pdf-tools';
+                return [
+                  { label: 'Home', href: '/', onClick: () => navigateTo('home') },
+                  {
+                    label: activeTool.categoryName,
+                    href: `/${canonicalCategorySlug}`,
+                    onClick: () => navigateTo(`category-${canonicalCategorySlug}`),
+                  },
+                  { label: activeTool.title },
+                ];
+              })()}
             />
 
             {/* Tool Top Banner Placement (728x90 Desktop / 320x50 Mobile) */}
@@ -875,7 +884,7 @@ export default function App() {
                     { name: 'Compress PDF', slug: 'compress-pdf' },
                     { name: 'Fill PDF Form', slug: 'fill-pdf-form' },
                     { name: 'Photo Resizer', slug: 'custom-photo-studio' },
-                    { name: 'PDF to Word', slug: 'pdf-to-word' },
+                    { name: 'PDF to Word', slug: 'pdf-to-editable-word' },
                   ].map((item) => (
                     <a
                       key={item.slug}
